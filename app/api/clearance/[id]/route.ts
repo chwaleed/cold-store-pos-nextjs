@@ -20,7 +20,6 @@ export async function GET(
       where: { id },
       include: {
         customer: true,
-        entryReceipt: true,
         clearedItems: {
           include: {
             entryItem: {
@@ -29,6 +28,13 @@ export async function GET(
                 productSubType: true,
                 packType: true,
                 room: true,
+                entryReceipt: {
+                  select: {
+                    receiptNo: true,
+                    carNo: true,
+                    entryDate: true,
+                  },
+                },
               },
             },
           },

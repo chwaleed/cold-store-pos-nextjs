@@ -3,6 +3,94 @@ import { prisma } from '@/lib/db';
 import { clearanceReceiptSchema } from '@/schema/clearance';
 
 // GET - List all clearance receipts
+// export async function GET(request: NextRequest) {
+//   try {
+//     const searchParams = request.nextUrl.searchParams;
+//     const page = parseInt(searchParams.get('page') || '1');
+//     const limit = parseInt(searchParams.get('limit') || '10');
+//     const search = searchParams.get('search') || '';
+//     const customerId = searchParams.get('customerId');
+//     const startDate = searchParams.get('startDate');
+//     const endDate = searchParams.get('endDate');
+
+//     const skip = (page - 1) * limit;
+
+//     // Build where clause
+//     const where: any = {};
+
+//     // Search by clearance number or car number
+//     if (search) {
+//       where.OR = [
+//         { clearanceNo: { contains: search } },
+//         { carNo: { contains: search } },
+//       ];
+//     }
+
+//     // Filter by customer
+//     if (customerId && customerId !== 'all') {
+//       where.customerId = parseInt(customerId);
+//     }
+
+//     // Filter by date range
+//     if (startDate || endDate) {
+//       where.clearanceDate = {};
+//       if (startDate) {
+//         where.clearanceDate.gte = new Date(startDate);
+//       }
+//       if (endDate) {
+//         // Add one day to include the end date
+//         const endDateTime = new Date(endDate);
+//         endDateTime.setDate(endDateTime.getDate() + 1);
+//         where.clearanceDate.lt = endDateTime;
+//       }
+//     }
+
+//     const [clearances, total] = await Promise.all([
+//       prisma.clearanceReceipt.findMany({
+//         where,
+//         skip,
+//         take: limit,
+//         orderBy: { clearanceDate: 'desc' },
+//         include: {
+//           customer: true,
+//           clearedItems: {
+//             include: {
+//               entryItem: {
+//                 include: {
+//                   productType: true,
+//                   productSubType: true,
+//                   packType: true,
+//                   room: true,
+//                   entryReceipt: {
+//                     select: {
+//                       receiptNo: true,
+//                       entryDate: true,
+//                     },
+//                   },
+//                 },
+//               },
+//             },
+//           },
+//         },
+//       }),
+//       prisma.clearanceReceipt.count({ where }),
+//     ]);
+
+//     return NextResponse.json({
+//       success: true,
+//       data: clearances,
+//       totalPages: Math.ceil(total / limit),
+//       currentPage: page,
+//     });
+//   } catch (error) {
+//     console.error('Error fetching clearances:', error);
+//     return NextResponse.json(
+//       { success: false, error: 'Failed to fetch clearances' },
+//       { status: 500 }
+//     );
+//   }
+// }
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -34,51 +122,53 @@ export async function GET(request: NextRequest) {
     // Filter by date range
     if (startDate || endDate) {
       where.clearanceDate = {};
-      if (startDate) {
-        where.clearanceDate.gte = new Date(startDate);
-      }
+      if (startDate) where.clearanceDate.gte = new Date(startDate);
       if (endDate) {
-        // Add one day to include the end date
         const endDateTime = new Date(endDate);
         endDateTime.setDate(endDateTime.getDate() + 1);
         where.clearanceDate.lt = endDateTime;
       }
     }
 
+    // Fetch only essential data
     const [clearances, total] = await Promise.all([
       prisma.clearanceReceipt.findMany({
         where,
         skip,
         take: limit,
         orderBy: { clearanceDate: 'desc' },
-        include: {
-          customer: true,
-          clearedItems: {
-            include: {
-              entryItem: {
-                include: {
-                  productType: true,
-                  productSubType: true,
-                  packType: true,
-                  room: true,
-                  entryReceipt: {
-                    select: {
-                      receiptNo: true,
-                      entryDate: true,
-                    },
-                  },
-                },
-              },
+        select: {
+          id: true,
+          clearanceNo: true,
+          clearanceDate: true,
+          totalAmount: true,
+          customer: {
+            select: {
+              id: true,
+              name: true, // change to your customer name field
             },
+          },
+          _count: {
+            select: { clearedItems: true }, // gives number of items
           },
         },
       }),
       prisma.clearanceReceipt.count({ where }),
     ]);
 
+    // Map to your desired structure
+    const formatted = clearances.map((c) => ({
+      id: c.id,
+      receiptNo: c.clearanceNo,
+      customer: c.customer,
+      date: c.clearanceDate,
+      itemsCount: c._count.clearedItems,
+      totalAmount: c.totalAmount,
+    }));
+
     return NextResponse.json({
       success: true,
-      data: clearances,
+      data: formatted,
       totalPages: Math.ceil(total / limit),
       currentPage: page,
     });
@@ -95,8 +185,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('Request Body:', body);
 
     // Parse and validate data
+
     const validatedData = clearanceReceiptSchema.parse({
       ...body,
       clearanceDate: body.clearanceDate
@@ -116,6 +208,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch all entry items with their entry receipts
     const entryItemIds = validatedData.items.map((item) => item.entryItemId);
+
     const entryItems = await prisma.entryItem.findMany({
       where: { id: { in: entryItemIds } },
       include: {
@@ -134,33 +227,6 @@ export async function POST(request: NextRequest) {
           error: 'One or more entry items not found',
         },
         { status: 404 }
-      );
-    }
-
-    // Verify all items belong to the same customer
-    const customerIds = new Set(
-      entryItems.map((item) => item.entryReceipt.customerId)
-    );
-    if (customerIds.size > 1) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'All items must belong to the same customer',
-        },
-        { status: 400 }
-      );
-    }
-
-    const actualCustomerId = entryItems[0].entryReceipt.customerId;
-
-    // Verify customer matches
-    if (actualCustomerId !== validatedData.customerId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Selected items do not belong to the specified customer',
-        },
-        { status: 400 }
       );
     }
 
@@ -260,7 +326,7 @@ export async function POST(request: NextRequest) {
       // Create clearance receipt
       const receipt = await tx.clearanceReceipt.create({
         data: {
-          clearanceNo,
+          clearanceNo: validatedData.receiptNo,
           customerId: validatedData.customerId,
           carNo: validatedData.carNo || null,
           clearanceDate: validatedData.clearanceDate || new Date(),
@@ -311,8 +377,8 @@ export async function POST(request: NextRequest) {
           customerId: validatedData.customerId,
           invoiceId: receipt.id,
           description: `Clearance ${clearanceNo}`,
-          debitAmount: totalAmount,
-          creditAmount: 0,
+          debitAmount: 0,
+          creditAmount: totalAmount,
         },
       });
 

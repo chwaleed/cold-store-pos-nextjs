@@ -23,6 +23,9 @@ export const clearanceReceiptSchema = z.object({
   clearanceDate: z.date(),
   receiptNo: z.string().min(1, 'Receipt number is required'), // ✅ Added validation message
   description: z.string().optional(),
+  items: z
+    .array(clearedItemSchema)
+    .min(1, 'At least one cleared item is required'),
 });
 
 // Type exports

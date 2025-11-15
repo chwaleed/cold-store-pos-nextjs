@@ -70,7 +70,7 @@ export function ClearanceTable() {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Clearance No.</TableHead>
+          <TableHead>Recipt No.</TableHead>
           <TableHead>Customer</TableHead>
           <TableHead>Date</TableHead>
           <TableHead>Items</TableHead>
@@ -81,9 +81,7 @@ export function ClearanceTable() {
       <TableBody>
         {clearances.map((clearance) => (
           <TableRow key={clearance.id}>
-            <TableCell className="font-medium">
-              {clearance.clearanceNo}
-            </TableCell>
+            <TableCell className="font-medium">{clearance.receiptNo}</TableCell>
             <TableCell>
               {clearance.customer?.name || 'N/A'}
               {clearance.customer?.village && (
@@ -94,11 +92,11 @@ export function ClearanceTable() {
               )}
             </TableCell>
             <TableCell>
-              {new Date(clearance.clearanceDate).toLocaleDateString()}
+              {new Date(clearance.date).toLocaleDateString()}
             </TableCell>
             <TableCell>
               <Badge variant="secondary">
-                {clearance.clearedItems?.length || 0} items
+                {clearance.itemsCount || 0} items
               </Badge>
             </TableCell>
             <TableCell className="text-right font-semibold">

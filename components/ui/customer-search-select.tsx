@@ -110,26 +110,47 @@ export function CustomerSearchSelect({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[400px] p-0" align="start">
-        <Command shouldFilter={false}>
+
+      {/* IMPORTANT: pointer-events-auto + z-index */}
+      <PopoverContent
+        className="w-[400px] p-0 z-50 pointer-events-auto"
+        align="start"
+      >
+        {/* Override all muted/opacity inside command */}
+        <Command
+          shouldFilter={false}
+          className="[&_*]:!text-black [&_*]:pointer-events-auto"
+        >
           <CommandInput
             placeholder="Search customer..."
             value={search}
             onValueChange={setSearch}
           />
+
           <CommandList>
             <CommandEmpty>
               {loading ? 'Searching...' : 'No customer found.'}
             </CommandEmpty>
+
             <CommandGroup>
               {customers.map((customer) => (
                 <CommandItem
                   key={customer.id}
                   value={customer.id.toString()}
+                  // keyboard
                   onSelect={() => {
                     onValueChange(customer.id);
                     setOpen(false);
                   }}
+                  // mouse (fix click issue)
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onValueChange(customer.id);
+                    setOpen(false);
+                  }}
+                  // needed for some browsers
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="!text-black cursor-pointer !opacity-100 data-[selected]:!opacity-100 data-[disabled]:!opacity-100 hover:!text-black hover:!opacity-100"
                 >
                   <Check
                     className={cn(
@@ -137,10 +158,11 @@ export function CustomerSearchSelect({
                       value === customer.id ? 'opacity-100' : 'opacity-0'
                     )}
                   />
+
                   <div className="flex flex-col">
-                    <span>{customer.name}</span>
+                    <span className="font-medium">{customer.name}</span>
                     {customer.phone && (
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-gray-700">
                         {customer.phone}
                       </span>
                     )}

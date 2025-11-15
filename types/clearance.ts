@@ -17,8 +17,9 @@ export interface ClearedItem {
 
 export interface ClearanceReceipt {
   id: number;
-  clearanceNo: string;
+  receiptNo: string;
   customerId: number;
+  itemsCount: number;
   carNo: string | null;
   clearanceDate: Date;
   totalAmount: number;

@@ -90,6 +90,10 @@ export function ClearanceForm() {
     },
   });
 
+  useEffect(() => {
+    form.setValue('items', clearedItems, { shouldValidate: true });
+  }, [clearedItems]);
+
   // Fetch available items when customer is selected or filters change
   useEffect(() => {
     const fetchItems = async () => {
@@ -395,11 +399,18 @@ export function ClearanceForm() {
     },
     {
       name: 'Product',
-      accessor: (row: EntryItemWithDetails) => {
-        return row.productSubType
-          ? `${row.productType.name} - ${row.productSubType.name}`
-          : row.productType.name;
-      },
+      accessor: (row: EntryItemWithDetails) => (
+        <div className="py-1">
+          <p className="font-medium text-sm leading-tight">
+            {row.productType?.name || 'N/A'}
+          </p>
+          {row.productSubType && (
+            <p className="text-xs text-muted-foreground leading-tight">
+              {row.productSubType.name}
+            </p>
+          )}
+        </div>
+      ),
       id: 'product',
     },
     {
@@ -409,7 +420,15 @@ export function ClearanceForm() {
     },
     {
       name: 'Room',
-      accessor: (row: EntryItemWithDetails) => row.room.name,
+      accessor: (row: any) => (
+        <div className=" items-center gap-1.5">
+          <p className="text-sm">{row.room?.name || 'N/A'}</p>
+
+          <p className="text-xs text-muted-foreground leading-tight">
+            Box: {row?.boxNo}
+          </p>
+        </div>
+      ),
       id: 'room',
     },
     {
