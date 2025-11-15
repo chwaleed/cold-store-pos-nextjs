@@ -1,15 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, Trash2 } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Eye, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -25,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { EntryReceipt } from '@/types/entry';
 import { useRouter } from 'next/navigation';
-import { Skeleton } from '@/components/ui/skeleton';
+import DataTable from '@/components/dataTable/data-table';
 
 interface EntryTableProps {
   entries: EntryReceipt[];
@@ -93,111 +85,96 @@ export function EntryTable({
     });
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-      </div>
-    );
-  }
-
-  if (entries.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">No entry receipts found</p>
-      </div>
-    );
-  }
+  const columns = [
+    {
+      name: 'Receipt No',
+      accessor: 'receiptNo',
+      id: 'receiptNo',
+      className: 'font-medium',
+    },
+    {
+      name: 'Customer',
+      accessor: (row: EntryReceipt) => row.customer?.name || 'N/A',
+      id: 'customer',
+    },
+    {
+      name: 'Car No',
+      accessor: 'carNo',
+      id: 'carNo',
+    },
+    {
+      name: 'Entry Date',
+      accessor: (row: EntryReceipt) => formatDate(row.entryDate),
+      id: 'entryDate',
+    },
+    {
+      name: 'Items',
+      accessor: (row: EntryReceipt) => (
+        <Badge variant="secondary">{row._count?.items || 0} items</Badge>
+      ),
+      id: 'items',
+    },
+    {
+      name: 'Total Amount',
+      accessor: (row: EntryReceipt) => `PKR ${row.totalAmount.toFixed(2)}`,
+      id: 'totalAmount',
+      className: 'text-right font-medium',
+      headerClassName: 'text-right',
+    },
+    {
+      name: 'Actions',
+      accessor: (row: EntryReceipt) => (
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push(`/records/${row.id}/preview`)}
+            title="Preview Receipt"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push(`/records/${row.id}/edit`)}
+            title="Edit Receipt"
+            disabled={!!row._count?.clearanceReceipts}
+          >
+            <Pencil className="h-4 w-4 text-blue-600" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setDeleteId(row.id)}
+            disabled={!!row._count?.clearanceReceipts}
+            title={
+              row._count?.clearanceReceipts
+                ? 'Cannot delete cleared receipt'
+                : 'Delete Receipt'
+            }
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
+      ),
+      id: 'actions',
+      className: 'text-right',
+      headerClassName: 'text-right',
+    },
+  ];
 
   return (
     <>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Receipt No</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Car No</TableHead>
-              <TableHead>Entry Date</TableHead>
-              <TableHead>Items</TableHead>
-              <TableHead className="text-right">Total Amount</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {entries.map((entry) => (
-              <TableRow key={entry.id}>
-                <TableCell className="font-medium">{entry.receiptNo}</TableCell>
-                <TableCell>{entry.customer?.name || 'N/A'}</TableCell>
-                <TableCell>{entry.carNo}</TableCell>
-                <TableCell>{formatDate(entry.entryDate)}</TableCell>
-                <TableCell>
-                  <Badge variant="secondary">
-                    {entry._count?.items || 0} items
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  PKR {entry.totalAmount.toFixed(2)}
-                </TableCell>
-                <TableCell>
-                  {entry._count?.clearanceReceipts ? (
-                    <Badge variant="outline">Cleared</Badge>
-                  ) : (
-                    <Badge>In Storage</Badge>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => router.push(`/records/${entry.id}`)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeleteId(entry.id)}
-                      disabled={!!entry._count?.clearanceReceipts}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onPageChange(page - 1)}
-            disabled={page === 1}
-          >
-            Previous
-          </Button>
-          <span className="text-sm">
-            Page {page} of {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onPageChange(page + 1)}
-            disabled={page === totalPages}
-          >
-            Next
-          </Button>
-        </div>
-      )}
+      <DataTable
+        columns={columns}
+        data={entries}
+        loading={loading}
+        emptyMessage="No entry receipts found"
+        skeletonRows={5}
+        currentPage={page}
+        lastPage={totalPages}
+        onPageChange={onPageChange}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>

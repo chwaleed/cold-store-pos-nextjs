@@ -65,7 +65,6 @@ Table EntryReceipt {
   customerId Int [not null]
   carNo String [not null]
   entryDate DateTime [default: `now()`, not null]
-  storageTillDate DateTime
   totalAmount Float [not null]
   description String
   createdAt DateTime [default: `now()`, not null]

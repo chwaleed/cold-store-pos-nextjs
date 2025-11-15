@@ -2,8 +2,8 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
-import { Plus, Save } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Save, ArrowLeft } from 'lucide-react';
 import { useFieldArray } from 'react-hook-form';
 
 import {
@@ -28,17 +28,19 @@ import { EntryItemDialog } from './entry-item-dialog';
 import ItemTable from './Item-table';
 import useStore from '@/app/(root)/(store)/store';
 import { CustomerSearchSelect } from '@/components/ui/customer-search-select';
+import { Skeleton } from '@/components/ui/skeleton';
 
-interface EntryFormProps {
-  onSuccess?: () => void;
+interface EntryEditFormProps {
+  entryId: number;
 }
 
-export function EntryForm({ onSuccess }: EntryFormProps) {
+export function EntryEditForm({ entryId }: EntryEditFormProps) {
   const productTypes = useStore((state) => state.types);
   const productSubTypes = useStore((state) => state.subType);
   const rooms = useStore((state) => state.rooms);
   const packTypes = useStore((state) => state.packTypes);
   const [loading, setLoading] = useState(false);
+  const [fetchingData, setFetchingData] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -53,7 +55,7 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
     },
   });
 
-  const { fields, append, remove, update } = useFieldArray({
+  const { fields, append, update } = useFieldArray({
     control: form.control,
     name: 'items',
   });
@@ -62,11 +64,67 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
   const [editItem, setEditItem] = useState<EntryItemFormData | null>(null);
   const [editIndex, setEditIndex] = useState<number | null>(null);
 
+  // Fetch existing entry data
+  useEffect(() => {
+    const fetchEntry = async () => {
+      try {
+        setFetchingData(true);
+        const response = await fetch(`/api/entry/${entryId}`);
+        const result = await response.json();
+
+        if (result.success) {
+          const entry = result.data;
+
+          // Map entry items to form format
+          const formattedItems = entry.items.map((item: any) => ({
+            productTypeId: item.productTypeId,
+            productSubTypeId: item.productSubTypeId || undefined,
+            packTypeId: item.packTypeId,
+            roomId: item.roomId,
+            boxNo: item.boxNo || '',
+            marka: item.marka || '',
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            hasKhaliJali: item.hasKhaliJali,
+            kjQuantity: item.kjQuantity || undefined,
+            kjUnitPrice: item.kjUnitPrice || undefined,
+          }));
+
+          form.reset({
+            customerId: entry.customerId,
+            carNo: entry.carNo,
+            receiptNo: entry.receiptNo,
+            description: entry.description || '',
+            items: formattedItems,
+          });
+        } else {
+          toast({
+            title: 'Error',
+            description: 'Failed to fetch entry data',
+            variant: 'destructive',
+          });
+          router.push('/records');
+        }
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch entry data',
+          variant: 'destructive',
+        });
+        router.push('/records');
+      } finally {
+        setFetchingData(false);
+      }
+    };
+
+    fetchEntry();
+  }, [entryId, form, router, toast]);
+
   const onSubmit = async (data: EntryReceiptFormData) => {
     try {
       setLoading(true);
-      const response = await fetch('/api/entry', {
-        method: 'POST',
+      const response = await fetch(`/api/entry/${entryId}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
@@ -76,36 +134,25 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
       if (result.success) {
         toast({
           title: 'Success',
-          description: `Entry receipt ${result.data.receiptNo} created successfully`,
+          description: 'Entry receipt updated successfully',
         });
-        form.reset();
-        if (onSuccess) {
-          onSuccess();
-        } else {
-          router.push('/records');
-        }
+        router.push('/records');
       } else {
         toast({
           title: 'Error',
-          description: result.error || 'Failed to create entry receipt',
+          description: result.error || 'Failed to update entry receipt',
           variant: 'destructive',
         });
       }
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to create entry receipt',
+        description: 'Failed to update entry receipt',
         variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
-  };
-
-  const addItem = () => {
-    setEditItem(null);
-    setEditIndex(null);
-    setItemDialogOpen(true);
   };
 
   const calculateItemTotal = (index: number) => {
@@ -128,16 +175,20 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
     }, 0);
   };
 
-  // Get filtered subtypes based on selected product type
-  const getFilteredSubTypes = (productTypeId: number) => {
-    return productSubTypes.filter((st) => st.productTypeId === productTypeId);
-  };
+  if (fetchingData) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
 
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-6  flex flex-col"
+        className="space-y-6 flex flex-col"
       >
         {/* Header Information */}
         <div>
@@ -181,7 +232,11 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
                 <FormItem>
                   <FormLabel>Receipt No *</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., CS-20240101-0001" {...field} />
+                    <Input
+                      placeholder="e.g., CS-20240101-0001"
+                      {...field}
+                      disabled
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -208,33 +263,32 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
           </div>
         </div>
 
-        {/* Items */}
-        <div className="flex w-full items-center justify-end">
-          <Button onClick={addItem} type="button">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Item
-          </Button>
+        {/* Items table - Note: Cannot delete items in edit mode */}
+        <div className="space-y-2">
+          <div className="text-sm text-muted-foreground">
+            Note: You can edit item details but cannot delete items in edit
+            mode.
+          </div>
+          <ItemTable
+            control={form.control}
+            register={form.register}
+            watch={form.watch}
+            setValue={form.setValue}
+            fields={fields}
+            remove={() => {}} // Disabled - no delete in edit mode
+            onEdit={(index, item) => {
+              setEditItem(item);
+              setEditIndex(index);
+              setItemDialogOpen(true);
+            }}
+            productTypes={productTypes}
+            productSubTypes={productSubTypes}
+            rooms={rooms}
+            packTypes={packTypes}
+            calculateItemTotal={calculateItemTotal}
+            editMode={true}
+          />
         </div>
-
-        {/* Items table */}
-        <ItemTable
-          control={form.control}
-          register={form.register}
-          watch={form.watch}
-          setValue={form.setValue}
-          fields={fields}
-          remove={remove}
-          onEdit={(index, item) => {
-            setEditItem(item);
-            setEditIndex(index);
-            setItemDialogOpen(true);
-          }}
-          productTypes={productTypes}
-          productSubTypes={productSubTypes}
-          rooms={rooms}
-          packTypes={packTypes}
-          calculateItemTotal={calculateItemTotal}
-        />
 
         <EntryItemDialog
           open={itemDialogOpen}
@@ -269,7 +323,6 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
         />
 
         {/* Grand Total & Actions */}
-
         <div className="flex items-center justify-between">
           <div className="text-2xl font-bold">
             Grand Total: PKR {calculateGrandTotal().toFixed(2)}
@@ -281,11 +334,12 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
               onClick={() => router.push('/records')}
               disabled={loading}
             >
+              <ArrowLeft className="mr-2 h-4 w-4" />
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
               <Save className="mr-2 h-4 w-4" />
-              {loading ? 'Saving...' : 'Save Entry'}
+              {loading ? 'Updating...' : 'Update Entry'}
             </Button>
           </div>
         </div>

@@ -3,15 +3,7 @@
 import React from 'react';
 import { Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-// table displays read-only item text (editing via dialog)
+import DataTable from '@/components/dataTable/data-table';
 import { ProductType, ProductSubType, Room, PackType } from '@/types/config';
 
 interface ItemTableProps {
@@ -27,6 +19,7 @@ interface ItemTableProps {
   rooms: Room[];
   packTypes: PackType[];
   calculateItemTotal: (index: number) => number;
+  editMode?: boolean; // Add flag to indicate edit mode
 }
 
 export const ItemTable: React.FC<ItemTableProps> = ({
@@ -42,102 +35,123 @@ export const ItemTable: React.FC<ItemTableProps> = ({
   rooms,
   packTypes,
   calculateItemTotal,
+  editMode = false,
 }) => {
   const items = watch('items') || [];
 
-  return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Type</TableHead>
-            <TableHead>Subtype</TableHead>
-            <TableHead>Pack</TableHead>
-            <TableHead>Room</TableHead>
-            <TableHead>Box</TableHead>
-            <TableHead>Marka</TableHead>
-            <TableHead className="text-right">Qty</TableHead>
-            <TableHead className="text-right">Unit Price</TableHead>
-            <TableHead className="text-right">KJ</TableHead>
-            <TableHead className="text-right">Total</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {fields.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={11}
-                className="text-center p-16 text-lg  text-muted-foreground"
-              >
-                No items added
-              </TableCell>
-            </TableRow>
-          ) : (
-            fields.map((field, index) => {
-              const item = items[index] || {};
-              const typeName =
-                productTypes.find((p) => p.id === item.productTypeId)?.name ||
-                '-';
-              const subTypeName =
-                productSubTypes.find((s) => s.id === item.productSubTypeId)
-                  ?.name || '-';
-              const packName =
-                packTypes.find((p) => p.id === item.packTypeId)?.name || '-';
-              const roomName =
-                rooms.find((r) => r.id === item.roomId)?.name || '-';
-              const boxNo = item.boxNo || '-';
-              const marka = item.marka || '-';
-              const qty = item.quantity ?? 0;
-              const unitPrice = item.unitPrice ?? 0;
-              const kjText = item.hasKhaliJali
-                ? `${item.kjQuantity ?? 0} x ${item.kjUnitPrice ?? 0}`
-                : '-';
-
-              return (
-                <TableRow key={field.id}>
-                  <TableCell>{typeName}</TableCell>
-                  <TableCell>{subTypeName}</TableCell>
-                  <TableCell>{packName}</TableCell>
-                  <TableCell>{roomName}</TableCell>
-                  <TableCell>{boxNo}</TableCell>
-                  <TableCell>{marka}</TableCell>
-                  <TableCell className="text-right">{qty}</TableCell>
-                  <TableCell className="text-right">
-                    {unitPrice.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right">{kjText}</TableCell>
-                  <TableCell className="text-right">
-                    PKR {calculateItemTotal(index).toFixed(2)}
-                  </TableCell>
-
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() =>
-                          typeof onEdit === 'function' && onEdit(index, item)
-                        }
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => remove(index)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })
+  const columns = [
+    {
+      name: 'Type',
+      accessor: (row: any, index: number) => {
+        const typeName =
+          productTypes.find((p) => p.id === row.productTypeId)?.name || '-';
+        return typeName;
+      },
+      id: 'type',
+    },
+    {
+      name: 'Subtype',
+      accessor: (row: any) => {
+        const subTypeName =
+          productSubTypes.find((s) => s.id === row.productSubTypeId)?.name ||
+          '-';
+        return subTypeName;
+      },
+      id: 'subtype',
+    },
+    {
+      name: 'Pack',
+      accessor: (row: any) => {
+        const packName =
+          packTypes.find((p) => p.id === row.packTypeId)?.name || '-';
+        return packName;
+      },
+      id: 'pack',
+    },
+    {
+      name: 'Room',
+      accessor: (row: any) => {
+        const roomName = rooms.find((r) => r.id === row.roomId)?.name || '-';
+        return roomName;
+      },
+      id: 'room',
+    },
+    {
+      name: 'Box',
+      accessor: (row: any) => row.boxNo || '-',
+      id: 'box',
+    },
+    {
+      name: 'Marka',
+      accessor: (row: any) => row.marka || '-',
+      id: 'marka',
+    },
+    {
+      name: 'Qty',
+      accessor: (row: any) => row.quantity ?? 0,
+      id: 'qty',
+      className: 'text-right',
+      headerClassName: 'text-right',
+    },
+    {
+      name: 'Unit Price',
+      accessor: (row: any) => (row.unitPrice ?? 0).toFixed(2),
+      id: 'unitPrice',
+      className: 'text-right',
+      headerClassName: 'text-right',
+    },
+    {
+      name: 'KJ',
+      accessor: (row: any) => {
+        return row.hasKhaliJali
+          ? `${row.kjQuantity ?? 0} x ${row.kjUnitPrice ?? 0}`
+          : '-';
+      },
+      id: 'kj',
+      className: 'text-right text-sm',
+      headerClassName: 'text-right',
+    },
+    {
+      name: 'Total',
+      accessor: (row: any, index: number) => {
+        return `PKR ${calculateItemTotal(index).toFixed(2)}`;
+      },
+      id: 'total',
+      className: 'text-right font-medium',
+      headerClassName: 'text-right',
+    },
+    {
+      name: 'Actions',
+      accessor: (row: any, index: number) => (
+        <div className="flex justify-end gap-2">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => typeof onEdit === 'function' && onEdit(index, row)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          {!editMode && (
+            <Button size="icon" variant="ghost" onClick={() => remove(index)}>
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
           )}
-        </TableBody>
-      </Table>
-    </div>
+        </div>
+      ),
+      id: 'actions',
+      className: 'text-right',
+      headerClassName: 'text-right',
+    },
+  ];
+
+  return (
+    <DataTable
+      columns={columns}
+      data={items}
+      loading={false}
+      emptyMessage="No items added"
+      skeletonRows={3}
+    />
   );
 };
 

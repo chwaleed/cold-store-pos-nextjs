@@ -92,7 +92,6 @@ model EntryReceipt {
   customerId      Int
   carNo           String
   entryDate       DateTime @default(now())
-  storageTillDate DateTime? // Storage end date (default: entryDate + 30 days)
   totalAmount     Float    // Sum of all items (including KJ)
   description     String?
   createdAt       DateTime @default(now())
