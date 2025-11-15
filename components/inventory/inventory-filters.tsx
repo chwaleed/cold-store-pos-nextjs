@@ -11,15 +11,15 @@ import {
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@radix-ui/react-checkbox';
 import { Label } from '@/components/ui/label';
+import useStore from '@/app/(root)/(store)/store';
 
 interface InventoryFiltersProps {
   filters: {
     room: string;
     type: string;
-    marka: string;
+    subType: string;
     dateFrom: string;
     dateTo: string;
-    showZeroStock: boolean;
   };
   setFilters: (filters: any) => void;
 }
@@ -28,110 +28,114 @@ export function InventoryFilters({
   filters,
   setFilters,
 }: InventoryFiltersProps) {
-  const [rooms, setRooms] = useState<any[]>([]);
-  const [types, setTypes] = useState<any[]>([]);
+  const [subTypesToShow, setSubTypesToShow] = useState<any[]>([]);
+  const [search, setSearch] = useState('');
+  const rooms = useStore((state) => state.rooms);
+  const types = useStore((state) => state.types);
+  const subTypes = useStore((state) => state.subType);
 
   useEffect(() => {
-    fetchFilterOptions();
-  }, []);
-
-  const fetchFilterOptions = async () => {
-    try {
-      const [roomsRes, typesRes] = await Promise.all([
-        fetch('/api/room'),
-        fetch('/api/producttype'),
-      ]);
-
-      const roomsData = await roomsRes.json();
-      const typesData = await typesRes.json();
-
-      if (roomsRes.ok) setRooms(roomsData.data || []);
-      if (typesRes.ok) setTypes(typesData.data || []);
-    } catch (error) {
-      console.error('Error loading filter options:', error);
+    if (!filters.type) return;
+    if (filters.type != 'all') {
+      const filtered = subTypes.filter(
+        (st) => st.productTypeId.toString() === filters.type
+      );
+      setSubTypesToShow(filtered);
+    } else {
+      {
+        setSubTypesToShow([]);
+      }
     }
-  };
+  }, [filters.type, subTypes]);
+  // console.log('Current subtypes:', filters);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="space-y-2">
-        <Label>Room</Label>
-        <Select
-          value={filters.room}
-          onValueChange={(value) => setFilters({ ...filters, room: value })}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="All rooms" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Rooms</SelectItem>
-            {rooms.map((room) => (
-              <SelectItem key={room.id} value={room.id.toString()}>
-                {room.name} ({room.type})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+    <div className="space-y-3">
+      {/* Search Bar */}
+      <div className="flex gap-5">
+        <div className="w-full">
+          <Input
+            placeholder="Search inventory..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full"
+          />
+        </div>
 
-      <div className="space-y-2">
-        <Label>Product Type</Label>
-        <Select
-          value={filters.type}
-          onValueChange={(value) => setFilters({ ...filters, type: value })}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="All types" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            {types.map((type) => (
-              <SelectItem key={type.id} value={type.id.toString()}>
-                {type.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+        {/* Compact Filters */}
+        <div className="flex  gap-2">
+          <Select
+            value={filters.room}
+            onValueChange={(value) => setFilters({ ...filters, room: value })}
+          >
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Room" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Rooms</SelectItem>
+              {rooms.map((room) => (
+                <SelectItem key={room.id} value={room.id.toString()}>
+                  {room.name} ({room.type})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-      <div className="space-y-2">
-        <Label>Marka</Label>
-        <Input
-          placeholder="Search by marka..."
-          value={filters.marka}
-          onChange={(e) => setFilters({ ...filters, marka: e.target.value })}
-        />
-      </div>
+          <Select
+            value={filters.type}
+            onValueChange={(value) =>
+              setFilters({ ...filters, type: value, subType: 'all' })
+            }
+          >
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              {types.map((type) => (
+                <SelectItem key={type.id} value={type.id.toString()}>
+                  {type.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-      <div className="space-y-2">
-        <Label>Date From</Label>
-        <Input
-          type="date"
-          value={filters.dateFrom}
-          onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-        />
-      </div>
+          <Select
+            value={filters.subType}
+            disabled={subTypesToShow.length === 0}
+            onValueChange={(value) =>
+              setFilters({ ...filters, subType: value })
+            }
+          >
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Subtype" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Subtype</SelectItem>
+              {subTypesToShow.map((subtype) => (
+                <SelectItem key={subtype.id} value={subtype.id.toString()}>
+                  {subtype.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-      <div className="space-y-2">
-        <Label>Date To</Label>
-        <Input
-          type="date"
-          value={filters.dateTo}
-          onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-        />
-      </div>
+          <Input
+            type="date"
+            value={filters.dateFrom}
+            onChange={(e) =>
+              setFilters({ ...filters, dateFrom: e.target.value })
+            }
+            className="w-[150px]"
+          />
 
-      <div className="flex items-center space-x-2 pt-8">
-        <Checkbox
-          id="showZeroStock"
-          checked={filters.showZeroStock}
-          onCheckedChange={(checked) =>
-            setFilters({ ...filters, showZeroStock: checked })
-          }
-        />
-        <Label htmlFor="showZeroStock" className="cursor-pointer">
-          Show zero stock items
-        </Label>
+          <Input
+            type="date"
+            value={filters.dateTo}
+            onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
+            className="w-[150px]"
+          />
+        </div>
       </div>
     </div>
   );

@@ -23,17 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@radix-ui/react-checkbox';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import {
   entryReceiptSchema,
   EntryReceiptFormData,
@@ -252,7 +241,9 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
               <FormLabel>Receipt Number</FormLabel>
               <div className="flex h-10 items-center px-3 rounded-md border border-input bg-muted">
                 <Receipt className="mr-2 h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Auto-generated</span>
+                <span className="text-sm text-muted-foreground">
+                  Auto-generated
+                </span>
               </div>
             </div>
 

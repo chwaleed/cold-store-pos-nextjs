@@ -13,13 +13,39 @@ import { ThemeProvider } from '@/components/theme-provider';
 import Navbar from '@/components/dashboard/navbar';
 import { NavbarSheet } from '@/components/dashboard/NavbarSheet';
 import Bread from '@/components/dashboard/breadcrumb';
-import { toast } from 'react-toastify';
 import axios from 'axios';
-import eventBus from '@/lib/even';
 import { KeyboardShortcutsProvider } from '@/components/keyboard-shortcuts/keyboard-shortcuts-provider';
+import useStore from './(store)/store';
 
 const RootLayout = ({ children }: RootLayoutProps) => {
-  const [storeName, setStoreName] = useState<string | null>(null);
+  const [storeName, setStoreName] = useState<string | null>('Ahmad ');
+  const state = useStore((state) => state);
+
+  const fetchFilters = async () => {
+    console.log('Fetching filters');
+    try {
+      const [types, subTypes, rooms] = await Promise.all([
+        axios.get('/api/producttype'),
+        axios.get('/api/productsubtype'),
+        axios.get('/api/room'),
+      ]);
+      if (types.data && types.data?.success) {
+        state.setTypes(types.data.data);
+      }
+      if (subTypes.data && subTypes.data?.success) {
+        state.setSubTypes(subTypes.data.data);
+      }
+      if (rooms.data && rooms.data?.success) {
+        state.setRooms(rooms.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching filters:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchFilters();
+  }, []);
 
   return (
     <KeyboardShortcutsProvider>

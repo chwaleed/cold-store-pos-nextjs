@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const room = searchParams.get('room');
     const type = searchParams.get('type');
+    const typeSub = searchParams.get('subType');
     const marka = searchParams.get('marka');
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');

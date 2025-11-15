@@ -15,14 +15,13 @@ export default function InventoryPage() {
   const [filters, setFilters] = useState({
     room: 'all',
     type: 'all',
-    marka: '',
+    subType: 'all',
     dateFrom: '',
     dateTo: '',
-    showZeroStock: false,
   });
 
   return (
-    <div className="w-full space-y-6 p-6">
+    <div className="w-full h-full bg-white rounded-xl space-y-2 p-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Inventory</h1>
@@ -31,30 +30,10 @@ export default function InventoryPage() {
           </p>
         </div>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-          <CardDescription>
-            Filter inventory by various criteria
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <InventoryFilters filters={filters} setFilters={setFilters} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Current Stock</CardTitle>
-          <CardDescription>
-            Real-time inventory levels with pricing
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <InventoryTable filters={filters} />
-        </CardContent>
-      </Card>
+      <div>
+        <InventoryFilters filters={filters} setFilters={setFilters} />
+      </div>
+      <InventoryTable filters={filters} />
     </div>
   );
 }

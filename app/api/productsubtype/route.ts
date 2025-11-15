@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const productTypeId = searchParams.get('productTypeId');
+    const includeType = searchParams.get('includeType');
 
     const where = productTypeId
       ? { productTypeId: parseInt(productTypeId) }
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
       where,
       orderBy: { name: 'asc' },
       include: {
-        productType: true,
+        productType: includeType != 'false' ? true : false,
       },
     });
 

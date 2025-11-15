@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -52,6 +52,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { productTypeSchema, type ProductTypeFormData } from '@/schema/config';
 import { ProductType, ProductSubType } from '@/types/config';
+import useStore from '@/app/(root)/(store)/store';
 
 interface ProductTypeWithDetails extends ProductType {
   subtypes?: ProductSubType[];
@@ -61,10 +62,10 @@ interface ProductTypeWithDetails extends ProductType {
 }
 
 export function ProductTypeManager() {
-  const [productTypes, setProductTypes] = useState<ProductTypeWithDetails[]>(
-    []
-  );
-  const [loading, setLoading] = useState(true);
+  const productTypes = useStore((state) => state.types);
+  const handleProductTypes = useStore((state) => state.handleType);
+
+  const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -77,27 +78,6 @@ export function ProductTypeManager() {
       name: '',
     },
   });
-
-  useEffect(() => {
-    fetchProductTypes();
-  }, []);
-
-  const fetchProductTypes = async () => {
-    try {
-      const response = await fetch('/api/producttype');
-      const data = await response.json();
-
-      if (data.success) {
-        setProductTypes(data.data);
-      } else {
-        toast.error(data.error || 'Failed to fetch product types');
-      }
-    } catch (error) {
-      toast.error('Failed to fetch product types');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const onSubmit = async (data: ProductTypeFormData) => {
     setSubmitting(true);
@@ -118,6 +98,11 @@ export function ProductTypeManager() {
       const result = await response.json();
 
       if (result.success) {
+        if (editMode) {
+          handleProductTypes(result.data, 'edit');
+        } else {
+          handleProductTypes(result.data, 'add');
+        }
         toast.success(
           editMode
             ? 'Product type updated successfully'
@@ -126,7 +111,6 @@ export function ProductTypeManager() {
         form.reset();
         setDialogOpen(false);
         // Refresh data immediately
-        await fetchProductTypes();
       } else {
         toast.error(result.error || 'Operation failed');
       }
@@ -155,11 +139,11 @@ export function ProductTypeManager() {
       const result = await response.json();
 
       if (result.success) {
+        handleProductTypes(selectedId, 'remove');
         toast.success('Product type deleted successfully');
         setDeleteDialogOpen(false);
         setSelectedId(null);
         // Refresh data immediately
-        await fetchProductTypes();
       } else {
         toast.error(result.error || 'Failed to delete product type');
       }
