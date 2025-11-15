@@ -41,7 +41,6 @@ export function AddCustomerDialog({
     defaultValues: {
       name: '',
       fatherName: '',
-      cnic: '',
       phone: '',
       address: '',
       village: '',
@@ -122,23 +121,7 @@ export function AddCustomerDialog({
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="cnic"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CNIC</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="1234567890123"
-                        maxLength={13}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* CNIC removed from form */}
 
               <FormField
                 control={form.control}

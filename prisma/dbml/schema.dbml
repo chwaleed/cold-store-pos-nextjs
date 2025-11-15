@@ -6,7 +6,6 @@ Table Customer {
   id Int [pk, increment]
   name String [not null]
   fatherName String
-  cnic String [unique]
   phone String
   address String
   village String

@@ -102,7 +102,6 @@ export function CustomerTable({
               <TableHead>Name</TableHead>
               <TableHead>Father Name</TableHead>
               <TableHead>Phone</TableHead>
-              <TableHead>CNIC</TableHead>
               <TableHead>Village</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -111,7 +110,7 @@ export function CustomerTable({
             {customers.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={5}
                   className="text-center text-muted-foreground"
                 >
                   No customers found
@@ -123,7 +122,6 @@ export function CustomerTable({
                   <TableCell className="font-medium">{customer.name}</TableCell>
                   <TableCell>{customer.fatherName || '-'}</TableCell>
                   <TableCell>{customer.phone || '-'}</TableCell>
-                  <TableCell>{customer.cnic || '-'}</TableCell>
                   <TableCell>{customer.village || '-'}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">

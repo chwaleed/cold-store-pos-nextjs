@@ -2,7 +2,6 @@ export interface Customer {
   id: number;
   name: string;
   fatherName?: string | null;
-  cnic?: string | null;
   phone?: string | null;
   address?: string | null;
   village?: string | null;

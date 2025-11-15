@@ -2,8 +2,8 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState, useEffect } from 'react';
-import { Plus, Trash2, Save, Edit, Receipt } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, Save } from 'lucide-react';
 import { useFieldArray } from 'react-hook-form';
 
 import {
@@ -17,35 +17,28 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   entryReceiptSchema,
   EntryReceiptFormData,
   EntryItemFormData,
 } from '@/schema/entry';
 import { useToast } from '@/components/ui/use-toast';
-import { Customer } from '@/types/customer';
 import { ProductType, ProductSubType, Room, PackType } from '@/types/config';
 import { useRouter } from 'next/navigation';
 import { EntryItemDialog } from './entry-item-dialog';
 import ItemTable from './Item-table';
+import useStore from '@/app/(root)/(store)/store';
+import { CustomerSearchSelect } from '@/components/ui/customer-search-select';
 
 interface EntryFormProps {
   onSuccess?: () => void;
 }
 
 export function EntryForm({ onSuccess }: EntryFormProps) {
+  const productTypes = useStore((state) => state.types);
+  const productSubTypes = useStore((state) => state.subType);
+  const rooms = useStore((state) => state.rooms);
+  const packTypes = useStore((state) => state.packTypes);
   const [loading, setLoading] = useState(false);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [productTypes, setProductTypes] = useState<ProductType[]>([]);
-  const [productSubTypes, setProductSubTypes] = useState<ProductSubType[]>([]);
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [packTypes, setPackTypes] = useState<PackType[]>([]);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -54,6 +47,7 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
     defaultValues: {
       customerId: 0,
       carNo: '',
+      receiptNo: '',
       description: '',
       items: [],
     },
@@ -67,50 +61,6 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<EntryItemFormData | null>(null);
   const [editIndex, setEditIndex] = useState<number | null>(null);
-
-  // Fetch all necessary data
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [customersRes, typesRes, subTypesRes, roomsRes, packTypesRes] =
-          await Promise.all([
-            fetch('/api/customer?limit=1000'),
-            fetch('/api/producttype'),
-            fetch('/api/productsubtype'),
-            fetch('/api/room'),
-            fetch('/api/packtype'),
-          ]);
-
-        const [
-          customersData,
-          typesData,
-          subTypesData,
-          roomsData,
-          packTypesData,
-        ] = await Promise.all([
-          customersRes.json(),
-          typesRes.json(),
-          subTypesRes.json(),
-          roomsRes.json(),
-          packTypesRes.json(),
-        ]);
-
-        if (customersData.success) setCustomers(customersData.data);
-        if (typesData.success) setProductTypes(typesData.data);
-        if (subTypesData.success) setProductSubTypes(subTypesData.data);
-        if (roomsData.success) setRooms(roomsData.data);
-        if (packTypesData.success) setPackTypes(packTypesData.data);
-      } catch (error) {
-        toast({
-          title: 'Error',
-          description: 'Failed to load form data',
-          variant: 'destructive',
-        });
-      }
-    };
-
-    fetchData();
-  }, [toast]);
 
   const onSubmit = async (data: EntryReceiptFormData) => {
     try {
@@ -198,26 +148,13 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Customer *</FormLabel>
-                  <Select
-                    value={field.value?.toString()}
-                    onValueChange={(value) => field.onChange(parseInt(value))}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select customer" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {customers.map((customer) => (
-                        <SelectItem
-                          key={customer.id}
-                          value={customer.id.toString()}
-                        >
-                          {customer.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <CustomerSearchSelect
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={loading}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -237,15 +174,19 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
               )}
             />
 
-            <div className="flex flex-col gap-2">
-              <FormLabel>Receipt Number</FormLabel>
-              <div className="flex h-10 items-center px-3 rounded-md border border-input bg-muted">
-                <Receipt className="mr-2 h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  Auto-generated
-                </span>
-              </div>
-            </div>
+            <FormField
+              control={form.control}
+              name="receiptNo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Receipt No *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., CS-20240101-0001" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

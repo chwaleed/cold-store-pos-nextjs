@@ -5,7 +5,7 @@ type Customer = {
   id: number;
   name: string;
   fatherName?: string;
-  cnic?: string; // Unique, 13 digits
+  // cnic removed
   phone?: string;
   address?: string;
   village?: string;

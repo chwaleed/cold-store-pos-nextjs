@@ -24,38 +24,27 @@ async function main() {
     data: {
       name: 'Potato',
       subTypes: {
-        create: [
-          { name: 'Cardinal' },
-          { name: 'Red' },
-          { name: 'White' }
-        ]
-      }
-    }
+        create: [{ name: 'Cardinal' }, { name: 'Red' }, { name: 'White' }],
+      },
+    },
   });
 
   const onion = await prisma.productType.create({
     data: {
       name: 'Onion',
       subTypes: {
-        create: [
-          { name: 'Red' },
-          { name: 'White' },
-          { name: 'Yellow' }
-        ]
-      }
-    }
+        create: [{ name: 'Red' }, { name: 'White' }, { name: 'Yellow' }],
+      },
+    },
   });
 
   const garlic = await prisma.productType.create({
     data: {
       name: 'Garlic',
       subTypes: {
-        create: [
-          { name: 'Chinese' },
-          { name: 'Local' }
-        ]
-      }
-    }
+        create: [{ name: 'Chinese' }, { name: 'Local' }],
+      },
+    },
   });
 
   console.log('✓ Created 3 Product Types with subtypes');
@@ -66,8 +55,8 @@ async function main() {
       name: 'Cold Room 1',
       type: 'COLD',
       capacity: 5000,
-      isActive: true
-    }
+      isActive: true,
+    },
   });
 
   const coldRoom2 = await prisma.room.create({
@@ -75,8 +64,8 @@ async function main() {
       name: 'Cold Room 2',
       type: 'COLD',
       capacity: 3000,
-      isActive: true
-    }
+      isActive: true,
+    },
   });
 
   const hotRoom1 = await prisma.room.create({
@@ -84,8 +73,8 @@ async function main() {
       name: 'Hot Room 1',
       type: 'HOT',
       capacity: 2000,
-      isActive: true
-    }
+      isActive: true,
+    },
   });
 
   console.log('✓ Created 3 Rooms (2 Cold, 1 Hot)');
@@ -94,15 +83,15 @@ async function main() {
   const bori = await prisma.packType.create({
     data: {
       name: 'Bori',
-      rentPerDay: 2.0 // 2 PKR per day
-    }
+      rentPerDay: 2.0, // 2 PKR per day
+    },
   });
 
   const jali = await prisma.packType.create({
     data: {
       name: 'Jali',
-      rentPerDay: 1.5 // 1.5 PKR per day
-    }
+      rentPerDay: 1.5, // 1.5 PKR per day
+    },
   });
 
   console.log('✓ Created 2 Pack Types');
@@ -112,22 +101,22 @@ async function main() {
     data: {
       name: 'Muhammad Ahmed',
       fatherName: 'Abdul Rahman',
-      cnic: '1234567890123',
+      // cnic removed
       phone: '03001234567',
       address: 'Main Bazar',
-      village: 'Village A'
-    }
+      village: 'Village A',
+    },
   });
 
   const customer2 = await prisma.customer.create({
     data: {
       name: 'Ali Hassan',
       fatherName: 'Hassan Ali',
-      cnic: '3210987654321',
+      // cnic removed
       phone: '03009876543',
       address: 'Chowk Road',
-      village: 'Village B'
-    }
+      village: 'Village B',
+    },
   });
 
   const customer3 = await prisma.customer.create({
@@ -136,8 +125,8 @@ async function main() {
       fatherName: 'Khan Muhammad',
       phone: '03111234567',
       address: 'Market Street',
-      village: 'Village C'
-    }
+      village: 'Village C',
+    },
   });
 
   console.log('✓ Created 3 Sample Customers');

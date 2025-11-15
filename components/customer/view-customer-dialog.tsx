@@ -74,10 +74,7 @@ export function ViewCustomerDialog({
                 <p className="font-medium">{customer.fatherName || '-'}</p>
               </div>
 
-              <div>
-                <p className="text-sm text-muted-foreground">CNIC</p>
-                <p className="font-medium">{customer.cnic || '-'}</p>
-              </div>
+              {/* CNIC removed */}
 
               <div>
                 <p className="text-sm text-muted-foreground">Phone</p>

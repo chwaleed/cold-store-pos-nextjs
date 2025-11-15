@@ -7,11 +7,6 @@ export async function GET() {
   try {
     const packTypes = await prisma.packType.findMany({
       orderBy: { name: 'asc' },
-      include: {
-        _count: {
-          select: { entryItems: true },
-        },
-      },
     });
 
     return NextResponse.json({

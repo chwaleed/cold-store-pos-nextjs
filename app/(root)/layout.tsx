@@ -24,10 +24,11 @@ const RootLayout = ({ children }: RootLayoutProps) => {
   const fetchFilters = async () => {
     console.log('Fetching filters');
     try {
-      const [types, subTypes, rooms] = await Promise.all([
+      const [types, subTypes, rooms, packTypes] = await Promise.all([
         axios.get('/api/producttype'),
         axios.get('/api/productsubtype'),
         axios.get('/api/room'),
+        axios.get('/api/packtype'),
       ]);
       if (types.data && types.data?.success) {
         state.setTypes(types.data.data);
@@ -37,6 +38,9 @@ const RootLayout = ({ children }: RootLayoutProps) => {
       }
       if (rooms.data && rooms.data?.success) {
         state.setRooms(rooms.data.data);
+      }
+      if (packTypes.data && packTypes.data?.success) {
+        state.setPackTypes(packTypes.data.data);
       }
     } catch (error) {
       console.error('Error fetching filters:', error);

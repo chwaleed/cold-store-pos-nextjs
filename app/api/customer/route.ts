@@ -14,10 +14,10 @@ export async function GET(request: NextRequest) {
     const where = search
       ? {
           OR: [
-            { name: { contains: search, mode: 'insensitive' as const } },
-            { phone: { contains: search, mode: 'insensitive' as const } },
-            { cnic: { contains: search, mode: 'insensitive' as const } },
-            { village: { contains: search, mode: 'insensitive' as const } },
+            { name: { contains: search } },
+            { phone: { contains: search } },
+            // CNIC removed from search
+            { village: { contains: search } },
           ],
         }
       : {};
@@ -56,20 +56,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const validatedData = customerSchema.parse(body);
-
-    // Check for duplicate CNIC if provided
-    if (validatedData.cnic) {
-      const existingCustomer = await prisma.customer.findUnique({
-        where: { cnic: validatedData.cnic },
-      });
-
-      if (existingCustomer) {
-        return NextResponse.json(
-          { success: false, error: 'Customer with this CNIC already exists' },
-          { status: 400 }
-        );
-      }
-    }
 
     const customer = await prisma.customer.create({
       data: validatedData,

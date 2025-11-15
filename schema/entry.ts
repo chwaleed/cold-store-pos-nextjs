@@ -41,6 +41,7 @@ export const entryItemSchema = z
 export const entryReceiptSchema = z.object({
   customerId: z.number().int().positive('Customer is required'),
   carNo: z.string().min(1, 'Car number is required'),
+  receiptNo: z.string().min(1, 'Receipt number is required'),
   entryDate: z.string().or(z.date()).optional(),
   description: z.string().optional().nullable(),
   items: z.array(entryItemSchema).min(1, 'At least one item is required'),

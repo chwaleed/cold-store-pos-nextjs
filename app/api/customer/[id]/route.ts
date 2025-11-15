@@ -97,19 +97,7 @@ export async function PUT(
       );
     }
 
-    // Check for duplicate CNIC if being updated
-    if (validatedData.cnic && validatedData.cnic !== existingCustomer.cnic) {
-      const duplicateCustomer = await prisma.customer.findUnique({
-        where: { cnic: validatedData.cnic },
-      });
-
-      if (duplicateCustomer) {
-        return NextResponse.json(
-          { success: false, error: 'Customer with this CNIC already exists' },
-          { status: 400 }
-        );
-      }
-    }
+    // CNIC no longer used — skip duplicate check
 
     const customer = await prisma.customer.update({
       where: { id: customerId },

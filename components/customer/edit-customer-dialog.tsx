@@ -44,7 +44,6 @@ export function EditCustomerDialog({
     defaultValues: {
       name: customer.name,
       fatherName: customer.fatherName || '',
-      cnic: customer.cnic || '',
       phone: customer.phone || '',
       address: customer.address || '',
       village: customer.village || '',
@@ -55,7 +54,6 @@ export function EditCustomerDialog({
     form.reset({
       name: customer.name,
       fatherName: customer.fatherName || '',
-      cnic: customer.cnic || '',
       phone: customer.phone || '',
       address: customer.address || '',
       village: customer.village || '',
@@ -135,23 +133,7 @@ export function EditCustomerDialog({
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="cnic"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CNIC</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="1234567890123"
-                        maxLength={13}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* CNIC removed */}
 
               <FormField
                 control={form.control}

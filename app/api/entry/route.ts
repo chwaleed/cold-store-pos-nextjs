@@ -113,8 +113,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = entryReceiptSchema.parse(body);
 
-    // Generate receipt number
-    const receiptNo = await generateReceiptNumber();
+    // Check if receipt number already exists
+    const existingReceipt = await prisma.entryReceipt.findUnique({
+      where: { receiptNo: validatedData.receiptNo },
+    });
+
+    if (existingReceipt) {
+      return NextResponse.json(
+        { success: false, error: 'Receipt number already exists' },
+        { status: 400 }
+      );
+    }
 
     // Calculate totals for each item
     const items = validatedData.items.map((item) => {
@@ -150,7 +159,7 @@ export async function POST(request: NextRequest) {
     // Create entry receipt with items
     const entryReceipt = await prisma.entryReceipt.create({
       data: {
-        receiptNo,
+        receiptNo: validatedData.receiptNo,
         customerId: validatedData.customerId,
         carNo: validatedData.carNo,
         entryDate: validatedData.entryDate

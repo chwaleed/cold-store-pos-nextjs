@@ -4,28 +4,22 @@ import { useState, useEffect } from 'react';
 import { Plus, Search, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { EntryTable } from '@/components/entry/entry-table';
 import { EntryReceipt } from '@/types/entry';
-import { Customer } from '@/types/customer';
 import { useDebounce } from 'use-debounce';
 import { useToast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
+import { CustomerSearchSelect } from '@/components/ui/customer-search-select';
 
 export default function RecordsPage() {
   const [entries, setEntries] = useState<EntryReceipt[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch] = useDebounce(searchTerm, 500);
-  const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
+  const [selectedCustomer, setSelectedCustomer] = useState<number | undefined>(
+    undefined
+  );
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [page, setPage] = useState(1);
@@ -33,22 +27,6 @@ export default function RecordsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
-
-  // Fetch customers for filter
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        const response = await fetch('/api/customer?limit=1000');
-        const data = await response.json();
-        if (data.success) {
-          setCustomers(data.data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch customers', error);
-      }
-    };
-    fetchCustomers();
-  }, []);
 
   useEffect(() => {
     const fetchEntries = async () => {
@@ -62,8 +40,8 @@ export default function RecordsPage() {
           limit: '10',
         });
 
-        if (selectedCustomer && selectedCustomer !== 'all') {
-          params.append('customerId', selectedCustomer);
+        if (selectedCustomer) {
+          params.append('customerId', selectedCustomer.toString());
         }
 
         if (startDate) {
@@ -107,17 +85,14 @@ export default function RecordsPage() {
 
   const clearFilters = () => {
     setSearchTerm('');
-    setSelectedCustomer('all');
+    setSelectedCustomer(undefined);
     setStartDate('');
     setEndDate('');
     setPage(1);
   };
 
   const hasActiveFilters =
-    searchTerm ||
-    (selectedCustomer && selectedCustomer !== 'all') ||
-    startDate ||
-    endDate;
+    searchTerm || selectedCustomer || startDate || endDate;
 
   return (
     <div className="w-full rounded-xl bg-white h-full mx-auto p-4 space-y-6">
@@ -164,25 +139,13 @@ export default function RecordsPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
             <div>
               <label className="text-sm font-medium mb-2 block">Customer</label>
-              <Select
+              <CustomerSearchSelect
                 value={selectedCustomer}
-                onValueChange={setSelectedCustomer}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All Customers" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Customers</SelectItem>
-                  {customers.map((customer) => (
-                    <SelectItem
-                      key={customer.id}
-                      value={customer.id.toString()}
-                    >
-                      {customer.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onValueChange={(value) => {
+                  setSelectedCustomer(value);
+                  setPage(1);
+                }}
+              />
             </div>
 
             <div>
@@ -212,14 +175,8 @@ export default function RecordsPage() {
             {searchTerm && (
               <Badge variant="secondary">Search: {searchTerm}</Badge>
             )}
-            {selectedCustomer && selectedCustomer !== 'all' && (
-              <Badge variant="secondary">
-                Customer:{' '}
-                {
-                  customers.find((c) => c.id.toString() === selectedCustomer)
-                    ?.name
-                }
-              </Badge>
+            {selectedCustomer && (
+              <Badge variant="secondary">Customer Filter Active</Badge>
             )}
             {startDate && <Badge variant="secondary">From: {startDate}</Badge>}
             {endDate && <Badge variant="secondary">To: {endDate}</Badge>}
