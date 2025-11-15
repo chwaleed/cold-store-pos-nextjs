@@ -45,8 +45,8 @@ export async function GET(request: NextRequest) {
     // Search by receipt number or car number
     if (search) {
       where.OR = [
-        { receiptNo: { contains: search, mode: 'insensitive' as const } },
-        { carNo: { contains: search, mode: 'insensitive' as const } },
+        { receiptNo: { contains: search } },
+        { carNo: { contains: search } },
       ];
     }
 

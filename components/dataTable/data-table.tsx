@@ -123,7 +123,7 @@ const DataTable = ({
     return pages;
   };
 
-  const showPagination = lastPage && lastPage > 1;
+  const showPagination = lastPage && lastPage > 1 ? true : false;
 
   return (
     <div>

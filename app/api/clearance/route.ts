@@ -140,6 +140,7 @@ export async function GET(request: NextRequest) {
         select: {
           id: true,
           clearanceNo: true,
+          carNo: true,
           clearanceDate: true,
           totalAmount: true,
           customer: {
@@ -164,6 +165,7 @@ export async function GET(request: NextRequest) {
       date: c.clearanceDate,
       itemsCount: c._count.clearedItems,
       totalAmount: c.totalAmount,
+      carNo: c.carNo,
     }));
 
     return NextResponse.json({

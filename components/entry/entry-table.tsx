@@ -162,6 +162,7 @@ export function EntryTable({
       headerClassName: 'text-right',
     },
   ];
+  console.log('last page ', totalPages);
 
   return (
     <>
