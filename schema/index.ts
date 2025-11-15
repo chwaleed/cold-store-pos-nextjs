@@ -1,6 +1,22 @@
 import * as z from 'zod';
 
-import { CatProduct } from '@prisma/client';
+// Define enum-like constants for SQLite
+export const CatProduct = {
+  ELECTRO: 'ELECTRO',
+  DRINK: 'DRINK',
+  FOOD: 'FOOD',
+  FASHION: 'FASHION',
+} as const;
+
+export type CatProduct = (typeof CatProduct)[keyof typeof CatProduct];
+
+export const UserRole = {
+  OWNER: 'OWNER',
+  WORKER: 'WORKER',
+  UNKNOW: 'UNKNOW',
+} as const;
+
+export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
 const categoryValidator = (val: string): val is CatProduct =>
   Object.values(CatProduct).includes(val as CatProduct);
@@ -66,3 +82,11 @@ export const restockSchema = z.object({
     .positive('stock must be a positive number')
     .min(1, 'stock min 1'),
 });
+
+// Export other schemas
+export * from './customer';
+export * from './entry';
+export * from './config';
+export * from './clearance';
+export * from './expense';
+export * from './setting';

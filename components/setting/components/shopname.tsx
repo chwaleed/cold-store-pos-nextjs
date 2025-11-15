@@ -54,27 +54,7 @@ const ShopnameCard: React.FC<ShopnameCardProps> = ({ storeName, storeId }) => {
 
     setIsLoading(true);
 
-    try {
-      const validatedData = shopnameSchema.parse({
-        storeName: editableStoreName,
-      });
-
-      await axios.patch(`/api/shopdata/${storeId}`, validatedData);
-
-      toast.success('Store name updated successfully.');
-      eventBus.emit('fetchStoreData');
-    } catch (error) {
-      if (error instanceof ZodError) {
-        // Handle ZodError
-        const fieldErrors = error.errors.map((err) => err.message);
-        toast.error(`${fieldErrors.join(', ')}`);
-      } else {
-        toast.error('Failed to update store name.');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+ 
 
   return (
     <Card className="my-5">

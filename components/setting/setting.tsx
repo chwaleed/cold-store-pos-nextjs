@@ -1,67 +1,58 @@
 'use client';
-import React, { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
-import axios from 'axios';
-import ShopnameCard from './components/shopname';
-import TaxrateCard from './components/taxrate';
-import eventBus from '@/lib/even';
+
+import { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ProductTypeManager } from '@/components/setting/product-type-manager';
+import { ProductSubTypeManager } from '@/components/setting/product-subtype-manager';
+import { RoomManager } from '@/components/setting/room-manager';
+import { PackTypeManager } from '@/components/setting/pack-type-manager';
+import { Settings2 } from 'lucide-react';
+
 export function Setting() {
-  const [storeName, setStoreName] = useState<string | null>(null);
-  const [storeId, setStoreId] = useState<string | null>(null);
-  const [taxRate, setTaxRate] = useState<number>(0);
-
-  useEffect(() => {
-    const fetchShopData = async () => {
-      try {
-        const isOnline = navigator.onLine;
-
-        if (!isOnline) {
-          toast.error(
-            'You are offline. Please check your internet connection.'
-          );
-          return;
-        }
-
-        const response = await axios.get('/api/shopdata');
-        const shopdata = response.data.data;
-
-        if (response.status === 200) {
-          setStoreId(shopdata.id);
-          setStoreName(shopdata.name);
-          setTaxRate(shopdata.tax);
-        } else {
-          toast.error('Failed to fetch data: ' + shopdata.error);
-        }
-      } catch (error: any) {
-        toast.error(
-          'Failed to fetch data: ' +
-            (error.response?.data.error || error.message)
-        );
-      }
-    };
-
-    fetchShopData();
-
-    const handleEventBusEvent = () => {
-      fetchShopData();
-    };
-
-    eventBus.on('fetchStoreData', handleEventBusEvent);
-
-    // Clean up event listener
-    return () => {
-      eventBus.removeListener('fetchStoreData', handleEventBusEvent);
-    };
-  }, []);
+  const [activeTab, setActiveTab] = useState('products');
 
   return (
-    <div className="flex min-h-screen w-full flex-col">
-      <div className="flex min-h-[calc(100vh_-_theme(spacing.16))] flex-1 flex-col gap-4 bg-muted/40 p-4 md:gap-8 md:p-10">
-        <div className="mx-auto grid w-full max-w-6xl items-start gap-6 ">
-          <div className="grid gap-6">
-            <ShopnameCard storeName={storeName} storeId={storeId} />
-            <TaxrateCard tax={taxRate} storeId={storeId} />
+    <div className="flex w-full flex-col">
+      <div className="flex rounded-xl min-h-[calc(100vh_-_theme(spacing.16))] flex-1 flex-col gap-4 bg-muted/40  md:gap-8 p-6 ">
+        <div className="mx-auto w-full  space-y-6">
+          <div className="flex items-center gap-3">
+            <Settings2 className="h-8 w-8" />
+            <div>
+              <h1 className="text-3xl font-bold">Settings</h1>
+              <p className="text-muted-foreground">
+                Manage system configuration and master data
+              </p>
+            </div>
           </div>
+
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="space-y-4"
+          >
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="products">Product Types</TabsTrigger>
+              <TabsTrigger value="subtypes">Subtypes</TabsTrigger>
+              <TabsTrigger value="rooms">Rooms</TabsTrigger>
+              <TabsTrigger value="packs">Pack Types</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="products" className="space-y-4">
+              <ProductTypeManager />
+            </TabsContent>
+
+            <TabsContent value="subtypes" className="space-y-4">
+              <ProductSubTypeManager />
+            </TabsContent>
+
+            <TabsContent value="rooms" className="space-y-4">
+              <RoomManager />
+            </TabsContent>
+
+            <TabsContent value="packs" className="space-y-4">
+              <PackTypeManager />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

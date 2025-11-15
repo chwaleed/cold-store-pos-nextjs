@@ -69,7 +69,6 @@ export default function Detail({
           return;
         }
 
-        const response = await axios.get('/api/shopdata');
         const shopdata = response.data.data;
 
         if (response.status === 200) {

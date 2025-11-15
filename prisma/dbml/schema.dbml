@@ -2,74 +2,203 @@
 //// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 //// ------------------------------------------------------
 
-Table User {
-  id String [pk]
+Table Customer {
+  id Int [pk, increment]
   name String [not null]
-  username String [not null]
-  email String [unique]
-  emailVerified DateTime
-  image String
-  password String
-  role UserRole [not null, default: 'UNKNOW']
-}
-
-Table ProductStock {
-  id String [pk]
-  name String [not null]
-  imageProduct String
-  price Float [not null]
-  stock Float [not null]
-  cat CatProduct [not null]
-  Product Product [not null]
-}
-
-Table Product {
-  id String [pk]
-  productId String [unique, not null]
-  productstock ProductStock [not null]
-  sellprice Float [not null]
-  OnSaleProduct OnSaleProduct [not null]
-}
-
-Table OnSaleProduct {
-  id String [pk]
-  productId String [not null]
-  quantity Int [not null]
-  saledate DateTime [default: `now()`, not null]
-  transactionId String [not null]
-  product Product [not null]
-  transaction Transaction [not null]
-}
-
-Table Transaction {
-  id String [pk]
-  totalAmount Decimal
+  fatherName String
+  cnic String [unique]
+  phone String
+  address String
+  village String
   createdAt DateTime [default: `now()`, not null]
-  isComplete Boolean [not null, default: false]
-  products OnSaleProduct [not null]
+  updatedAt DateTime [not null]
+  entryReceipts EntryReceipt [not null]
+  clearanceReceipts ClearanceReceipt [not null]
+  ledger Ledger [not null]
 }
 
-Table ShopData {
-  id String [pk]
-  tax Int
-  name String
+Table ProductType {
+  id Int [pk, increment]
+  name String [unique, not null]
+  doubleRentAfter30Days Boolean [not null, default: false]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  subTypes ProductSubType [not null]
+  entryItems EntryItem [not null]
 }
 
-Enum UserRole {
-  OWNER
-  WORKER
-  UNKNOW
+Table ProductSubType {
+  id Int [pk, increment]
+  productTypeId Int [not null]
+  name String [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  productType ProductType [not null]
+  entryItems EntryItem [not null]
+
+  indexes {
+    (productTypeId, name) [unique]
+  }
 }
 
-Enum CatProduct {
-  ELECTRO
-  DRINK
-  FOOD
-  FASHION
+Table Room {
+  id Int [pk, increment]
+  name String [unique, not null]
+  type String [not null]
+  capacity Int
+  isActive Boolean [not null, default: true]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  entryItems EntryItem [not null]
 }
 
-Ref: Product.productId > ProductStock.id [delete: Cascade]
+Table PackType {
+  id Int [pk, increment]
+  name String [unique, not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  entryItems EntryItem [not null]
+}
 
-Ref: OnSaleProduct.productId > Product.productId [delete: Cascade]
+Table EntryReceipt {
+  id Int [pk, increment]
+  receiptNo String [unique, not null]
+  customerId Int [not null]
+  carNo String [not null]
+  entryDate DateTime [default: `now()`, not null]
+  storageTillDate DateTime
+  totalAmount Float [not null]
+  description String
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  customer Customer [not null]
+  items EntryItem [not null]
+  clearanceReceipts ClearanceReceipt [not null]
+}
 
-Ref: OnSaleProduct.transactionId > Transaction.id [delete: Cascade]
+Table EntryItem {
+  id Int [pk, increment]
+  entryReceiptId Int [not null]
+  productTypeId Int [not null]
+  productSubTypeId Int
+  packTypeId Int [not null]
+  roomId Int [not null]
+  boxNo String
+  marka String
+  quantity Float [not null]
+  remainingQuantity Float [not null]
+  unitPrice Float [not null]
+  totalPrice Float [not null]
+  hasKhaliJali Boolean [not null, default: false]
+  kjQuantity Float
+  kjUnitPrice Float
+  kjTotal Float
+  grandTotal Float [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  entryReceipt EntryReceipt [not null]
+  productType ProductType [not null]
+  productSubType ProductSubType
+  packType PackType [not null]
+  room Room [not null]
+  clearedItems ClearedItem [not null]
+}
+
+Table ClearanceReceipt {
+  id Int [pk, increment]
+  clearanceNo String [unique, not null]
+  customerId Int [not null]
+  entryReceiptId Int [not null]
+  carNo String
+  clearanceDate DateTime [default: `now()`, not null]
+  totalRent Float [not null]
+  description String
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  customer Customer [not null]
+  entryReceipt EntryReceipt [not null]
+  clearedItems ClearedItem [not null]
+}
+
+Table ClearedItem {
+  id Int [pk, increment]
+  clearanceReceiptId Int [not null]
+  entryItemId Int [not null]
+  quantityCleared Float [not null]
+  kjQuantityCleared Float
+  daysStored Int [not null]
+  rentPerDay Float [not null]
+  totalRent Float [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  clearanceReceipt ClearanceReceipt [not null]
+  entryItem EntryItem [not null]
+}
+
+Table Ledger {
+  id Int [pk, increment]
+  customerId Int [not null]
+  invoiceId Int
+  description String [not null]
+  debitAmount Float [not null, default: 0]
+  creditAmount Float [not null, default: 0]
+  isDiscount Boolean [not null, default: false]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  customer Customer [not null]
+}
+
+Table ExpenseCategory {
+  id Int [pk, increment]
+  name String [unique, not null]
+  description String
+  isActive Boolean [not null, default: true]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  expenses Expense [not null]
+}
+
+Table Expense {
+  id Int [pk, increment]
+  date DateTime [default: `now()`, not null]
+  categoryId Int [not null]
+  amount Float [not null]
+  description String
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  category ExpenseCategory [not null]
+}
+
+Table Setting {
+  id Int [pk, increment]
+  key String [unique, not null]
+  value String [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Ref: ProductSubType.productTypeId > ProductType.id [delete: Cascade]
+
+Ref: EntryReceipt.customerId > Customer.id [delete: Cascade]
+
+Ref: EntryItem.entryReceiptId > EntryReceipt.id [delete: Cascade]
+
+Ref: EntryItem.productTypeId > ProductType.id
+
+Ref: EntryItem.productSubTypeId > ProductSubType.id
+
+Ref: EntryItem.packTypeId > PackType.id
+
+Ref: EntryItem.roomId > Room.id
+
+Ref: ClearanceReceipt.customerId > Customer.id [delete: Cascade]
+
+Ref: ClearanceReceipt.entryReceiptId > EntryReceipt.id [delete: Cascade]
+
+Ref: ClearedItem.clearanceReceiptId > ClearanceReceipt.id [delete: Cascade]
+
+Ref: ClearedItem.entryItemId > EntryItem.id [delete: Cascade]
+
+Ref: Ledger.customerId > Customer.id [delete: Cascade]
+
+Ref: Expense.categoryId > ExpenseCategory.id [delete: Cascade]

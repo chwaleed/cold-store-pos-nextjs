@@ -56,8 +56,6 @@ const TaxrateCard: React.FC<TaxrateCardProps> = ({ tax, storeId }) => {
         tax: taxNumber,
       });
 
-      await axios.patch(`/api/shopdata/${storeId}`, validatedData);
-
       toast.success('Tax updated successfully.');
       eventBus.emit('fetchStoreData');
     } catch (error) {

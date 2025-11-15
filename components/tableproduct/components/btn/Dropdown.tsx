@@ -1,17 +1,17 @@
-"use client";
+'use client';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { DeleteAlertDialog } from "./alertDelete";
-import { SheetEdit } from "./sheetEdit";
-import { CatProduct } from "@prisma/client";
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { DeleteAlertDialog } from './alertDelete';
+import { SheetEdit } from './sheetEdit';
+import { CatProduct } from '@/schema';
 
 type Product = {
   id: string;
