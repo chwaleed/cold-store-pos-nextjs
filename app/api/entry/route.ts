@@ -80,7 +80,6 @@ export async function GET(request: NextRequest) {
           _count: {
             select: {
               items: true,
-              clearanceReceipts: true,
             },
           },
         },

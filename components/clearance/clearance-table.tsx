@@ -72,10 +72,9 @@ export function ClearanceTable() {
         <TableRow>
           <TableHead>Clearance No.</TableHead>
           <TableHead>Customer</TableHead>
-          <TableHead>Entry Receipt</TableHead>
           <TableHead>Date</TableHead>
           <TableHead>Items</TableHead>
-          <TableHead className="text-right">Total Rent</TableHead>
+          <TableHead className="text-right">Total Amount</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -94,7 +93,6 @@ export function ClearanceTable() {
                 </span>
               )}
             </TableCell>
-            <TableCell>{clearance.entryReceipt?.receiptNo || 'N/A'}</TableCell>
             <TableCell>
               {new Date(clearance.clearanceDate).toLocaleDateString()}
             </TableCell>
@@ -104,7 +102,7 @@ export function ClearanceTable() {
               </Badge>
             </TableCell>
             <TableCell className="text-right font-semibold">
-              PKR {clearance.totalRent.toFixed(2)}
+              PKR {clearance.totalAmount.toFixed(2)}
             </TableCell>
             <TableCell className="text-right">
               <Button variant="ghost" size="icon" asChild>

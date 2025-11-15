@@ -120,25 +120,8 @@ export default function RecordsPage() {
               className="pl-10"
             />
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter className="h-4 w-4" />
-          </Button>
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters}>
-              <X className="h-4 w-4 mr-2" />
-              Clear Filters
-            </Button>
-          )}
-        </div>
-
-        {showFilters && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-lg">
             <div>
-              <label className="text-sm font-medium mb-2 block">Customer</label>
               <CustomerSearchSelect
                 value={selectedCustomer}
                 onValueChange={(value) => {
@@ -148,10 +131,7 @@ export default function RecordsPage() {
               />
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Start Date
-              </label>
+            <div className="">
               <Input
                 type="date"
                 value={startDate}
@@ -160,7 +140,6 @@ export default function RecordsPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">End Date</label>
               <Input
                 type="date"
                 value={endDate}
@@ -168,7 +147,7 @@ export default function RecordsPage() {
               />
             </div>
           </div>
-        )}
+        </div>
 
         {hasActiveFilters && (
           <div className="flex gap-2 flex-wrap">

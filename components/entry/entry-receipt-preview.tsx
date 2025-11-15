@@ -120,26 +120,24 @@ export function EntryReceiptPreview({ entryId }: EntryReceiptPreviewProps) {
       id: 'packType',
     },
     {
-      name: 'Room',
+      name: 'Room/Box',
       accessor: (row: any) => (
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm">{row.room?.name || 'N/A'}</span>
-          {row.room?.type && (
-            <Badge variant="outline" className="text-xs px-1 py-0 h-4">
-              {row.room.type}
-            </Badge>
-          )}
+        <div className=" items-center gap-1.5">
+          <p className="text-sm">{row.room?.name || 'N/A'}</p>
+
+          <p className="text-xs text-muted-foreground leading-tight">
+            Box: {row.boxNo}
+          </p>
         </div>
       ),
       id: 'room',
     },
     {
-      name: 'Box/Marka',
+      name: 'Marka',
       accessor: (row: any) => (
         <div className="text-xs leading-tight">
-          {row.boxNo && <p>B: {row.boxNo}</p>}
-          {row.marka && <p>M: {row.marka}</p>}
-          {!row.boxNo && !row.marka && <p>-</p>}
+          {row.marka && <p> {row.marka}</p>}
+          {!row.marka && <p>-</p>}
         </div>
       ),
       id: 'boxMarka',
@@ -152,17 +150,28 @@ export function EntryReceiptPreview({ entryId }: EntryReceiptPreviewProps) {
       headerClassName: 'text-right',
     },
     {
-      name: 'Unit Price',
+      name: 'Price',
       accessor: (row: any) => (
-        <span className="text-sm">{row.unitPrice.toFixed(2)}</span>
+        <div className="text-xs leading-tight">
+          <p>
+            {row.quantity} × {row.unitPrice?.toFixed(2)}
+          </p>
+          <p className="text-muted-foreground">
+            = {row.totalPrice?.toFixed(2)}
+          </p>
+        </div>
       ),
       id: 'unitPrice',
       className: 'text-right',
       headerClassName: 'text-right',
     },
+    // <span className="text-sm">{row.unitPrice.toFixed(2)}</span>
+
     {
       name: 'KJ',
       accessor: (row: any) => {
+        console.log('reow ', row);
+
         if (row.hasKhaliJali && row.kjQuantity) {
           return (
             <div className="text-xs leading-tight">

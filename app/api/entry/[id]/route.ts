@@ -32,11 +32,6 @@ export async function GET(
             id: 'asc',
           },
         },
-        _count: {
-          select: {
-            clearanceReceipts: true,
-          },
-        },
       },
     });
 
@@ -92,11 +87,6 @@ export async function PUT(
       where: { id },
       include: {
         items: true,
-        _count: {
-          select: {
-            clearanceReceipts: true,
-          },
-        },
       },
     });
 
@@ -104,17 +94,6 @@ export async function PUT(
       return NextResponse.json(
         { success: false, error: 'Entry receipt not found' },
         { status: 404 }
-      );
-    }
-
-    // Prevent editing if there are clearances
-    if (existingReceipt._count.clearanceReceipts > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Cannot edit entry receipt with existing clearances',
-        },
-        { status: 400 }
       );
     }
 

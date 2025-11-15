@@ -118,33 +118,47 @@ export function InventoryTable({ filters }: InventoryTableProps) {
       accessor: (row: InventoryItem) => row.marka || '-',
       id: 'marka',
     },
+    //  <div className="py-1">
+    //       <p className="font-medium text-sm leading-tight">
+    //         {row.productType?.name || 'N/A'}
+    //       </p>
+    //       {row.productSubType && (
+    //         <p className="text-xs text-muted-foreground leading-tight">
+    //           {row.productSubType.name}
+    //         </p>
+    //       )}
+    //     </div>
     {
-      name: 'Type',
+      name: 'Product',
       accessor: (row: InventoryItem) => (
         <div>
-          {row.isDoubleRent && <span className="mr-1">⚡</span>}
-          {row.typeName}
+          <div>
+            {row.isDoubleRent && <span className="mr-1">⚡</span>}
+            {row.typeName}
+          </div>
+          {row.subtypeName && (
+            <p className="text-xs text-muted-foreground leading-tight">
+              {row.subtypeName}
+            </p>
+          )}
         </div>
       ),
       id: 'type',
     },
+
     {
-      name: 'Subtype',
-      accessor: (row: InventoryItem) => row.subtypeName || '-',
-      id: 'subtype',
-    },
-    {
-      name: 'Room',
+      name: 'Room/Box',
       accessor: (row: InventoryItem) => (
-        <Badge variant="outline">{row.roomName}</Badge>
+        <div className=" items-center gap-1.5">
+          <p className="text-sm">{row.roomName || 'N/A'}</p>
+          <p className="text-xs text-muted-foreground leading-tight">
+            Box: {row.boxNo}
+          </p>
+        </div>
       ),
       id: 'room',
     },
-    {
-      name: 'Box',
-      accessor: (row: InventoryItem) => row.boxNo || '-',
-      id: 'box',
-    },
+
     {
       name: 'Available Qty',
       accessor: (row: InventoryItem) => row.availableQty.toFixed(2),
@@ -172,8 +186,20 @@ export function InventoryTable({ filters }: InventoryTableProps) {
       headerClassName: 'text-right',
     },
     {
-      name: 'Unit Price',
-      accessor: (row: InventoryItem) => `PKR ${row.unitPrice.toFixed(2)}`,
+      name: 'Price',
+      accessor: (row: InventoryItem) => {
+        console.log(row);
+        return (
+          <div className="text-xs leading-tight">
+            <p>
+              {row.availableQty} × {row.unitPrice?.toFixed(2)}
+            </p>
+            <p className="text-muted-foreground">
+              {/* = {row.totalPrice?.toFixed(2)} */}
+            </p>
+          </div>
+        );
+      },
       id: 'unitPrice',
       className: 'text-right',
       headerClassName: 'text-right',

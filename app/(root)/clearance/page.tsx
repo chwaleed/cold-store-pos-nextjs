@@ -28,15 +28,7 @@ export default function ClearancePage() {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Clearance Records</CardTitle>
-          <CardDescription>View all clearance transactions</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ClearanceTable />
-        </CardContent>
-      </Card>
+      <ClearanceTable />
     </div>
   );
 }

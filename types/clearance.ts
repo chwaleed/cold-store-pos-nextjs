@@ -4,30 +4,28 @@ import { EntryReceipt, EntryItem } from './entry';
 export interface ClearedItem {
   id: number;
   clearanceReceiptId: number;
+  entryReceiptId: number;
   entryItemId: number;
-  quantityCleared: number;
-  kjQuantityCleared: number | null;
-  daysStored: number;
-  rentPerDay: number;
-  totalRent: number;
+  clearQuantity: number;
+  clearKjQuantity: number | null;
+  totalAmount: number;
   createdAt: Date;
   updatedAt: Date;
   entryItem?: EntryItem;
+  entryReceipt?: EntryReceipt;
 }
 
 export interface ClearanceReceipt {
   id: number;
   clearanceNo: string;
   customerId: number;
-  entryReceiptId: number;
   carNo: string | null;
   clearanceDate: Date;
-  totalRent: number;
+  totalAmount: number;
   description: string | null;
   createdAt: Date;
   updatedAt: Date;
   customer?: Customer;
-  entryReceipt?: EntryReceipt;
   clearedItems?: ClearedItem[];
 }
 
@@ -45,27 +43,49 @@ export interface ClearanceListResponse {
 }
 
 // Helper types for clearance form
-export interface CustomerWithInventory extends Customer {
-  entryReceipts: Array<{
+export interface EntryItemWithDetails {
+  id: number;
+  entryReceiptId: number;
+  productTypeId: number;
+  productSubTypeId: number | null;
+  packTypeId: number;
+  roomId: number;
+  boxNo: string | null;
+  marka: string | null;
+  quantity: number;
+  remainingQuantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  hasKhaliJali: boolean;
+  kjQuantity: number | null;
+  kjUnitPrice: number | null;
+  kjTotal: number | null;
+  grandTotal: number;
+  createdAt: Date;
+  updatedAt: Date;
+  productType: { name: string };
+  productSubType: { name: string } | null;
+  packType: { name: string };
+  room: { name: string };
+  entryReceipt: {
     id: number;
     receiptNo: string;
     entryDate: Date;
-    items: Array<{
-      id: number;
-      remainingQuantity: number;
-      productType: { name: string };
-      productSubType: { name: string } | null;
-    }>;
-  }>;
+    customerId: number;
+    customer: Customer;
+  };
 }
 
-export interface EntryReceiptWithItems extends EntryReceipt {
-  items: Array<
-    EntryItem & {
-      productType: { name: string };
-      productSubType: { name: string } | null;
-      packType: { name: string };
-      room: { name: string };
-    }
-  >;
+export interface ClearedItemWithDetails {
+  entryItemId: number;
+  clearQuantity: number;
+  clearKjQuantity: number | null;
+  productName: string;
+  packName: string;
+  roomName: string;
+  availableQty: number;
+  unitPrice: number;
+  hasKhaliJali: boolean;
+  kjQuantity?: number | null;
+  kjUnitPrice?: number | null;
 }

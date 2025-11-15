@@ -71,7 +71,6 @@ Table EntryReceipt {
   updatedAt DateTime [not null]
   customer Customer [not null]
   items EntryItem [not null]
-  clearanceReceipts ClearanceReceipt [not null]
 }
 
 Table EntryItem {
@@ -106,27 +105,24 @@ Table ClearanceReceipt {
   id Int [pk, increment]
   clearanceNo String [unique, not null]
   customerId Int [not null]
-  entryReceiptId Int [not null]
   carNo String
   clearanceDate DateTime [default: `now()`, not null]
-  totalRent Float [not null]
+  totalAmount Float [not null]
   description String
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   customer Customer [not null]
-  entryReceipt EntryReceipt [not null]
   clearedItems ClearedItem [not null]
 }
 
 Table ClearedItem {
   id Int [pk, increment]
   clearanceReceiptId Int [not null]
+  entryReceiptId Int [not null]
   entryItemId Int [not null]
-  quantityCleared Float [not null]
-  kjQuantityCleared Float
-  daysStored Int [not null]
-  rentPerDay Float [not null]
-  totalRent Float [not null]
+  clearQuantity Float [not null]
+  clearKjQuantity Float
+  totalAmount Float [not null]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   clearanceReceipt ClearanceReceipt [not null]
@@ -190,8 +186,6 @@ Ref: EntryItem.packTypeId > PackType.id
 Ref: EntryItem.roomId > Room.id
 
 Ref: ClearanceReceipt.customerId > Customer.id [delete: Cascade]
-
-Ref: ClearanceReceipt.entryReceiptId > EntryReceipt.id [delete: Cascade]
 
 Ref: ClearedItem.clearanceReceiptId > ClearanceReceipt.id [delete: Cascade]
 

@@ -50,7 +50,6 @@ export async function GET(request: NextRequest) {
         productType: true,
         productSubType: true,
         room: true,
-        clearedItems: true,
       },
       orderBy: {
         entryReceipt: {
@@ -102,6 +101,9 @@ export async function GET(request: NextRequest) {
           totalValue,
           daysInStorage,
           daysLeft,
+          kjQuantity: item.kjQuantity,
+          kjUnitPrice: item.kjUnitPrice,
+          kjTotal: item.kjTotal,
           isDoubleRent,
         };
       })

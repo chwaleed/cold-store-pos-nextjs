@@ -53,7 +53,6 @@ export async function GET(request: NextRequest) {
         orderBy: { clearanceDate: 'desc' },
         include: {
           customer: true,
-          entryReceipt: true,
           clearedItems: {
             include: {
               entryItem: {
@@ -62,6 +61,12 @@ export async function GET(request: NextRequest) {
                   productSubType: true,
                   packType: true,
                   room: true,
+                  entryReceipt: {
+                    select: {
+                      receiptNo: true,
+                      entryDate: true,
+                    },
+                  },
                 },
               },
             },
@@ -99,76 +104,142 @@ export async function POST(request: NextRequest) {
         : new Date(),
     });
 
-    // Find entry receipt by receipt number
-    const entryReceipt = await prisma.entryReceipt.findUnique({
-      where: { receiptNo: validatedData.entryReceiptNo },
-      include: {
-        items: true,
-      },
-    });
-
-    if (!entryReceipt) {
+    if (validatedData.items.length === 0) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Entry receipt not found with the provided receipt number',
-        },
-        { status: 404 }
-      );
-    }
-
-    // Verify customer matches
-    if (entryReceipt.customerId !== validatedData.customerId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Entry receipt does not belong to the selected customer',
+          error: 'At least one item must be selected for clearance',
         },
         { status: 400 }
       );
     }
 
-    // Verify all items belong to the entry receipt and have sufficient quantity
-    for (const item of validatedData.items) {
-      const entryItem = entryReceipt.items.find(
-        (ei) => ei.id === item.entryItemId
+    // Fetch all entry items with their entry receipts
+    const entryItemIds = validatedData.items.map((item) => item.entryItemId);
+    const entryItems = await prisma.entryItem.findMany({
+      where: { id: { in: entryItemIds } },
+      include: {
+        entryReceipt: {
+          include: {
+            customer: true,
+          },
+        },
+      },
+    });
+
+    if (entryItems.length !== validatedData.items.length) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'One or more entry items not found',
+        },
+        { status: 404 }
       );
+    }
+
+    // Verify all items belong to the same customer
+    const customerIds = new Set(
+      entryItems.map((item) => item.entryReceipt.customerId)
+    );
+    if (customerIds.size > 1) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'All items must belong to the same customer',
+        },
+        { status: 400 }
+      );
+    }
+
+    const actualCustomerId = entryItems[0].entryReceipt.customerId;
+
+    // Verify customer matches
+    if (actualCustomerId !== validatedData.customerId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Selected items do not belong to the specified customer',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Verify quantities and calculate total amount
+    let totalAmount = 0;
+    const clearedItemsData: {
+      entryItemId: number;
+      entryReceiptId: number;
+      clearQuantity: number;
+      clearKjQuantity: number | null;
+      totalAmount: number;
+    }[] = [];
+
+    for (const item of validatedData.items) {
+      const entryItem = entryItems.find((ei) => ei.id === item.entryItemId);
 
       if (!entryItem) {
         return NextResponse.json(
           {
             success: false,
-            error: `Item ${item.entryItemId} not found in entry receipt`,
+            error: `Entry item ${item.entryItemId} not found`,
           },
-          { status: 400 }
+          { status: 404 }
         );
       }
 
-      if (entryItem.remainingQuantity < item.quantityCleared) {
+      // Verify sufficient quantity
+      if (entryItem.remainingQuantity < item.clearQuantity) {
         return NextResponse.json(
           {
             success: false,
-            error: `Insufficient quantity for item ${item.entryItemId}. Available: ${entryItem.remainingQuantity}, Requested: ${item.quantityCleared}`,
+            error: `Insufficient quantity for item ${item.entryItemId}. Available: ${entryItem.remainingQuantity}, Requested: ${item.clearQuantity}`,
           },
           { status: 400 }
         );
       }
 
-      // Verify KJ quantity if item has KJ and KJ quantity is being cleared
-      if (entryItem.hasKhaliJali && item.kjQuantityCleared) {
+      // Verify KJ quantity if applicable
+      if (item.clearKjQuantity && item.clearKjQuantity > 0) {
+        if (!entryItem.hasKhaliJali) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: `Item ${item.entryItemId} does not have Khali Jali`,
+            },
+            { status: 400 }
+          );
+        }
+
         if (
           !entryItem.kjQuantity ||
-          item.kjQuantityCleared > entryItem.kjQuantity
+          item.clearKjQuantity > entryItem.kjQuantity
         ) {
           return NextResponse.json(
             {
               success: false,
-              error: `Insufficient KJ quantity for item ${item.entryItemId}. Available: ${entryItem.kjQuantity || 0}, Requested: ${item.kjQuantityCleared}`,
+              error: `Insufficient KJ quantity for item ${item.entryItemId}. Available: ${entryItem.kjQuantity || 0}, Requested: ${item.clearKjQuantity}`,
             },
             { status: 400 }
           );
         }
       }
+
+      // Calculate item total amount
+      const itemAmount = item.clearQuantity * entryItem.unitPrice;
+      const kjAmount =
+        item.clearKjQuantity && entryItem.kjUnitPrice
+          ? item.clearKjQuantity * entryItem.kjUnitPrice
+          : 0;
+      const itemTotalAmount = itemAmount + kjAmount;
+      totalAmount += itemTotalAmount;
+
+      clearedItemsData.push({
+        entryItemId: item.entryItemId,
+        entryReceiptId: entryItem.entryReceiptId,
+        clearQuantity: item.clearQuantity,
+        clearKjQuantity: item.clearKjQuantity || null,
+        totalAmount: itemTotalAmount,
+      });
     }
 
     // Generate clearance number
@@ -184,37 +255,6 @@ export async function POST(request: NextRequest) {
     });
     const clearanceNo = `CL-${dateStr}-${String(count + 1).padStart(4, '0')}`;
 
-    // Calculate days stored and total rent
-    const clearanceDate = validatedData.clearanceDate || new Date();
-    const daysStored = Math.max(
-      1,
-      Math.ceil(
-        (clearanceDate.getTime() - entryReceipt.entryDate.getTime()) /
-          (1000 * 60 * 60 * 24)
-      )
-    );
-
-    let totalRent = 0;
-    const clearedItemsData = validatedData.items.map((item) => {
-      const entryItem = entryReceipt.items.find(
-        (ei) => ei.id === item.entryItemId
-      )!;
-
-      // Use entry item's unitPrice as rent per day (this is the rent that was charged during entry)
-      const rentPerDay = entryItem.unitPrice;
-      const itemRent = item.quantityCleared * daysStored * rentPerDay;
-      totalRent += itemRent;
-
-      return {
-        entryItemId: item.entryItemId,
-        quantityCleared: item.quantityCleared,
-        kjQuantityCleared: item.kjQuantityCleared || null,
-        daysStored,
-        rentPerDay,
-        totalRent: itemRent,
-      };
-    });
-
     // Create clearance receipt with cleared items in a transaction
     const clearance = await prisma.$transaction(async (tx) => {
       // Create clearance receipt
@@ -222,10 +262,9 @@ export async function POST(request: NextRequest) {
         data: {
           clearanceNo,
           customerId: validatedData.customerId,
-          entryReceiptId: entryReceipt.id,
           carNo: validatedData.carNo || null,
-          clearanceDate,
-          totalRent,
+          clearanceDate: validatedData.clearanceDate || new Date(),
+          totalAmount,
           description: validatedData.description || null,
           clearedItems: {
             create: clearedItemsData,
@@ -233,7 +272,6 @@ export async function POST(request: NextRequest) {
         },
         include: {
           customer: true,
-          entryReceipt: true,
           clearedItems: {
             include: {
               entryItem: {
@@ -242,6 +280,12 @@ export async function POST(request: NextRequest) {
                   productSubType: true,
                   packType: true,
                   room: true,
+                  entryReceipt: {
+                    select: {
+                      receiptNo: true,
+                      entryDate: true,
+                    },
+                  },
                 },
               },
             },
@@ -255,19 +299,19 @@ export async function POST(request: NextRequest) {
           where: { id: item.entryItemId },
           data: {
             remainingQuantity: {
-              decrement: item.quantityCleared,
+              decrement: item.clearQuantity,
             },
           },
         });
       }
 
-      // Create ledger entry for rent (DEBIT)
+      // Create ledger entry for clearance amount (DEBIT)
       await tx.ledger.create({
         data: {
           customerId: validatedData.customerId,
           invoiceId: receipt.id,
-          description: `Rent for Clearance ${clearanceNo}`,
-          debitAmount: totalRent,
+          description: `Clearance ${clearanceNo}`,
+          debitAmount: totalAmount,
           creditAmount: 0,
         },
       });
