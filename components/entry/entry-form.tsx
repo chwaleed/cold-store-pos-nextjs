@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { Plus, Save } from 'lucide-react';
+import { Plus, Save, UserPlus } from 'lucide-react';
 import { useFieldArray } from 'react-hook-form';
 
 import {
@@ -28,6 +28,7 @@ import { EntryItemDialog } from './entry-item-dialog';
 import ItemTable from './Item-table';
 import useStore from '@/app/(root)/(store)/store';
 import { CustomerSearchSelect } from '@/components/ui/customer-search-select';
+import { AddCustomerDialog } from '@/components/customer/add-customer-dialog';
 
 interface EntryFormProps {
   onSuccess?: () => void;
@@ -62,6 +63,7 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<EntryItemFormData | null>(null);
   const [editIndex, setEditIndex] = useState<number | null>(null);
+  const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
 
   const onSubmit = async (data: EntryReceiptFormData) => {
     try {
@@ -107,6 +109,16 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
     setEditItem(null);
     setEditIndex(null);
     setItemDialogOpen(true);
+  };
+
+  const handleCustomerCreated = () => {
+    setCustomerDialogOpen(false);
+    // Optionally refresh customer list in CustomerSearchSelect
+    toast({
+      title: 'Success',
+      description:
+        'Customer created successfully. Please select from the dropdown.',
+    });
   };
 
   const calculateItemTotal = (index: number) => {
@@ -156,13 +168,25 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Customer *</FormLabel>
-                  <FormControl>
-                    <CustomerSearchSelect
-                      value={field.value}
-                      onValueChange={field.onChange}
+                  <div className="flex gap-2">
+                    <FormControl>
+                      <CustomerSearchSelect
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={loading}
+                      />
+                    </FormControl>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCustomerDialogOpen(true)}
                       disabled={loading}
-                    />
-                  </FormControl>
+                      title="Add new customer"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                    </Button>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -288,6 +312,12 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
           productSubTypes={productSubTypes}
           rooms={rooms}
           packTypes={packTypes}
+        />
+
+        <AddCustomerDialog
+          open={customerDialogOpen}
+          onOpenChange={setCustomerDialogOpen}
+          onSuccess={handleCustomerCreated}
         />
 
         {/* Grand Total & Actions */}

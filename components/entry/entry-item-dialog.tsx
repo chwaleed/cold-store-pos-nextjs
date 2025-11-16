@@ -99,6 +99,17 @@ export function EntryItemDialog({
   const onSubmit = async (data: EntryItemFormData, e?: React.FormEvent) => {
     e?.preventDefault();
     e?.stopPropagation();
+
+    // Validate box number against room capacity before submitting
+    const selectedRoom = rooms.find((r) => r.id === data.roomId);
+    const roomCapacity = selectedRoom?.capacity || null;
+    const boxValue = data.boxNo ? parseInt(data.boxNo) : null;
+
+    if (roomCapacity !== null && boxValue !== null && boxValue > roomCapacity) {
+      // Prevent submission if box number exceeds capacity
+      return;
+    }
+
     setSubmitting(true);
     try {
       onAdd(data);
@@ -116,6 +127,10 @@ export function EntryItemDialog({
 
   const selectedTypeId = form.watch('productTypeId');
   const filteredSubTypes = getFilteredSubTypes(selectedTypeId);
+
+  const selectedRoomId = form.watch('roomId');
+  const selectedRoom = rooms.find((r) => r.id === selectedRoomId);
+  const roomCapacity = selectedRoom?.capacity || null;
 
   const hasKhaliJali = form.watch('hasKhaliJali');
   const quantity = form.watch('quantity') || 0;
@@ -287,19 +302,57 @@ export function EntryItemDialog({
               <FormField
                 control={form.control}
                 name="boxNo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Box Number</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Box #"
-                        {...field}
-                        value={field.value || ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const boxValue = field.value ? parseInt(field.value) : null;
+                  const exceedsCapacity =
+                    roomCapacity !== null &&
+                    boxValue !== null &&
+                    boxValue > roomCapacity;
+
+                  return (
+                    <FormItem>
+                      <FormLabel>Box Number</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Box #"
+                          {...field}
+                          value={field.value || ''}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const numValue = value ? parseInt(value) : null;
+
+                            if (
+                              roomCapacity !== null &&
+                              numValue !== null &&
+                              numValue > roomCapacity
+                            ) {
+                              // Show warning but allow input (will show error message)
+                              field.onChange(value);
+                            } else {
+                              field.onChange(value);
+                            }
+                          }}
+                          className={
+                            exceedsCapacity
+                              ? 'border-red-500 focus-visible:ring-red-500'
+                              : ''
+                          }
+                        />
+                      </FormControl>
+                      {exceedsCapacity && (
+                        <p className="text-sm text-red-500 mt-1">
+                          Box number exceeds room capacity ({roomCapacity})
+                        </p>
+                      )}
+                      {!exceedsCapacity && roomCapacity !== null && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Room capacity: {roomCapacity}
+                        </p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField

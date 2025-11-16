@@ -112,18 +112,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = entryReceiptSchema.parse(body);
 
-    // Check if receipt number already exists
-    const existingReceipt = await prisma.entryReceipt.findUnique({
-      where: { receiptNo: validatedData.receiptNo },
-    });
-
-    if (existingReceipt) {
-      return NextResponse.json(
-        { success: false, error: 'Receipt number already exists' },
-        { status: 400 }
-      );
-    }
-
     // Calculate totals for each item
     const items = validatedData.items.map((item) => {
       const totalPrice = item.quantity * item.unitPrice;

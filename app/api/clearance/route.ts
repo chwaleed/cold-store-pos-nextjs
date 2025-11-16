@@ -388,17 +388,20 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // Create ledger entry for clearance (credit)
-      await tx.ledger.create({
-        data: {
-          customerId: validatedData.customerId,
-          type: 'clearance',
-          clearanceReceiptId: receipt.id,
-          description: `Clearance: ${validatedData.receiptNo}`,
-          debitAmount: 0,
-          creditAmount: totalAmount,
-        },
-      });
+      // Create ledger entry for payment if paymentAmount > 0
+      const paymentAmount = validatedData.paymentAmount || 0;
+      if (paymentAmount > 0) {
+        await tx.ledger.create({
+          data: {
+            customerId: validatedData.customerId,
+            type: 'clearance',
+            clearanceReceiptId: receipt.id,
+            description: `Clearance: ${validatedData.receiptNo}`,
+            debitAmount: 0,
+            creditAmount: paymentAmount,
+          },
+        });
+      }
 
       return receipt;
     });

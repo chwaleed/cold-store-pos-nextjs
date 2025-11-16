@@ -74,6 +74,7 @@ export function ClearanceForm() {
       receiptNo: '',
       description: '',
       clearanceDate: new Date(),
+      paymentAmount: 0,
       items: [],
     },
   });
@@ -367,7 +368,7 @@ export function ClearanceForm() {
           unitPrice={selectedItem?.unitPrice ?? 0}
           hasKhaliJali={
             (selectedItem?.hasKhaliJali &&
-              selectedItem?.remainingKjQuantity > 0) ??
+              ((selectedItem as any)?.remainingKjQuantity ?? 0) > 0) ??
             false
           }
           kjQuantity={

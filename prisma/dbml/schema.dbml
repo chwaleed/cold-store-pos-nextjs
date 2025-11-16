@@ -61,7 +61,7 @@ Table PackType {
 
 Table EntryReceipt {
   id Int [pk, increment]
-  receiptNo String [unique, not null]
+  receiptNo String [not null]
   customerId Int [not null]
   carNo String [not null]
   entryDate DateTime [default: `now()`, not null]
