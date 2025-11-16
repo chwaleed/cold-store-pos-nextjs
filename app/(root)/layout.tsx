@@ -22,7 +22,6 @@ const RootLayout = ({ children }: RootLayoutProps) => {
   const state = useStore((state) => state);
 
   const fetchFilters = async () => {
-    console.log('Fetching filters');
     try {
       const [types, subTypes, rooms, packTypes] = await Promise.all([
         axios.get('/api/producttype'),

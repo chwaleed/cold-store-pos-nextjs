@@ -170,8 +170,6 @@ export function EntryReceiptPreview({ entryId }: EntryReceiptPreviewProps) {
     {
       name: 'KJ',
       accessor: (row: any) => {
-        console.log('reow ', row);
-
         if (row.hasKhaliJali && row.kjQuantity) {
           return (
             <div className="text-xs leading-tight">

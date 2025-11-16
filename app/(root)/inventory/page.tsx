@@ -18,6 +18,7 @@ export default function InventoryPage() {
     subType: 'all',
     dateFrom: '',
     dateTo: '',
+    search: '',
   });
 
   return (

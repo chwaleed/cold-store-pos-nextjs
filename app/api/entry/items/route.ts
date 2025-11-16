@@ -12,6 +12,9 @@ export async function GET(request: NextRequest) {
     const entryReceiptNo = searchParams.get('entryReceiptNo');
     const roomId = searchParams.get('roomId');
     const productTypeId = searchParams.get('productTypeId');
+    const productSubTypeId = searchParams.get('productSubTypeId');
+    const dateFrom = searchParams.get('dateFrom');
+    const dateTo = searchParams.get('dateTo');
 
     const skip = (page - 1) * limit;
 
@@ -27,14 +30,6 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    // Filter by entry receipt number
-    if (entryReceiptNo) {
-      where.entryReceipt = {
-        ...where.entryReceipt,
-        receiptNo: { contains: entryReceiptNo },
-      };
-    }
-
     // Filter by room
     if (roomId) {
       where.roomId = parseInt(roomId);
@@ -45,11 +40,40 @@ export async function GET(request: NextRequest) {
       where.productTypeId = parseInt(productTypeId);
     }
 
-    // Search by box number or marka
+    // Filter by product subtype
+    if (productSubTypeId) {
+      where.productSubTypeId = parseInt(productSubTypeId);
+    }
+
+    // Filter by date range
+    if (dateFrom || dateTo) {
+      where.entryReceipt = {
+        ...where.entryReceipt,
+        entryDate: {},
+      };
+
+      if (dateFrom) {
+        where.entryReceipt.entryDate.gte = new Date(dateFrom);
+      }
+
+      if (dateTo) {
+        // Set to end of day
+        const endDate = new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        where.entryReceipt.entryDate.lte = endDate;
+      }
+    }
+
+    // Combined search for receipt number, marka, and box number
+    // Supports searching by any of these fields in a single search input
     if (search) {
       where.OR = [
-        { boxNo: { contains: search } },
         { marka: { contains: search } },
+        {
+          entryReceipt: {
+            receiptNo: { contains: search },
+          },
+        },
       ];
     }
 

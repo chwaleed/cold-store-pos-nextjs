@@ -82,11 +82,15 @@ export interface ClearedItemWithDetails {
   clearQuantity: number;
   clearKjQuantity: number | null;
   productName: string;
+  type: string;
+  subType: string;
   packName: string;
   roomName: string;
+  boxNo: string | null;
   availableQty: number;
   unitPrice: number;
   hasKhaliJali: boolean;
   kjQuantity?: number | null;
   kjUnitPrice?: number | null;
+  grandTotal: number;
 }

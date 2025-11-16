@@ -9,8 +9,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@radix-ui/react-checkbox';
-import { Label } from '@/components/ui/label';
 import useStore from '@/app/(root)/(store)/store';
 
 interface InventoryFiltersProps {
@@ -20,16 +18,19 @@ interface InventoryFiltersProps {
     subType: string;
     dateFrom: string;
     dateTo: string;
+    search: string;
   };
   setFilters: (filters: any) => void;
+  searchPlaceholder?: string;
 }
 
 export function InventoryFilters({
   filters,
   setFilters,
+  searchPlaceholder = 'Search by receipt no, marka, or box no...',
 }: InventoryFiltersProps) {
   const [subTypesToShow, setSubTypesToShow] = useState<any[]>([]);
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState(filters.search || '');
   const rooms = useStore((state) => state.rooms);
   const types = useStore((state) => state.types);
   const subTypes = useStore((state) => state.subType);
@@ -42,12 +43,21 @@ export function InventoryFilters({
       );
       setSubTypesToShow(filtered);
     } else {
-      {
-        setSubTypesToShow([]);
-      }
+      setSubTypesToShow([]);
     }
   }, [filters.type, subTypes]);
-  // console.log('Current subtypes:', filters);
+
+  // Debounce search input
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchInput !== filters.search) {
+        setFilters({ ...filters, search: searchInput });
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
 
   return (
     <div className="space-y-3">
@@ -55,15 +65,15 @@ export function InventoryFilters({
       <div className="flex gap-5">
         <div className="w-full">
           <Input
-            placeholder="Search inventory..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            placeholder={searchPlaceholder}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="w-full"
           />
         </div>
 
         {/* Compact Filters */}
-        <div className="flex  gap-2">
+        <div className="flex gap-2">
           <Select
             value={filters.room}
             onValueChange={(value) => setFilters({ ...filters, room: value })}
