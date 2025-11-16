@@ -2,32 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { entryReceiptSchema } from '@/schema/entry';
 
-// Generate receipt number in format: CS-YYYYMMDD-XXXX
-async function generateReceiptNumber(): Promise<string> {
-  const today = new Date();
-  const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
-
-  // Find the last receipt number for today
-  const lastReceipt = await prisma.entryReceipt.findFirst({
-    where: {
-      receiptNo: {
-        startsWith: `CS-${dateStr}`,
-      },
-    },
-    orderBy: {
-      receiptNo: 'desc',
-    },
-  });
-
-  let sequence = 1;
-  if (lastReceipt) {
-    const lastSequence = parseInt(lastReceipt.receiptNo.split('-')[2]);
-    sequence = lastSequence + 1;
-  }
-
-  return `CS-${dateStr}-${sequence.toString().padStart(4, '0')}`;
-}
-
 // GET /api/entry - List entry receipts
 export async function GET(request: NextRequest) {
   try {
@@ -74,7 +48,7 @@ export async function GET(request: NextRequest) {
         where,
         skip,
         take: limit,
-        orderBy: { entryDate: 'desc' },
+        orderBy: { id: 'desc' },
         include: {
           customer: true,
           _count: {

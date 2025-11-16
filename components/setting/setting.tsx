@@ -12,8 +12,8 @@ export function Setting() {
   const [activeTab, setActiveTab] = useState('products');
 
   return (
-    <div className="flex w-full flex-col">
-      <div className="flex rounded-xl min-h-[calc(100vh_-_theme(spacing.16))] flex-1 flex-col gap-4 bg-muted/40  md:gap-8 p-6 ">
+    <div className="flex w-full  flex-col">
+      <div className="flex rounded-xl  flex-1 flex-col gap-4   md:gap-8 p-6 ">
         <div className="mx-auto w-full  space-y-6">
           <div className="flex items-center gap-3">
             <Settings2 className="h-8 w-8" />

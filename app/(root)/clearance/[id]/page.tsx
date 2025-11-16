@@ -20,7 +20,7 @@ export default function ClearanceDetailsPage() {
 
   return (
     <div className="h-full w-full bg-white rounded-xl p-6 space-y-6">
-      <ClearnceReceiptPreview clearanceId={params.id} />
+      <ClearnceReceiptPreview clearanceId={Number(params.id)} />
     </div>
   );
 }
