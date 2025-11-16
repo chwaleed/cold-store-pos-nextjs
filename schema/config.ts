@@ -3,10 +3,12 @@ import { z } from 'zod';
 // ProductType schemas
 export const productTypeSchema = z.object({
   name: z.string().min(1, 'Product type name is required'),
+  doubleRentAfter30Days: z.boolean().default(false),
 });
 
 export const updateProductTypeSchema = z.object({
   name: z.string().min(1, 'Product type name is required').optional(),
+  doubleRentAfter30Days: z.boolean().optional(),
 });
 
 // ProductSubType schemas

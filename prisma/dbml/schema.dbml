@@ -71,6 +71,7 @@ Table EntryReceipt {
   updatedAt DateTime [not null]
   customer Customer [not null]
   items EntryItem [not null]
+  ledgerEntries Ledger [not null]
 }
 
 Table EntryItem {
@@ -88,6 +89,7 @@ Table EntryItem {
   totalPrice Float [not null]
   hasKhaliJali Boolean [not null, default: false]
   kjQuantity Float
+  remainingKjQuantity Float
   kjUnitPrice Float
   kjTotal Float
   grandTotal Float [not null]
@@ -103,7 +105,7 @@ Table EntryItem {
 
 Table ClearanceReceipt {
   id Int [pk, increment]
-  clearanceNo String [unique, not null]
+  clearanceNo String [not null]
   customerId Int [not null]
   carNo String
   clearanceDate DateTime [default: `now()`, not null]
@@ -113,6 +115,7 @@ Table ClearanceReceipt {
   updatedAt DateTime [not null]
   customer Customer [not null]
   clearedItems ClearedItem [not null]
+  ledgerEntries Ledger [not null]
 }
 
 Table ClearedItem {
@@ -132,7 +135,9 @@ Table ClearedItem {
 Table Ledger {
   id Int [pk, increment]
   customerId Int [not null]
-  invoiceId Int
+  type String [not null]
+  entryReceiptId Int
+  clearanceReceiptId Int
   description String [not null]
   debitAmount Float [not null, default: 0]
   creditAmount Float [not null, default: 0]
@@ -140,6 +145,8 @@ Table Ledger {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   customer Customer [not null]
+  entryReceipt EntryReceipt
+  clearanceReceipt ClearanceReceipt
 }
 
 Table ExpenseCategory {
@@ -192,5 +199,9 @@ Ref: ClearedItem.clearanceReceiptId > ClearanceReceipt.id [delete: Cascade]
 Ref: ClearedItem.entryItemId > EntryItem.id [delete: Cascade]
 
 Ref: Ledger.customerId > Customer.id [delete: Cascade]
+
+Ref: Ledger.entryReceiptId > EntryReceipt.id [delete: Set Null]
+
+Ref: Ledger.clearanceReceiptId > ClearanceReceipt.id [delete: Set Null]
 
 Ref: Expense.categoryId > ExpenseCategory.id [delete: Cascade]

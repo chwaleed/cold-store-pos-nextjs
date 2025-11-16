@@ -202,14 +202,33 @@ export function EntryReceiptPreview({ entryId }: EntryReceiptPreviewProps) {
     },
     {
       name: 'Rem',
-      accessor: (row: any) => (
-        <Badge
-          variant={row.remainingQuantity === 0 ? 'outline' : 'default'}
-          className="text-xs px-1.5 py-0 h-5"
-        >
-          {row.remainingQuantity}
-        </Badge>
-      ),
+      accessor: (row: any) => {
+        // Item is fully cleared only when ALL quantities are 0
+        const isFullyCleared = row.hasKhaliJali
+          ? row.remainingQuantity === 0 && (row.remainingKjQuantity ?? 0) === 0
+          : row.remainingQuantity === 0;
+
+        return (
+          <div className="text-right space-y-0.5">
+            <Badge
+              variant={row.remainingQuantity === 0 ? 'outline' : 'default'}
+              className="text-xs px-1.5 py-0 h-5"
+            >
+              {row.remainingQuantity}
+            </Badge>
+            {row.hasKhaliJali && row.remainingKjQuantity !== null && (
+              <Badge
+                variant={
+                  (row.remainingKjQuantity ?? 0) === 0 ? 'outline' : 'default'
+                }
+                className="text-xs px-1.5 py-0 h-5 ml-1"
+              >
+                KJ: {row.remainingKjQuantity}
+              </Badge>
+            )}
+          </div>
+        );
+      },
       id: 'remaining',
       className: 'text-right',
       headerClassName: 'text-right',

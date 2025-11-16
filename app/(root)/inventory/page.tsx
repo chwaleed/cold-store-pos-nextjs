@@ -19,6 +19,7 @@ export default function InventoryPage() {
     dateFrom: '',
     dateTo: '',
     search: '',
+    customerId: '',
   });
 
   return (

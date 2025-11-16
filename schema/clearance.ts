@@ -1,20 +1,24 @@
 import { z } from 'zod';
 
 // Cleared Item schema
-export const clearedItemSchema = z.object({
-  entryItemId: z.number().int().positive('Entry item is required'),
-  clearQuantity: z
-    .number()
-    .positive('Quantity must be greater than 0')
-    .refine((val) => val > 0, {
-      message: 'Quantity cleared must be greater than 0',
-    }),
-  clearKjQuantity: z
-    .number()
-    .nonnegative('KJ quantity cannot be negative')
-    .optional()
-    .nullable(),
-});
+// Note: clearKjQuantity is optional and can be different from clearQuantity
+// Allows scenarios like: 10 packs stored with 50 KJ units
+// Either clearQuantity OR clearKjQuantity must be > 0 (can clear just one type)
+export const clearedItemSchema = z
+  .object({
+    entryItemId: z.number().int().positive('Entry item is required'),
+    clearQuantity: z.number().nonnegative('Quantity cannot be negative'),
+    clearKjQuantity: z
+      .number()
+      .nonnegative('KJ quantity cannot be negative')
+      .optional()
+      .nullable(),
+  })
+  .refine((data) => data.clearQuantity > 0 || (data.clearKjQuantity ?? 0) > 0, {
+    message:
+      'At least one of clearQuantity or clearKjQuantity must be greater than 0',
+    path: ['clearQuantity'],
+  });
 
 // Clearance Receipt schema
 export const clearanceReceiptSchema = z.object({

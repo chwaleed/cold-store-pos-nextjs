@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -18,13 +18,18 @@ interface InventoryItem {
   roomName: string;
   boxNo: string | null;
   availableQty: number;
-  storageTillDate: Date | null;
   unitPrice: number;
   currentPrice: number;
   totalValue: number;
   daysInStorage: number;
-  daysLeft: number | null;
+  displayDays: number;
   isDoubleRent: boolean;
+  hasKhaliJali: boolean;
+  kjQuantity: number | null;
+  kjUnitPrice: number | null;
+  remainingKjQuantity: number | null;
+  hasDoubleRentEnabled: boolean;
+  grandTotal: number;
 }
 
 interface InventoryTableProps {
@@ -34,6 +39,8 @@ interface InventoryTableProps {
     subType: string;
     dateFrom: string;
     dateTo: string;
+    search: string;
+    customerId: string;
   };
 }
 
@@ -48,10 +55,6 @@ export function InventoryTable({ filters }: InventoryTableProps) {
     totalValue: 0,
   });
 
-  useEffect(() => {
-    fetchInventory(1);
-  }, [filters]);
-
   const fetchInventory = async (page: number = currentPage) => {
     setLoading(true);
     try {
@@ -62,6 +65,9 @@ export function InventoryTable({ filters }: InventoryTableProps) {
       if (filters.subType !== 'all') params.append('subType', filters.subType);
       if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
       if (filters.dateTo) params.append('dateTo', filters.dateTo);
+      if (filters.search) params.append('search', filters.search);
+      if (filters.customerId && filters.customerId !== '')
+        params.append('customerId', filters.customerId);
 
       const response = await fetch(`/api/inventory?${params}`);
       const data = await response.json();
@@ -83,6 +89,11 @@ export function InventoryTable({ filters }: InventoryTableProps) {
     }
   };
 
+  useEffect(() => {
+    fetchInventory(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters]);
+
   const handlePageChange = (pageNo: number) => {
     setCurrentPage(pageNo);
     fetchInventory(pageNo);
@@ -97,8 +108,8 @@ export function InventoryTable({ filters }: InventoryTableProps) {
 
   const columns = [
     {
-      name: '#',
-      accessor: (_row: InventoryItem, index: number) => index + 1,
+      name: 'Recipt No',
+      accessor: 'reciptNo',
       id: 'index',
     },
     {
@@ -118,23 +129,16 @@ export function InventoryTable({ filters }: InventoryTableProps) {
       accessor: (row: InventoryItem) => row.marka || '-',
       id: 'marka',
     },
-    //  <div className="py-1">
-    //       <p className="font-medium text-sm leading-tight">
-    //         {row.productType?.name || 'N/A'}
-    //       </p>
-    //       {row.productSubType && (
-    //         <p className="text-xs text-muted-foreground leading-tight">
-    //           {row.productSubType.name}
-    //         </p>
-    //       )}
-    //     </div>
+
     {
       name: 'Product',
       accessor: (row: InventoryItem) => (
         <div>
-          <div>
-            {row.isDoubleRent && <span className="mr-1">⚡</span>}
-            {row.typeName}
+          <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1">{row.typeName}</div>
+            {row.hasDoubleRentEnabled && (
+              <Zap size={14} className=" text-yellow-500 fill-yellow-500" />
+            )}
           </div>
           {row.subtypeName && (
             <p className="text-xs text-muted-foreground leading-tight">
@@ -161,63 +165,90 @@ export function InventoryTable({ filters }: InventoryTableProps) {
 
     {
       name: 'Available Qty',
-      accessor: (row: InventoryItem) => row.availableQty.toFixed(2),
-      id: 'qty',
-      className: 'text-right font-medium',
-      headerClassName: 'text-right',
-    },
-    {
-      name: 'Storage Till',
-      accessor: (row: InventoryItem) =>
-        row.storageTillDate
-          ? format(new Date(row.storageTillDate), 'MMM dd, yyyy')
-          : '-',
-      id: 'storageTill',
-    },
-    {
-      name: 'Days Left',
       accessor: (row: InventoryItem) => (
-        <span className={getDaysLeftColor(row.daysLeft)}>
-          {row.daysLeft !== null ? `${row.daysLeft} days` : '-'}
-        </span>
+        <div className="text-right">
+          <span className="font-medium">{row.availableQty.toFixed(2)}</span>
+          {row.hasKhaliJali && row.remainingKjQuantity !== null && (
+            <p className="text-xs text-muted-foreground leading-tight">
+              KJ: {row.remainingKjQuantity.toFixed(2)}
+            </p>
+          )}
+        </div>
       ),
-      id: 'daysLeft',
+      id: 'qty',
       className: 'text-right',
       headerClassName: 'text-right',
     },
+    {
+      name: 'Days in Storage',
+      accessor: (row: InventoryItem) => (
+        <div className="text-center">
+          {row.hasDoubleRentEnabled && (
+            <p
+              className={`text-sm font-semibold ${
+                row.displayDays < 0 ? 'text-red-600' : 'text-muted-foreground'
+              }`}
+            >
+              {row.displayDays < 0
+                ? `${row.displayDays} days`
+                : `${row.daysInStorage} days`}
+            </p>
+          )}
+          {!row.hasDoubleRentEnabled && (
+            <p className="text-sm text-muted-foreground">
+              {row.daysInStorage} days
+            </p>
+          )}
+        </div>
+      ),
+      id: 'daysInStorage',
+      className: 'text-center',
+      headerClassName: 'text-center',
+    },
+
     {
       name: 'Price',
-      accessor: (row: InventoryItem) => {
-        console.log(row);
-        return (
-          <div className="text-xs leading-tight">
-            <p>
-              {row.availableQty} × {row.unitPrice?.toFixed(2)}
-            </p>
-            <p className="text-muted-foreground">
-              {/* = {row.totalPrice?.toFixed(2)} */}
-            </p>
-          </div>
-        );
-      },
+      accessor: (row: any) => (
+        <div className="text-xs leading-tight">
+          <p>
+            {row.availableQty} × {row?.unitPrice?.toFixed(2)}{' '}
+          </p>
+          <p className="text-muted-foreground">
+            = {(row.availableQty * row?.unitPrice).toFixed(2)}
+          </p>
+        </div>
+      ),
+
       id: 'unitPrice',
       className: 'text-right',
-      headerClassName: 'text-right',
+      headerClassName: 'text-center',
     },
     {
-      name: 'Current Price',
-      accessor: (row: InventoryItem) => (
-        <span className={row.isDoubleRent ? 'text-red-600 font-bold' : ''}>
-          PKR {row.currentPrice.toFixed(2)}
-        </span>
-      ),
+      name: 'KJ',
+      accessor: (row: any) => {
+        console.log(row);
+        if (row.hasKhaliJali) {
+          return (
+            <div className="text-xs leading-tight">
+              <p>
+                {row.remainingKjQuantity} × {row?.kjUnitPrice?.toFixed(2)}{' '}
+              </p>
+              <p className="text-muted-foreground">
+                = {row.remainingKjQuantity * row?.kjUnitPrice?.toFixed(2)}
+              </p>
+            </div>
+          );
+        }
+        return <span className="text-sm">-</span>;
+      },
+
       id: 'currentPrice',
       className: 'text-right',
-      headerClassName: 'text-right',
+      headerClassName: 'text-center',
     },
     {
       name: 'Total Value',
-      accessor: (row: InventoryItem) => `PKR ${row.totalValue.toFixed(2)}`,
+      accessor: (row: InventoryItem) => `PKR ${row.grandTotal.toFixed(2)}`,
       id: 'totalValue',
       className: 'text-right font-bold',
       headerClassName: 'text-right',
@@ -236,9 +267,7 @@ export function InventoryTable({ filters }: InventoryTableProps) {
             </div>
             <div className="flex items-center gap-2">
               <p className="text-sm text-muted-foreground">Total Quantity: </p>
-              <p className="text-xl font-bold">
-                {summary.totalQuantity.toFixed(2)}
-              </p>
+              <p className="text-xl font-bold">{summary.totalQuantity}</p>
             </div>
             <div className="flex items-center gap-2">
               <p className="text-sm text-muted-foreground">Total Value: </p>

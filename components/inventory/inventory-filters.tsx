@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import useStore from '@/app/(root)/(store)/store';
+import { CustomerSearchSelect } from '@/components/ui/customer-search-select';
 
 interface InventoryFiltersProps {
   filters: {
@@ -19,6 +20,7 @@ interface InventoryFiltersProps {
     dateFrom: string;
     dateTo: string;
     search: string;
+    customerId: string;
   };
   setFilters: (filters: any) => void;
   searchPlaceholder?: string;
@@ -65,7 +67,7 @@ export function InventoryFilters({
       <div className="flex gap-5">
         <div className="w-full">
           <Input
-            placeholder={searchPlaceholder}
+            placeholder="Search by receipt no, marka..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className="w-full"
@@ -74,6 +76,20 @@ export function InventoryFilters({
 
         {/* Compact Filters */}
         <div className="flex gap-2">
+          <div className="w-[200px]">
+            <CustomerSearchSelect
+              value={filters.customerId ? parseInt(filters.customerId) : 0}
+              onValueChange={(value) =>
+                setFilters({
+                  ...filters,
+                  customerId: value ? value.toString() : '',
+                })
+              }
+              placeholder="All Customers"
+              allowClear
+            />
+          </div>
+
           <Select
             value={filters.room}
             onValueChange={(value) => setFilters({ ...filters, room: value })}

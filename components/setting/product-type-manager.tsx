@@ -28,8 +28,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -76,6 +78,7 @@ export function ProductTypeManager() {
     resolver: zodResolver(productTypeSchema),
     defaultValues: {
       name: '',
+      doubleRentAfter30Days: false,
     },
   });
 
@@ -124,7 +127,10 @@ export function ProductTypeManager() {
   const handleEdit = (productType: ProductTypeWithDetails) => {
     setSelectedId(productType.id);
     setEditMode(true);
-    form.reset({ name: productType.name });
+    form.reset({
+      name: productType.name,
+      doubleRentAfter30Days: productType.doubleRentAfter30Days || false,
+    });
     setDialogOpen(true);
   };
 
@@ -155,7 +161,10 @@ export function ProductTypeManager() {
   const handleAddNew = () => {
     setEditMode(false);
     setSelectedId(null);
-    form.reset({ name: '' });
+    form.reset({
+      name: '',
+      doubleRentAfter30Days: false,
+    });
     setDialogOpen(true);
   };
 
@@ -259,6 +268,27 @@ export function ProductTypeManager() {
                       <Input placeholder="e.g., Potato" {...field} />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="doubleRentAfter30Days"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Double Amount After 30 Days</FormLabel>
+                      <FormDescription>
+                        Automatically double the rental price for items stored
+                        longer than 30 days
+                      </FormDescription>
+                    </div>
                   </FormItem>
                 )}
               />

@@ -1,6 +1,7 @@
 export interface ProductType {
   id: number;
   name: string;
+  doubleRentAfter30Days: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

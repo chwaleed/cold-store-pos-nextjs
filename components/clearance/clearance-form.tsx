@@ -108,8 +108,10 @@ export function ClearanceForm() {
 
   const handleSelectItemForQuantity = (item: EntryItemWithDetails) => {
     setSelectedItem(item);
-    setClearQuantity(item.remainingQuantity);
-    setClearKjQuantity(item.hasKhaliJali ? item.kjQuantity || 0 : 0);
+    // Set product quantity (can be 0 if only KJ is remaining)
+    setClearQuantity(item.remainingQuantity || 0);
+    // Set KJ quantity if applicable
+    setClearKjQuantity(item.hasKhaliJali ? item.remainingKjQuantity || 0 : 0);
     setShowQuantityDialog(true);
   };
 
@@ -121,15 +123,33 @@ export function ClearanceForm() {
       (selectedItem as any).availableQty ??
       0;
 
-    if (clearQuantity <= 0 || clearQuantity > availableQty) {
-      toast.error(`Quantity must be between 1 and ${availableQty}`);
+    const hasKj = (selectedItem as any).hasKhaliJali;
+    const maxKj =
+      (selectedItem as any).remainingKjQuantity ??
+      (selectedItem as any).kjQuantity ??
+      0;
+
+    // Validate that at least one quantity is being cleared
+    if (clearQuantity <= 0 && clearKjQuantity <= 0) {
+      toast.error('You must clear at least product quantity or KJ quantity');
       return;
     }
 
-    const hasKj = (selectedItem as any).hasKhaliJali;
-    const maxKj = (selectedItem as any).kjQuantity ?? 0;
-    if (hasKj && (clearKjQuantity < 0 || clearKjQuantity > maxKj)) {
-      toast.error(`KJ quantity must be between 0 and ${maxKj}`);
+    // Validate product quantity doesn't exceed available
+    if (clearQuantity > availableQty) {
+      toast.error(`Product quantity cannot exceed ${availableQty}`);
+      return;
+    }
+
+    // Validate KJ quantity doesn't exceed available
+    if (clearKjQuantity > maxKj) {
+      toast.error(`KJ quantity cannot exceed ${maxKj}`);
+      return;
+    }
+
+    // Ensure we don't have negative values
+    if (clearQuantity < 0 || clearKjQuantity < 0) {
+      toast.error('Quantities cannot be negative');
       return;
     }
 
@@ -283,9 +303,19 @@ export function ClearanceForm() {
       : 0;
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
+      e.preventDefault();
+    }
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        onKeyDown={handleKeyDown}
+        className="space-y-6"
+      >
         <ClearanceFormFields
           form={form}
           onCustomerChange={handleCustomerChange}
@@ -335,8 +365,16 @@ export function ClearanceForm() {
           productName={getProductDisplay()}
           availableQuantity={getAvailableQuantity()}
           unitPrice={selectedItem?.unitPrice ?? 0}
-          hasKhaliJali={selectedItem?.hasKhaliJali ?? false}
-          kjQuantity={(selectedItem as any)?.kjQuantity ?? 0}
+          hasKhaliJali={
+            (selectedItem?.hasKhaliJali &&
+              selectedItem?.remainingKjQuantity > 0) ??
+            false
+          }
+          kjQuantity={
+            (selectedItem as any)?.remainingKjQuantity ??
+            (selectedItem as any)?.kjQuantity ??
+            0
+          }
           kjUnitPrice={(selectedItem as any)?.kjUnitPrice ?? 0}
           clearQuantity={clearQuantity}
           clearKjQuantity={clearKjQuantity}

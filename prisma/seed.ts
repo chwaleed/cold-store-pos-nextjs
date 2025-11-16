@@ -83,14 +83,12 @@ async function main() {
   const bori = await prisma.packType.create({
     data: {
       name: 'Bori',
-      rentPerDay: 2.0, // 2 PKR per day
     },
   });
 
   const jali = await prisma.packType.create({
     data: {
       name: 'Jali',
-      rentPerDay: 1.5, // 1.5 PKR per day
     },
   });
 

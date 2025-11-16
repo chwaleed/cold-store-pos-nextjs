@@ -42,6 +42,7 @@ interface EntryItemDialogProps {
   productSubTypes: ProductSubType[];
   rooms: Room[];
   packTypes: PackType[];
+  isEditMode?: boolean; // Flag to indicate if we're in entry edit mode
 }
 
 export function EntryItemDialog({
@@ -53,6 +54,7 @@ export function EntryItemDialog({
   productSubTypes,
   rooms,
   packTypes,
+  isEditMode = false,
 }: EntryItemDialogProps) {
   const [submitting, setSubmitting] = useState(false);
 
@@ -94,7 +96,9 @@ export function EntryItemDialog({
     }
   }, [editItem, form]);
 
-  const onSubmit = async (data: EntryItemFormData) => {
+  const onSubmit = async (data: EntryItemFormData, e?: React.FormEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     setSubmitting(true);
     try {
       onAdd(data);
@@ -136,7 +140,19 @@ export function EntryItemDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit(onSubmit)(e);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
+                e.preventDefault();
+              }
+            }}
+            className="space-y-4"
+          >
             {/* Product Information */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <FormField
@@ -151,6 +167,7 @@ export function EntryItemDialog({
                         field.onChange(parseInt(value));
                         form.setValue('productSubTypeId', null);
                       }}
+                      disabled={isEditMode && !!editItem}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -182,7 +199,9 @@ export function EntryItemDialog({
                         field.onChange(value ? parseInt(value) : null)
                       }
                       disabled={
-                        !selectedTypeId || filteredSubTypes.length === 0
+                        !selectedTypeId ||
+                        filteredSubTypes.length === 0 ||
+                        (isEditMode && !!editItem)
                       }
                     >
                       <FormControl>

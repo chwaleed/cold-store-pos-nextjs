@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Eye, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,7 +25,6 @@ import {
 import { Customer } from '@/types/customer';
 import { useToast } from '@/components/ui/use-toast';
 import { EditCustomerDialog } from './edit-customer-dialog';
-import { ViewCustomerDialog } from './view-customer-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface CustomerTableProps {
@@ -44,9 +44,9 @@ export function CustomerTable({
   onPageChange,
   onRefresh,
 }: CustomerTableProps) {
+  const router = useRouter();
   const [deleteCustomerId, setDeleteCustomerId] = useState<number | null>(null);
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
-  const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
 
   const handleDelete = async () => {
@@ -128,7 +128,8 @@ export function CustomerTable({
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => setViewCustomer(customer)}
+                        onClick={() => router.push(`/customers/${customer.id}`)}
+                        title="View details"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -136,6 +137,7 @@ export function CustomerTable({
                         size="icon"
                         variant="ghost"
                         onClick={() => setEditCustomer(customer)}
+                        title="Edit customer"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -143,6 +145,7 @@ export function CustomerTable({
                         size="icon"
                         variant="ghost"
                         onClick={() => setDeleteCustomerId(customer.id)}
+                        title="Delete customer"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -205,14 +208,6 @@ export function CustomerTable({
             setEditCustomer(null);
             onRefresh();
           }}
-        />
-      )}
-
-      {viewCustomer && (
-        <ViewCustomerDialog
-          customerId={viewCustomer.id}
-          open={!!viewCustomer}
-          onOpenChange={(open) => !open && setViewCustomer(null)}
         />
       )}
     </>

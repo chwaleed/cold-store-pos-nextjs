@@ -23,12 +23,16 @@ interface CustomerSearchSelectProps {
   value?: number;
   onValueChange: (value: number) => void;
   disabled?: boolean;
+  placeholder?: string;
+  allowClear?: boolean;
 }
 
 export function CustomerSearchSelect({
   value,
   onValueChange,
   disabled,
+  placeholder = 'Select customer...',
+  allowClear = false,
 }: CustomerSearchSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [customers, setCustomers] = React.useState<Customer[]>([]);
@@ -106,7 +110,7 @@ export function CustomerSearchSelect({
           className="w-full justify-between"
           disabled={disabled}
         >
-          {selectedCustomer ? selectedCustomer.name : 'Select customer...'}
+          {selectedCustomer ? selectedCustomer.name : placeholder}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -133,6 +137,24 @@ export function CustomerSearchSelect({
             </CommandEmpty>
 
             <CommandGroup>
+              {allowClear && value > 0 && (
+                <CommandItem
+                  value="clear"
+                  onSelect={() => {
+                    onValueChange(0);
+                    setOpen(false);
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onValueChange(0);
+                    setOpen(false);
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="!text-gray-500 cursor-pointer !opacity-100 hover:!text-gray-700"
+                >
+                  <span className="italic">Clear selection</span>
+                </CommandItem>
+              )}
               {customers.map((customer) => (
                 <CommandItem
                   key={customer.id}

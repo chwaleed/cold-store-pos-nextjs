@@ -34,6 +34,13 @@ interface EntryEditFormProps {
   entryId: number;
 }
 
+interface ItemClearanceStatus {
+  entryItemId: number;
+  isCleared: boolean;
+  remainingQuantity: number;
+  remainingKjQuantity: number | null;
+}
+
 export function EntryEditForm({ entryId }: EntryEditFormProps) {
   const productTypes = useStore((state) => state.types);
   const productSubTypes = useStore((state) => state.subType);
@@ -41,6 +48,9 @@ export function EntryEditForm({ entryId }: EntryEditFormProps) {
   const packTypes = useStore((state) => state.packTypes);
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(true);
+  const [itemClearanceStatus, setItemClearanceStatus] = useState<
+    Map<number, ItemClearanceStatus>
+  >(new Map());
   const { toast } = useToast();
   const router = useRouter();
 
@@ -75,8 +85,29 @@ export function EntryEditForm({ entryId }: EntryEditFormProps) {
         if (result.success) {
           const entry = result.data;
 
+          // Build clearance status map
+          const statusMap = new Map<number, ItemClearanceStatus>();
+          entry.items.forEach((item: any) => {
+            const isFullyCleared =
+              item.remainingQuantity === 0 &&
+              (!item.hasKhaliJali || item.remainingKjQuantity === 0);
+            const isPartiallyCleared =
+              item.quantity !== item.remainingQuantity ||
+              (item.hasKhaliJali &&
+                item.kjQuantity !== item.remainingKjQuantity);
+
+            statusMap.set(item.id, {
+              entryItemId: item.id,
+              isCleared: isFullyCleared || isPartiallyCleared,
+              remainingQuantity: item.remainingQuantity,
+              remainingKjQuantity: item.remainingKjQuantity,
+            });
+          });
+          setItemClearanceStatus(statusMap);
+
           // Map entry items to form format
           const formattedItems = entry.items.map((item: any) => ({
+            id: item.id, // Add item ID for tracking clearance
             productTypeId: item.productTypeId,
             productSubTypeId: item.productSubTypeId || undefined,
             packTypeId: item.packTypeId,
@@ -175,6 +206,12 @@ export function EntryEditForm({ entryId }: EntryEditFormProps) {
     }, 0);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
+      e.preventDefault();
+    }
+  };
+
   if (fetchingData) {
     return (
       <div className="space-y-4">
@@ -188,6 +225,7 @@ export function EntryEditForm({ entryId }: EntryEditFormProps) {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
+        onKeyDown={handleKeyDown}
         className="space-y-6 flex flex-col"
       >
         {/* Header Information */}
@@ -203,7 +241,7 @@ export function EntryEditForm({ entryId }: EntryEditFormProps) {
                     <CustomerSearchSelect
                       value={field.value}
                       onValueChange={field.onChange}
-                      disabled={loading}
+                      disabled={true}
                     />
                   </FormControl>
                   <FormMessage />
@@ -266,8 +304,9 @@ export function EntryEditForm({ entryId }: EntryEditFormProps) {
         {/* Items table - Note: Cannot delete items in edit mode */}
         <div className="space-y-2">
           <div className="text-sm text-muted-foreground">
-            Note: You can edit item details but cannot delete items in edit
-            mode.
+            Note: Click the pencil icon to edit item details (quantity, price, etc.).
+            Items with cleared quantity cannot be edited. When finished editing all items,
+            click &quot;Update Entry&quot; to save all changes.
           </div>
           <ItemTable
             control={form.control}
@@ -277,6 +316,19 @@ export function EntryEditForm({ entryId }: EntryEditFormProps) {
             fields={fields}
             remove={() => {}} // Disabled - no delete in edit mode
             onEdit={(index, item) => {
+              const itemId = (item as any).id;
+              const clearanceStatus = itemClearanceStatus.get(itemId);
+
+              if (clearanceStatus?.isCleared) {
+                toast({
+                  title: 'Cannot Edit',
+                  description:
+                    'This item has been cleared and cannot be edited.',
+                  variant: 'destructive',
+                });
+                return;
+              }
+
               setEditItem(item);
               setEditIndex(index);
               setItemDialogOpen(true);
@@ -287,6 +339,7 @@ export function EntryEditForm({ entryId }: EntryEditFormProps) {
             packTypes={packTypes}
             calculateItemTotal={calculateItemTotal}
             editMode={true}
+            itemClearanceStatus={itemClearanceStatus}
           />
         </div>
 
@@ -303,7 +356,10 @@ export function EntryEditForm({ entryId }: EntryEditFormProps) {
           }}
           onAdd={(data) => {
             if (editIndex !== null && editIndex !== undefined) {
-              update(editIndex, data);
+              // Preserve the item ID when updating
+              const itemId = (editItem as any)?.id;
+              const updatedData = itemId ? { ...data, id: itemId } : data;
+              update(editIndex, updatedData);
             } else {
               append(data);
             }
@@ -320,6 +376,7 @@ export function EntryEditForm({ entryId }: EntryEditFormProps) {
           productSubTypes={productSubTypes}
           rooms={rooms}
           packTypes={packTypes}
+          isEditMode={true}
         />
 
         {/* Grand Total & Actions */}

@@ -90,9 +90,18 @@ export function AvailableItemsDialog({
     },
     {
       name: 'Available Qty',
-      accessor: (row: EntryItemWithDetails) => row.remainingQuantity,
+      accessor: (row: EntryItemWithDetails) => (
+        <div className="text-right">
+          <span className="font-medium">{row.remainingQuantity}</span>
+          {row.hasKhaliJali && row.remainingKjQuantity !== null && (
+            <p className="text-xs text-muted-foreground leading-tight">
+              KJ: {row.remainingKjQuantity}
+            </p>
+          )}
+        </div>
+      ),
       id: 'qty',
-      className: 'text-center',
+      className: 'text-right',
       headerClassName: 'text-right',
     },
     {
@@ -114,15 +123,14 @@ export function AvailableItemsDialog({
     {
       name: 'KJ',
       accessor: (row: any) => {
-        console.log('row ', row);
-        if (row.hasKhaliJali && row.kjQuantity) {
+        if (row.hasKhaliJali && row?.remainingKjQuantity > 0) {
           return (
             <div className="text-xs leading-tight">
               <p>
-                {row.kjQuantity} × {row.kjUnitPrice?.toFixed(2)}
+                {row.remainingKjQuantity} × {row.kjUnitPrice?.toFixed(2)}
               </p>
               <p className="text-muted-foreground">
-                = {row.kjTotal?.toFixed(2)}
+                = {(row?.remainingKjQuantity * row.kjUnitPrice)?.toFixed(2)}
               </p>
             </div>
           );
@@ -139,7 +147,11 @@ export function AvailableItemsDialog({
         <Button
           size="sm"
           onClick={() => onSelectItem(row)}
-          disabled={clearedItemIds.includes(row.id)}
+          disabled={
+            clearedItemIds.includes(row.id) ||
+            (row.remainingQuantity <= 0 &&
+              (!row.hasKhaliJali || (row.remainingKjQuantity ?? 0) <= 0))
+          }
         >
           <Plus className="h-4 w-4 mr-1" />
           Add

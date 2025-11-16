@@ -48,6 +48,7 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
       customerId: 0,
       carNo: '',
       receiptNo: '',
+      entryDate: new Date().toISOString().split('T')[0],
       description: '',
       items: [],
     },
@@ -133,15 +134,22 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
     return productSubTypes.filter((st) => st.productTypeId === productTypeId);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
+      e.preventDefault();
+    }
+  };
+
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
+        onKeyDown={handleKeyDown}
         className="space-y-6  flex flex-col"
       >
         {/* Header Information */}
         <div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <FormField
               control={form.control}
               name="customerId"
@@ -182,6 +190,20 @@ export function EntryForm({ onSuccess }: EntryFormProps) {
                   <FormLabel>Receipt No *</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., CS-20240101-0001" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="entryDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Entry Date *</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} value={field.value || ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

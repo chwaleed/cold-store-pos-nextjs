@@ -6,6 +6,13 @@ import { Button } from '@/components/ui/button';
 import DataTable from '@/components/dataTable/data-table';
 import { ProductType, ProductSubType, Room, PackType } from '@/types/config';
 
+interface ItemClearanceStatus {
+  entryItemId: number;
+  isCleared: boolean;
+  remainingQuantity: number;
+  remainingKjQuantity: number | null;
+}
+
 interface ItemTableProps {
   control: any;
   register: any;
@@ -20,6 +27,7 @@ interface ItemTableProps {
   packTypes: PackType[];
   calculateItemTotal: (index: number) => number;
   editMode?: boolean; // Add flag to indicate edit mode
+  itemClearanceStatus?: Map<number, ItemClearanceStatus>; // Track cleared items
 }
 
 export const ItemTable: React.FC<ItemTableProps> = ({
@@ -36,6 +44,7 @@ export const ItemTable: React.FC<ItemTableProps> = ({
   packTypes,
   calculateItemTotal,
   editMode = false,
+  itemClearanceStatus,
 }) => {
   const items = watch('items') || [];
 
@@ -122,22 +131,51 @@ export const ItemTable: React.FC<ItemTableProps> = ({
     },
     {
       name: 'Actions',
-      accessor: (row: any, index: number) => (
-        <div className="flex justify-end gap-2">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => typeof onEdit === 'function' && onEdit(index, row)}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-          {!editMode && (
-            <Button size="icon" variant="ghost" onClick={() => remove(index)}>
-              <Trash2 className="h-4 w-4 text-destructive" />
+      accessor: (row: any, index: number) => {
+        const itemId = row.id;
+        const isCleared = itemClearanceStatus?.get(itemId)?.isCleared || false;
+
+        return (
+          <div className="flex justify-end gap-2">
+            <Button
+              size="icon"
+              variant="ghost"
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof onEdit === 'function') {
+                  onEdit(index, row);
+                }
+              }}
+              disabled={editMode && isCleared}
+              title={
+                editMode && isCleared
+                  ? 'Cannot edit cleared items'
+                  : 'Edit item'
+              }
+            >
+              <Pencil
+                className={`h-4 w-4 ${editMode && isCleared ? 'opacity-50' : ''}`}
+              />
             </Button>
-          )}
-        </div>
-      ),
+            {!editMode && (
+              <Button
+                size="icon"
+                variant="ghost"
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  remove(index);
+                }}
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            )}
+          </div>
+        );
+      },
       id: 'actions',
       className: 'text-right',
       headerClassName: 'text-right',

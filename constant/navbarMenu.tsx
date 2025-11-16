@@ -19,16 +19,6 @@ export const NAVBAR_ITEMS: NavItem[] = [
     icon: <Home className="h-4 w-4" />,
   },
   {
-    title: 'Customers',
-    path: '/customers',
-    icon: <ShoppingCart className="h-4 w-4" />,
-  },
-  {
-    title: 'Product',
-    path: '/product',
-    icon: <Package className="h-4 w-4" />,
-  },
-  {
     title: 'Stock Entry',
     path: '/records',
     icon: <Archive className="h-4 w-4" />,
@@ -43,6 +33,12 @@ export const NAVBAR_ITEMS: NavItem[] = [
     path: '/inventory',
     icon: <Warehouse className="h-4 w-4" />,
   },
+  {
+    title: 'Customers',
+    path: '/customers',
+    icon: <ShoppingCart className="h-4 w-4" />,
+  },
+
   {
     title: 'Expenses',
     path: '/expenses',

@@ -64,7 +64,7 @@ export function QuantityDialog({
             {isEdit ? 'Edit' : 'Set'} Clearance Quantity
           </DialogTitle>
           <DialogDescription>
-            Specify how much quantity to clear for this item
+            At least one quantity (Product or KJ) must be greater than 0
           </DialogDescription>
         </DialogHeader>
 
@@ -82,7 +82,7 @@ export function QuantityDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="clear-qty">Clear Quantity *</Label>
+            <Label htmlFor="clear-qty">Clear Quantity</Label>
             <Input
               id="clear-qty"
               type="number"
@@ -107,7 +107,7 @@ export function QuantityDialog({
           {hasKhaliJali && (
             <div className="space-y-2">
               <Label htmlFor="clear-kj-qty">
-                Khali Jali Quantity (Max: {kjQuantity || 0})
+                Khali Jali Quantity (Available: {kjQuantity || 0})
               </Label>
               <Input
                 id="clear-kj-qty"

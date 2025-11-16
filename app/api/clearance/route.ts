@@ -255,8 +255,23 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Verify sufficient quantity
-      if (entryItem.remainingQuantity < item.clearQuantity) {
+      // Validate that at least one quantity is being cleared
+      const clearKjQuantity = item.clearKjQuantity ?? 0;
+      if (item.clearQuantity <= 0 && clearKjQuantity <= 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `At least one quantity (product or KJ) must be cleared for item ${item.entryItemId}`,
+          },
+          { status: 400 }
+        );
+      }
+
+      // Verify sufficient product quantity if being cleared
+      if (
+        item.clearQuantity > 0 &&
+        entryItem.remainingQuantity < item.clearQuantity
+      ) {
         return NextResponse.json(
           {
             success: false,
@@ -266,26 +281,14 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Verify KJ quantity if applicable
-      if (item.clearKjQuantity && item.clearKjQuantity > 0) {
-        if (!entryItem.hasKhaliJali) {
+      // Verify sufficient KJ quantity if being cleared
+      if (entryItem.hasKhaliJali && clearKjQuantity > 0) {
+        const availableKj = entryItem.remainingKjQuantity || 0;
+        if (clearKjQuantity > availableKj) {
           return NextResponse.json(
             {
               success: false,
-              error: `Item ${item.entryItemId} does not have Khali Jali`,
-            },
-            { status: 400 }
-          );
-        }
-
-        if (
-          !entryItem.kjQuantity ||
-          item.clearKjQuantity > entryItem.kjQuantity
-        ) {
-          return NextResponse.json(
-            {
-              success: false,
-              error: `Insufficient KJ quantity for item ${item.entryItemId}. Available: ${entryItem.kjQuantity || 0}, Requested: ${item.clearKjQuantity}`,
+              error: `Insufficient KJ quantity for item ${item.entryItemId}. Available: ${availableKj}, Requested: ${clearKjQuantity}`,
             },
             { status: 400 }
           );
@@ -295,8 +298,8 @@ export async function POST(request: NextRequest) {
       // Calculate item total amount
       const itemAmount = item.clearQuantity * entryItem.unitPrice;
       const kjAmount =
-        item.clearKjQuantity && entryItem.kjUnitPrice
-          ? item.clearKjQuantity * entryItem.kjUnitPrice
+        clearKjQuantity && entryItem.kjUnitPrice
+          ? clearKjQuantity * entryItem.kjUnitPrice
           : 0;
       const itemTotalAmount = itemAmount + kjAmount;
       totalAmount += itemTotalAmount;
@@ -305,7 +308,7 @@ export async function POST(request: NextRequest) {
         entryItemId: item.entryItemId,
         entryReceiptId: entryItem.entryReceiptId,
         clearQuantity: item.clearQuantity,
-        clearKjQuantity: item.clearKjQuantity || null,
+        clearKjQuantity: clearKjQuantity > 0 ? clearKjQuantity : null,
         totalAmount: itemTotalAmount,
       });
     }
@@ -361,24 +364,37 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Update remaining quantities in entry items
-      for (const item of validatedData.items) {
-        await tx.entryItem.update({
-          where: { id: item.entryItemId },
-          data: {
-            remainingQuantity: {
-              decrement: item.clearQuantity,
-            },
+      // Update remaining quantities in entry items and KJ quantities
+      for (const clearedItem of clearedItemsData) {
+        const entryItem = entryItems.find(
+          (ei) => ei.id === clearedItem.entryItemId
+        );
+        const updateData: any = {
+          remainingQuantity: {
+            decrement: clearedItem.clearQuantity,
           },
+        };
+
+        // Also decrement remaining KJ quantity if applicable
+        if (entryItem?.hasKhaliJali && clearedItem.clearKjQuantity) {
+          updateData.remainingKjQuantity = {
+            decrement: clearedItem.clearKjQuantity,
+          };
+        }
+
+        await tx.entryItem.update({
+          where: { id: clearedItem.entryItemId },
+          data: updateData,
         });
       }
 
-      // Create ledger entry for clearance amount (DEBIT)
+      // Create ledger entry for clearance (credit)
       await tx.ledger.create({
         data: {
           customerId: validatedData.customerId,
-          invoiceId: receipt.id,
-          description: `Clearance ${clearanceNo}`,
+          type: 'clearance',
+          clearanceReceiptId: receipt.id,
+          description: `Clearance: ${validatedData.receiptNo}`,
           debitAmount: 0,
           creditAmount: totalAmount,
         },

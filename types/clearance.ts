@@ -59,6 +59,7 @@ export interface EntryItemWithDetails {
   totalPrice: number;
   hasKhaliJali: boolean;
   kjQuantity: number | null;
+  remainingKjQuantity: number | null; // Track remaining KJ separately
   kjUnitPrice: number | null;
   kjTotal: number | null;
   grandTotal: number;

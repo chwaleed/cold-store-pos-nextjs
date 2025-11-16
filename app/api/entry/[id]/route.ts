@@ -82,7 +82,7 @@ export async function PUT(
       );
     }
 
-    // Check if entry receipt exists
+    // Check if entry receipt exists and get old total amount
     const existingReceipt = await prisma.entryReceipt.findUnique({
       where: { id },
       include: {
@@ -97,17 +97,28 @@ export async function PUT(
       );
     }
 
-    // Calculate total amount
-    let totalAmount = 0;
+    const oldTotalAmount = existingReceipt.totalAmount;
+
+    // Build a map of existing items by their id to preserve clearance data
+    const existingItemsMap = new Map(
+      existingReceipt.items.map((item) => [item.id, item])
+    );
+
+    // Calculate new total amount
+    let newTotalAmount = 0;
     const processedItems = items.map((item: any) => {
       const totalPrice = item.quantity * item.unitPrice;
       const kjTotal = item.hasKhaliJali
         ? (item.kjQuantity || 0) * (item.kjUnitPrice || 0)
         : 0;
       const grandTotal = totalPrice + kjTotal;
-      totalAmount += grandTotal;
+      newTotalAmount += grandTotal;
+
+      // Get the existing item to preserve remaining quantities
+      const existingItem = item.id ? existingItemsMap.get(item.id) : null;
 
       return {
+        id: item.id || undefined, // Preserve id if editing existing item
         productTypeId: item.productTypeId,
         productSubTypeId: item.productSubTypeId || null,
         packTypeId: item.packTypeId,
@@ -115,35 +126,61 @@ export async function PUT(
         boxNo: item.boxNo || null,
         marka: item.marka || null,
         quantity: item.quantity,
-        remainingQuantity: item.quantity, // Keep as initial quantity
+        // Preserve remaining quantity if item was partially cleared
+        remainingQuantity: existingItem
+          ? Math.min(item.quantity, existingItem.remainingQuantity)
+          : item.quantity,
         unitPrice: item.unitPrice,
         totalPrice,
         hasKhaliJali: item.hasKhaliJali || false,
         kjQuantity: item.kjQuantity || null,
+        // Preserve remaining KJ quantity if item was partially cleared
+        remainingKjQuantity:
+          existingItem && item.kjQuantity
+            ? Math.min(item.kjQuantity, existingItem.remainingKjQuantity || 0)
+            : item.kjQuantity || null,
         kjUnitPrice: item.kjUnitPrice || null,
         kjTotal: kjTotal > 0 ? kjTotal : null,
         grandTotal,
       };
     });
 
-    // Update entry receipt and items in transaction
+    // Update entry receipt, items, and ledger in transaction
     const updatedReceipt = await prisma.$transaction(async (tx) => {
-      // Delete existing items
-      await tx.entryItem.deleteMany({
-        where: { entryReceiptId: id },
-      });
+      // Update existing items or create new ones
+      for (const processedItem of processedItems) {
+        if (processedItem.id) {
+          // Update existing item
+          await tx.entryItem.update({
+            where: { id: processedItem.id },
+            data: {
+              quantity: processedItem.quantity,
+              remainingQuantity: processedItem.remainingQuantity,
+              unitPrice: processedItem.unitPrice,
+              totalPrice: processedItem.totalPrice,
+              hasKhaliJali: processedItem.hasKhaliJali,
+              kjQuantity: processedItem.kjQuantity,
+              remainingKjQuantity: processedItem.remainingKjQuantity,
+              kjUnitPrice: processedItem.kjUnitPrice,
+              kjTotal: processedItem.kjTotal,
+              grandTotal: processedItem.grandTotal,
+              boxNo: processedItem.boxNo,
+              marka: processedItem.marka,
+              packTypeId: processedItem.packTypeId,
+              roomId: processedItem.roomId,
+            },
+          });
+        }
+      }
 
-      // Update entry receipt and create new items
-      return await tx.entryReceipt.update({
+      // Update entry receipt with new total
+      const receipt = await tx.entryReceipt.update({
         where: { id },
         data: {
           customerId,
           carNo,
           description: description || null,
-          totalAmount,
-          items: {
-            create: processedItems,
-          },
+          totalAmount: newTotalAmount,
         },
         include: {
           customer: true,
@@ -157,12 +194,36 @@ export async function PUT(
           },
         },
       });
+
+      // Update the ledger entry if amount changed
+      if (oldTotalAmount !== newTotalAmount) {
+        // Find the ledger entry for this receipt
+        const ledgerEntry = await tx.ledger.findFirst({
+          where: {
+            entryReceiptId: id,
+            type: 'adding_inventory',
+          },
+        });
+
+        if (ledgerEntry) {
+          // Update the ledger entry with new debit amount
+          await tx.ledger.update({
+            where: { id: ledgerEntry.id },
+            data: {
+              debitAmount: newTotalAmount,
+              description: `Entry Receipt: ${existingReceipt.receiptNo} (Updated)`,
+            },
+          });
+        }
+      }
+
+      return receipt;
     });
 
     return NextResponse.json({
       success: true,
       data: updatedReceipt,
-      message: 'Entry receipt updated successfully',
+      message: 'Entry receipt and ledger updated successfully',
     });
   } catch (error) {
     console.error('Error updating entry receipt:', error);

@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Plus, Search, Eye, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import DataTable from '@/components/dataTable/data-table';
 import { AddCustomerDialog } from '@/components/customer/add-customer-dialog';
 import { EditCustomerDialog } from '@/components/customer/edit-customer-dialog';
-import { ViewCustomerDialog } from '@/components/customer/view-customer-dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +23,7 @@ import { useDebounce } from 'use-debounce';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function CustomerPage() {
+  const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,7 +33,6 @@ export default function CustomerPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [deleteCustomerId, setDeleteCustomerId] = useState<number | null>(null);
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
-  const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const { toast } = useToast();
 
@@ -147,8 +147,9 @@ export default function CustomerPage() {
           <Button
             size="icon"
             variant="ghost"
-            onClick={() => setViewCustomer(row)}
+            onClick={() => router.push(`/customers/${row.id}`)}
             className="h-8 w-8"
+            title="View details"
           >
             <Eye className="h-4 w-4" />
           </Button>
@@ -157,6 +158,7 @@ export default function CustomerPage() {
             variant="ghost"
             onClick={() => setEditCustomer(row)}
             className="h-8 w-8"
+            title="Edit customer"
           >
             <Pencil className="h-4 w-4" />
           </Button>
@@ -165,6 +167,7 @@ export default function CustomerPage() {
             variant="ghost"
             onClick={() => setDeleteCustomerId(row.id)}
             className="h-8 w-8 text-red-600 hover:text-red-700"
+            title="Delete customer"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -246,14 +249,6 @@ export default function CustomerPage() {
             setEditCustomer(null);
             handleRefresh();
           }}
-        />
-      )}
-
-      {viewCustomer && (
-        <ViewCustomerDialog
-          customerId={viewCustomer.id}
-          open={!!viewCustomer}
-          onOpenChange={(open) => !open && setViewCustomer(null)}
         />
       )}
     </div>

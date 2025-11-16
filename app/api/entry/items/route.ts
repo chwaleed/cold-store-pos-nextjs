@@ -18,9 +18,20 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit;
 
-    // Build where clause - only show items with remaining quantity
+    // Build where clause - show items with ANY remaining quantity
+    // Items are clearable if they have remainingQuantity > 0 OR remainingKjQuantity > 0 (for KJ items)
     const where: any = {
-      remainingQuantity: { gt: 0 },
+      OR: [
+        // Items with remaining product quantity
+        {
+          remainingQuantity: { gt: 0 },
+        },
+        // Items with KJ and remaining KJ quantity (even if product quantity is 0)
+        {
+          hasKhaliJali: true,
+          remainingKjQuantity: { gt: 0 },
+        },
+      ],
     };
 
     // Filter by customer through entry receipt

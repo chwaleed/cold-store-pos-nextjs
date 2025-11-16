@@ -1,243 +1,253 @@
-// Cold Store Management System - Prisma Schema
-// Database: SQLite
-// ORM: Prisma
+  // Cold Store Management System - Prisma Schema
+  // Database: SQLite
+  // ORM: Prisma
 
-generator client {
-  provider = "prisma-client-js"
-}
+  generator client {
+    provider = "prisma-client-js"
+  }
 
-generator dbml {
-  provider = "prisma-dbml-generator"
-}
+  generator dbml {
+    provider = "prisma-dbml-generator"
+  }
 
-datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
-}
+  datasource db {
+    provider = "sqlite"
+    url      = env("DATABASE_URL")
+  }
 
-// Customer Model
-model Customer {
-  id        Int      @id @default(autoincrement())
-  name      String
-  fatherName String?
-  phone     String?
-  address   String?
-  village   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // Customer Model
+  model Customer {
+    id        Int      @id @default(autoincrement())
+    name      String
+    fatherName String?
+    phone     String?
+    address   String?
+    village   String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-  entryReceipts     EntryReceipt[]
-  clearanceReceipts ClearanceReceipt[]
-  ledger            Ledger[]
+    entryReceipts     EntryReceipt[]
+    clearanceReceipts ClearanceReceipt[]
+    ledger            Ledger[]
 
-  @@index([name])
-  // CNIC was removed (no longer stored)
-  @@index([phone])
-}
+    @@index([name])
+    // CNIC was removed (no longer stored)
+    @@index([phone])
+  }
 
-// Product Type Model (e.g., Potato, Onion, Garlic)
-model ProductType {
-  id                    Int      @id @default(autoincrement())
-  name                  String   @unique
-  doubleRentAfter30Days Boolean  @default(false) // Enable double rent pricing after 30 days
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  // Product Type Model (e.g., Potato, Onion, Garlic)
+  model ProductType {
+    id                    Int      @id @default(autoincrement())
+    name                  String   @unique
+    doubleRentAfter30Days Boolean  @default(false) // Enable double rent pricing after 30 days
+    createdAt             DateTime @default(now())
+    updatedAt             DateTime @updatedAt
 
-  subTypes   ProductSubType[]
-  entryItems EntryItem[]
-}
+    subTypes   ProductSubType[]
+    entryItems EntryItem[]
+  }
 
-// Product SubType Model (e.g., Cardinal, Red, White)
-model ProductSubType {
-  id            Int      @id @default(autoincrement())
-  productTypeId Int
-  name          String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  // Product SubType Model (e.g., Cardinal, Red, White)
+  model ProductSubType {
+    id            Int      @id @default(autoincrement())
+    productTypeId Int
+    name          String
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
 
-  productType ProductType @relation(fields: [productTypeId], references: [id], onDelete: Cascade)
-  entryItems  EntryItem[]
+    productType ProductType @relation(fields: [productTypeId], references: [id], onDelete: Cascade)
+    entryItems  EntryItem[]
 
-  @@unique([productTypeId, name])
-  @@index([productTypeId])
-}
+    @@unique([productTypeId, name])
+    @@index([productTypeId])
+  }
 
-// Room Model
-model Room {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  type      String   // 'COLD' or 'HOT'
-  capacity  Int?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // Room Model
+  model Room {
+    id        Int      @id @default(autoincrement())
+    name      String   @unique
+    type      String   // 'COLD' or 'HOT'
+    capacity  Int?
+    isActive  Boolean  @default(true)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-  entryItems EntryItem[]
-}
+    entryItems EntryItem[]
+  }
 
-// Pack Type Model (Bori, Jali)
-model PackType {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // Pack Type Model (Bori, Jali)
+  model PackType {
+    id        Int      @id @default(autoincrement())
+    name      String   @unique
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-  entryItems EntryItem[]
-}
+    entryItems EntryItem[]
+  }
 
-// Entry Receipt Model
-model EntryReceipt {
-  id              Int      @id @default(autoincrement())
-  receiptNo       String   @unique // Format: CS-YYYYMMDD-XXXX
-  customerId      Int
-  carNo           String
-  entryDate       DateTime @default(now())
-  totalAmount     Float    // Sum of all items (including KJ)
-  description     String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  // Entry Receipt Model
+  model EntryReceipt {
+    id              Int      @id @default(autoincrement())
+    receiptNo       String   @unique // Format: CS-YYYYMMDD-XXXX
+    customerId      Int
+    carNo           String
+    entryDate       DateTime @default(now())
+    totalAmount     Float    // Sum of all items (including KJ)
+    description     String?
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
 
-  customer Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  items    EntryItem[]
+    customer    Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+    items       EntryItem[]
+    ledgerEntries Ledger[]
 
-  @@index([customerId])
-  @@index([receiptNo])
-  @@index([entryDate])
-}
+    @@index([customerId])
+    @@index([receiptNo])
+    @@index([entryDate])
+  }
 
-// Entry Item Model
-model EntryItem {
-  id                Int      @id @default(autoincrement())
-  entryReceiptId    Int
-  productTypeId     Int
-  productSubTypeId  Int?
-  packTypeId        Int
-  roomId            Int
-  boxNo             String?
-  marka             String?  // Marking/label
-  quantity          Float    // Initial quantity
-  remainingQuantity Float    // Tracks partial clearances
-  unitPrice         Float
-  totalPrice        Float    // quantity × unitPrice
-  
-  // Khali Jali (Empty Crate) fields
-  hasKhaliJali      Boolean  @default(false)
-  kjQuantity        Float?
-  kjUnitPrice       Float?
-  kjTotal           Float?   // kjQuantity × kjUnitPrice
-  
-  grandTotal        Float    // totalPrice + kjTotal
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  // Entry Item Model
+  model EntryItem {
+    id                Int      @id @default(autoincrement())
+    entryReceiptId    Int
+    productTypeId     Int
+    productSubTypeId  Int?
+    packTypeId        Int
+    roomId            Int
+    boxNo             String?
+    marka             String?  // Marking/label
+    quantity          Float    // Initial quantity
+    remainingQuantity Float    // Tracks partial clearances
+    unitPrice         Float
+    totalPrice        Float    // quantity × unitPrice
+    
+    // Khali Jali (Empty Crate) fields
+    hasKhaliJali       Boolean  @default(false)
+    kjQuantity         Float?   // Initial KJ quantity
+    remainingKjQuantity Float?   // Tracks remaining KJ after partial clearances
+    kjUnitPrice        Float?
+    kjTotal            Float?   // kjQuantity × kjUnitPrice
+    
+    grandTotal        Float    // totalPrice + kjTotal
+    createdAt         DateTime @default(now())
+    updatedAt         DateTime @updatedAt
 
-  entryReceipt   EntryReceipt     @relation(fields: [entryReceiptId], references: [id], onDelete: Cascade)
-  productType    ProductType      @relation(fields: [productTypeId], references: [id])
-  productSubType ProductSubType?  @relation(fields: [productSubTypeId], references: [id])
-  packType       PackType         @relation(fields: [packTypeId], references: [id])
-  room           Room             @relation(fields: [roomId], references: [id])
-  clearedItems   ClearedItem[]
+    entryReceipt   EntryReceipt     @relation(fields: [entryReceiptId], references: [id], onDelete: Cascade)
+    productType    ProductType      @relation(fields: [productTypeId], references: [id])
+    productSubType ProductSubType?  @relation(fields: [productSubTypeId], references: [id])
+    packType       PackType         @relation(fields: [packTypeId], references: [id])
+    room           Room             @relation(fields: [roomId], references: [id])
+    clearedItems   ClearedItem[]
 
-  @@index([entryReceiptId])
-  @@index([productTypeId])
-  @@index([roomId])
-}
+    @@index([entryReceiptId])
+    @@index([productTypeId])
+    @@index([roomId])
+  }
 
-// Clearance Receipt Model
-model ClearanceReceipt {
-  id              Int      @id @default(autoincrement())
-  clearanceNo     String   @unique // Format: CL-YYYYMMDD-XXXX
-  customerId      Int
-  carNo           String?
-  clearanceDate   DateTime @default(now())
-  totalAmount     Float    // Sum of all cleared items totalAmount
-  description     String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  // Clearance Receipt Model
+  model ClearanceReceipt {
+    id              Int      @id @default(autoincrement())
+    clearanceNo     String   // Format: CL-YYYYMMDD-XXXX (allows duplicates)
+    customerId      Int
+    carNo           String?
+    clearanceDate   DateTime @default(now())
+    totalAmount     Float    // Sum of all cleared items totalAmount
+    description     String?
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
 
-  customer      Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  clearedItems  ClearedItem[]
+    customer       Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+    clearedItems   ClearedItem[]
+    ledgerEntries  Ledger[]
 
-  @@index([customerId])
-  @@index([clearanceNo])
-  @@index([clearanceDate])
-}
+    @@index([customerId])
+    @@index([clearanceNo])
+    @@index([clearanceDate])
+  }
 
-// Cleared Item Model
-model ClearedItem {
-  id                  Int      @id @default(autoincrement())
-  clearanceReceiptId  Int
-  entryReceiptId      Int      // Reference to entry receipt for tracking
-  entryItemId         Int
-  clearQuantity       Float    // Quantity being cleared (must be <= entryItem.remainingQuantity)
-  clearKjQuantity     Float?   // Khali Jali quantity cleared (must be <= entryItem.kjQuantity)
-  totalAmount         Float    // (EntryItem.unitPrice * clearQuantity) + (clearKjQuantity * kjUnitPrice)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  // Cleared Item Model
+  model ClearedItem {
+    id                  Int      @id @default(autoincrement())
+    clearanceReceiptId  Int
+    entryReceiptId      Int      // Reference to entry receipt for tracking
+    entryItemId         Int
+    clearQuantity       Float    // Quantity being cleared (must be <= entryItem.remainingQuantity)
+    clearKjQuantity     Float?   // Khali Jali quantity cleared (must be <= entryItem.kjQuantity)
+    totalAmount         Float    // (EntryItem.unitPrice * clearQuantity) + (clearKjQuantity * kjUnitPrice)
+    createdAt           DateTime @default(now())
+    updatedAt           DateTime @updatedAt
 
-  clearanceReceipt ClearanceReceipt @relation(fields: [clearanceReceiptId], references: [id], onDelete: Cascade)
-  entryItem        EntryItem        @relation(fields: [entryItemId], references: [id], onDelete: Cascade)
+    clearanceReceipt ClearanceReceipt @relation(fields: [clearanceReceiptId], references: [id], onDelete: Cascade)
+    entryItem        EntryItem        @relation(fields: [entryItemId], references: [id], onDelete: Cascade)
 
-  @@index([clearanceReceiptId])
-  @@index([entryReceiptId])
-  @@index([entryItemId])
-}
+    @@index([clearanceReceiptId])
+    @@index([entryReceiptId])
+    @@index([entryItemId])
+  }
 
-// Ledger Model - Simplified Credit System
-model Ledger {
-  id           Int      @id @default(autoincrement())
-  customerId   Int
-  invoiceId    Int?     // Can be EntryReceipt or ClearanceReceipt ID
-  description  String   // e.g., "Payment", "Rent Charged", "Discount Given", "Cash Advance"
-  debitAmount  Float    @default(0) // Amount customer owes
-  creditAmount Float    @default(0) // Amount customer paid
-  isDiscount   Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  // Ledger Model - Simplified Credit System
+  model Ledger {
+    id                 Int      @id @default(autoincrement())
+    customerId         Int
+    type               String   // Type of transaction: "adding_inventory", "clearance", "direct_cash"
+    entryReceiptId     Int?     // Reference to EntryReceipt for adding_inventory type
+    clearanceReceiptId Int?     // Reference to ClearanceReceipt for clearance type
+    description        String   // e.g., "Payment", "Rent Charged", "Discount Given", "Cash Advance"
+    debitAmount        Float    @default(0) // Amount customer owes
+    creditAmount       Float    @default(0) // Amount customer paid
+    isDiscount         Boolean  @default(false)
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
 
-  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+    customer          Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+    entryReceipt      EntryReceipt?     @relation(fields: [entryReceiptId], references: [id], onDelete: SetNull)
+    clearanceReceipt  ClearanceReceipt? @relation(fields: [clearanceReceiptId], references: [id], onDelete: SetNull)
 
-  @@index([customerId])
-  @@index([createdAt])
-}
+    @@index([customerId])
+    @@index([createdAt])
+    @@index([entryReceiptId])
+    @@index([clearanceReceiptId])
+    @@index([type])
+  }
 
-// Expense Category Model
-model ExpenseCategory {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  description String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // Expense Category Model
+  model ExpenseCategory {
+    id          Int      @id @default(autoincrement())
+    name        String   @unique
+    description String?
+    isActive    Boolean  @default(true)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
 
-  expenses Expense[]
+    expenses Expense[]
 
-  @@index([name])
-}
+    @@index([name])
+  }
 
-// Expense Model
-model Expense {
-  id          Int             @id @default(autoincrement())
-  date        DateTime        @default(now())
-  categoryId  Int
-  amount      Float
-  description String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  // Expense Model
+  model Expense {
+    id          Int             @id @default(autoincrement())
+    date        DateTime        @default(now())
+    categoryId  Int
+    amount      Float
+    description String?
+    createdAt   DateTime        @default(now())
+    updatedAt   DateTime        @updatedAt
 
-  category ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+    category ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  @@index([categoryId])
-  @@index([date])
-}
+    @@index([categoryId])
+    @@index([date])
+  }
 
-// Settings Model - Key-Value pairs for system configuration
-model Setting {
-  id        Int      @id @default(autoincrement())
-  key       String   @unique
-  value     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // Settings Model - Key-Value pairs for system configuration
+  model Setting {
+    id        Int      @id @default(autoincrement())
+    key       String   @unique
+    value     String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-  @@index([key])
-}
+    @@index([key])
+  }
 

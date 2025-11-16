@@ -146,6 +146,7 @@ export async function POST(request: NextRequest) {
         totalPrice,
         hasKhaliJali: item.hasKhaliJali,
         kjQuantity: item.kjQuantity || null,
+        remainingKjQuantity: item.kjQuantity || null, // Initially, remaining KJ = kjQuantity
         kjUnitPrice: item.kjUnitPrice || null,
         kjTotal: kjTotal > 0 ? kjTotal : null,
         grandTotal,
@@ -155,32 +156,49 @@ export async function POST(request: NextRequest) {
     // Calculate total amount for receipt
     const totalAmount = items.reduce((sum, item) => sum + item.grandTotal, 0);
 
-    // Create entry receipt with items
-    const entryReceipt = await prisma.entryReceipt.create({
-      data: {
-        receiptNo: validatedData.receiptNo,
-        customerId: validatedData.customerId,
-        carNo: validatedData.carNo,
-        entryDate: validatedData.entryDate
-          ? new Date(validatedData.entryDate)
-          : new Date(),
-        totalAmount,
-        description: validatedData.description || null,
-        items: {
-          create: items,
-        },
-      },
-      include: {
-        customer: true,
-        items: {
-          include: {
-            productType: true,
-            productSubType: true,
-            packType: true,
-            room: true,
+    // Create entry receipt with items in a transaction
+    const entryReceipt = await prisma.$transaction(async (tx) => {
+      // Create the entry receipt
+      const receipt = await tx.entryReceipt.create({
+        data: {
+          receiptNo: validatedData.receiptNo,
+          customerId: validatedData.customerId,
+          carNo: validatedData.carNo,
+          entryDate: validatedData.entryDate
+            ? new Date(validatedData.entryDate)
+            : new Date(),
+          totalAmount,
+          description: validatedData.description || null,
+          items: {
+            create: items,
           },
         },
-      },
+        include: {
+          customer: true,
+          items: {
+            include: {
+              productType: true,
+              productSubType: true,
+              packType: true,
+              room: true,
+            },
+          },
+        },
+      });
+
+      // Create ledger entry for inventory addition (debit)
+      await tx.ledger.create({
+        data: {
+          customerId: validatedData.customerId,
+          type: 'adding_inventory',
+          entryReceiptId: receipt.id,
+          description: `Entry Receipt: ${validatedData.receiptNo}`,
+          debitAmount: totalAmount,
+          creditAmount: 0,
+        },
+      });
+
+      return receipt;
     });
 
     return NextResponse.json(
