@@ -19,6 +19,9 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
 
+    // Calculate skip value for pagination
+    const skip = (page - 1) * limit;
+
     // Build where clause
     const where: any = {};
 
@@ -65,95 +68,129 @@ export async function GET(request: NextRequest) {
       if (dateTo) where.entryReceipt.entryDate.lte = new Date(dateTo);
     }
 
-    // Fetch entry items with related data
-    const entryItems = await prisma.entryItem.findMany({
-      where,
-      include: {
-        entryReceipt: {
-          include: {
-            customer: true,
+    // --- NEW: Move showZeroStock filter into the 'where' clause ---
+    if (!showZeroStock) {
+      // This structure finds items that are NOT zero stock
+      // We add it to an 'AND' array to combine with other filters
+      where.AND = [
+        ...(where.AND || []), // Preserve other AND conditions if any
+        {
+          OR: [
+            // Case 1: Has KhaliJali, EITHER product OR kj has quantity > 0
+            {
+              hasKhaliJali: true,
+              OR: [
+                { remainingQuantity: { gt: 0 } },
+                { remainingKjQuantity: { gt: 0 } },
+              ],
+            },
+            // Case 2: Does NOT have KhaliJali, product has quantity > 0
+            {
+              hasKhaliJali: false,
+              remainingQuantity: { gt: 0 },
+            },
+          ],
+        },
+      ];
+    }
+
+    // --- MODIFIED: Use $transaction to get count and paginated data ---
+    const [totalItems, entryItems] = await prisma.$transaction([
+      // 1. Get the total count of items matching the filters
+      prisma.entryItem.count({ where }),
+      // 2. Get the paginated data
+      prisma.entryItem.findMany({
+        where,
+        include: {
+          entryReceipt: {
+            include: {
+              customer: true,
+            },
+          },
+          productType: true,
+          productSubType: true,
+          room: true,
+        },
+        orderBy: {
+          entryReceipt: {
+            entryDate: 'desc',
           },
         },
-        productType: true,
-        productSubType: true,
-        room: true,
-      },
-      orderBy: {
-        entryReceipt: {
-          entryDate: 'desc',
-        },
-      },
-    });
+        // Apply pagination at the database level
+        skip: skip,
+        take: limit,
+      }),
+    ]);
+    // --- End of modified block ---
 
     const today = new Date();
 
-    console.log('Fetched entry items:', entryItems);
+    console.log(`Fetched ${entryItems.length} items for page ${page}`);
 
     // Calculate inventory with double rent logic
-    const inventory = entryItems
-      .map((item) => {
-        const availableQty = item.remainingQuantity;
-        const availableKjQty = item.remainingKjQuantity ?? 0;
+    // This 'inventory' array will now only contain the items for the current page
+    const inventory = entryItems.map((item) => {
+      const availableQty = item.remainingQuantity;
+      const availableKjQty = item.remainingKjQuantity ?? 0;
 
-        // Skip if zero stock and filter is off
-        // Item is available if it has ANY remaining quantity (product OR KJ)
-        const isAvailable = item.hasKhaliJali
-          ? availableQty > 0 || availableKjQty > 0
-          : availableQty > 0;
+      // --- REMOVED ---
+      // The zero stock filter is no longer needed here,
+      // as it was handled by the database query.
+      // ---
 
-        if (!showZeroStock && !isAvailable) {
-          return null;
-        }
-        const daysInStorage = differenceInDays(
-          today,
-          item.entryReceipt.entryDate
-        );
+      const daysInStorage = differenceInDays(
+        today,
+        item.entryReceipt.entryDate
+      );
 
-        // Double rent calculation
-        const isDoubleRent =
-          item.productType.doubleRentAfter30Days && daysInStorage > 30;
-        const currentPrice = isDoubleRent ? item.unitPrice * 2 : item.unitPrice;
-        const totalValue = availableQty * currentPrice;
+      // Double rent calculation
+      const isDoubleRent =
+        item.productType.doubleRentAfter30Days && daysInStorage > 30;
+      const currentPrice = isDoubleRent ? item.unitPrice * 2 : item.unitPrice;
+      const totalValue = availableQty * currentPrice;
 
-        // For types with doubleRentAfter30Days, show negative days after 30 days
-        const displayDays =
-          item.productType.doubleRentAfter30Days && daysInStorage > 30
-            ? -(daysInStorage - 30)
-            : daysInStorage;
+      // For types with doubleRentAfter30Days, show negative days after 30 days
+      const displayDays =
+        item.productType.doubleRentAfter30Days && daysInStorage > 30
+          ? -(daysInStorage - 30)
+          : daysInStorage;
 
-        return {
-          id: item.id,
-          entryDate: item.entryReceipt.entryDate,
-          customerName: item.entryReceipt.customer.name,
-          marka: item.marka,
-          typeName: item.productType.name,
-          subtypeName: item.productSubType?.name || null,
-          roomName: item.room.name,
-          boxNo: item.boxNo,
-          availableQty,
-          unitPrice: item.unitPrice,
-          currentPrice,
-          totalValue,
-          daysInStorage,
-          displayDays,
-          kjQuantity: item.kjQuantity,
-          kjUnitPrice: item.kjUnitPrice,
-          kjTotal: item.kjTotal,
-          isDoubleRent,
-          grandTotal:
-            availableQty * currentPrice +
-            availableKjQty * (item.kjUnitPrice || 0),
-          hasKhaliJali: item.hasKhaliJali,
-          remainingKjQuantity: item.remainingKjQuantity,
-          reciptNo: item.entryReceipt?.receiptNo,
-          hasDoubleRentEnabled: item.productType.doubleRentAfter30Days,
-        };
-      })
-      .filter((item) => item !== null);
+      return {
+        id: item.id,
+        entryDate: item.entryReceipt.entryDate,
+        customerName: item.entryReceipt.customer.name,
+        marka: item.marka,
+        typeName: item.productType.name,
+        subtypeName: item.productSubType?.name || null,
+        roomName: item.room.name,
+        boxNo: item.boxNo,
+        availableQty,
+        unitPrice: item.unitPrice,
+        currentPrice,
+        totalValue,
+        daysInStorage,
+        displayDays,
+        kjQuantity: item.kjQuantity,
+        kjUnitPrice: item.kjUnitPrice,
+        kjTotal: item.kjTotal,
+        isDoubleRent,
+        grandTotal:
+          availableQty * currentPrice +
+          availableKjQty * (item.kjUnitPrice || 0),
+        hasKhaliJali: item.hasKhaliJali,
+        remainingKjQuantity: item.remainingKjQuantity,
+        reciptNo: item.entryReceipt?.receiptNo,
+        hasDoubleRentEnabled: item.productType.doubleRentAfter30Days,
+      };
+    });
+    // --- REMOVED: .filter((item) => item !== null) ---
 
-    // Calculate summary properly
+    // --- IMPORTANT NOTE ON 'summary' ---
+    // This summary is now calculated ONLY for the items on the current page.
+    // If you need a grand total summary for ALL items,
+    // that requires a separate, complex query.
     const summary = {
-      totalItems: inventory.length, // Total number of items across all pages
+      totalItems: inventory.length, // This is page items. Use 'totalItems' from count for all items.
       totalQuantity: inventory.reduce(
         (sum, item) => sum + (item.availableQty || 0),
         0
@@ -164,22 +201,19 @@ export async function GET(request: NextRequest) {
       ),
     };
 
-    // Implement pagination
-    const totalItems = inventory.length;
+    // --- MODIFIED: Pagination calculation ---
     const totalPages = Math.ceil(totalItems / limit);
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedInventory = inventory.slice(startIndex, endIndex);
+    // --- REMOVED: startIndex, endIndex, and slice ---
 
     return NextResponse.json({
       success: true,
-      data: paginatedInventory,
-      summary,
+      data: inventory, // This is now the paginated list
+      summary, // Be aware: This is a summary of the *page*, not *all* data.
       pagination: {
         currentPage: page,
         lastPage: totalPages,
         perPage: limit,
-        total: totalItems,
+        total: totalItems, // This is the TRUE total count from the DB
       },
     });
   } catch (error: any) {

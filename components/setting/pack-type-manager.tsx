@@ -52,6 +52,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { packTypeSchema, type PackTypeFormData } from '@/schema/config';
 import { PackType } from '@/types/config';
+import DataTable from '@/components/dataTable/data-table';
 
 interface PackTypeWithCount extends PackType {
   _count?: {
@@ -67,6 +68,8 @@ export function PackTypeManager() {
   const [editMode, setEditMode] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   const form = useForm<PackTypeFormData>({
     resolver: zodResolver(packTypeSchema),
@@ -176,6 +179,38 @@ export function PackTypeManager() {
     setDialogOpen(true);
   };
 
+  const columns = [
+    { name: 'Name', accessor: 'name', id: 'name', className: 'font-medium' },
+    {
+      name: 'Actions',
+      accessor: (row: any) => (
+        <div className="flex gap-2">
+          <Button variant="ghost" size="icon" onClick={() => handleEdit(row)}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setSelectedId(row.id);
+              setDeleteDialogOpen(true);
+            }}
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
+      ),
+      id: 'actions',
+      className: 'text-right',
+    },
+  ];
+
+  const totalPages = Math.ceil(packTypes.length / itemsPerPage);
+  const paginatedData = packTypes.slice(
+    (page - 1) * itemsPerPage,
+    page * itemsPerPage
+  );
+
   return (
     <>
       <Card>
@@ -194,54 +229,16 @@ export function PackTypeManager() {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="space-y-2">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          ) : packTypes.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No pack types found. Add one to get started.
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {packTypes.map((packType) => (
-                  <TableRow key={packType.id}>
-                    <TableCell className="font-medium">
-                      {packType.name}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(packType)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setSelectedId(packType.id);
-                          setDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+          <DataTable
+            columns={columns}
+            data={paginatedData}
+            loading={loading}
+            emptyMessage="No pack types found. Add one to get started."
+            skeletonRows={5}
+            currentPage={page}
+            lastPage={totalPages}
+            onPageChange={setPage}
+          />
         </CardContent>
       </Card>
 

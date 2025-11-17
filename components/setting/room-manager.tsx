@@ -59,6 +59,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { roomSchema, type RoomFormData } from '@/schema/config';
 import { Room } from '@/types/config';
+import DataTable from '@/components/dataTable/data-table';
 
 interface RoomWithCount extends Room {
   _count?: {
@@ -74,6 +75,8 @@ export function RoomManager() {
   const [editMode, setEditMode] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   const form = useForm<RoomFormData>({
     resolver: zodResolver(roomSchema),
@@ -185,6 +188,60 @@ export function RoomManager() {
     setDialogOpen(true);
   };
 
+  const columns = [
+    { name: 'Name', accessor: 'name', id: 'name', className: 'font-medium' },
+    {
+      name: 'Type',
+      accessor: (row: any) => (
+        <Badge
+          variant={row.type === 'Cold' ? 'default' : 'destructive'}
+          className="gap-1"
+        >
+          {row.type === 'Cold' ? (
+            <Snowflake className="h-3 w-3" />
+          ) : (
+            <Flame className="h-3 w-3" />
+          )}
+          {row.type}
+        </Badge>
+      ),
+      id: 'type',
+    },
+    {
+      name: 'Capacity',
+      accessor: (row: any) => (row.capacity ? `${row.capacity} units` : 'N/A'),
+      id: 'capacity',
+    },
+    {
+      name: 'Actions',
+      accessor: (row: any) => (
+        <div className="flex gap-2">
+          <Button variant="ghost" size="icon" onClick={() => handleEdit(row)}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setSelectedId(row.id);
+              setDeleteDialogOpen(true);
+            }}
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
+      ),
+      id: 'actions',
+      className: 'text-right',
+    },
+  ];
+
+  const totalPages = Math.ceil(rooms.length / itemsPerPage);
+  const paginatedData = rooms.slice(
+    (page - 1) * itemsPerPage,
+    page * itemsPerPage
+  );
+
   return (
     <>
       <Card>
@@ -203,72 +260,16 @@ export function RoomManager() {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="space-y-2">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          ) : rooms.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No rooms found. Add one to get started.
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Capacity</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rooms.map((room) => (
-                  <TableRow key={room.id}>
-                    <TableCell className="font-medium">{room.name}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          room.type === 'Cold' ? 'default' : 'destructive'
-                        }
-                        className="gap-1"
-                      >
-                        {room.type === 'Cold' ? (
-                          <Snowflake className="h-3 w-3" />
-                        ) : (
-                          <Flame className="h-3 w-3" />
-                        )}
-                        {room.type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {room.capacity ? `${room.capacity} units` : 'N/A'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(room)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setSelectedId(room.id);
-                          setDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+          <DataTable
+            columns={columns}
+            data={paginatedData}
+            loading={loading}
+            emptyMessage="No rooms found. Add one to get started."
+            skeletonRows={5}
+            currentPage={page}
+            lastPage={totalPages}
+            onPageChange={setPage}
+          />
         </CardContent>
       </Card>
 

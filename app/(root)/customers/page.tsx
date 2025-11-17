@@ -178,7 +178,7 @@ export default function CustomerPage() {
   ];
 
   return (
-    <div className="w-full rounded-xl bg-white h-full mx-auto p-4 space-y-6">
+    <div className="w-full rounded-xl bg-background h-full mx-auto p-4 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Customers</h1>

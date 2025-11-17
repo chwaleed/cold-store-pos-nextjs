@@ -59,7 +59,7 @@ const DataTable = ({
       <tr key={`skeleton-${index}`}>
         {columns.map((column) => (
           <td key={column.id} className={`px-4 py-3 ${column.className || ''}`}>
-            <div className="h-4 bg-gray-200 rounded animate-pulse" />
+            <div className="h-4 bg-foreground/10 rounded animate-pulse" />
           </td>
         ))}
       </tr>
@@ -78,7 +78,7 @@ const DataTable = ({
   // Render data rows
   const renderDataRows = () => {
     return data.map((row, rowIndex) => (
-      <tr key={row.id || rowIndex} className="border-b hover:bg-gray-50">
+      <tr key={row.id || rowIndex} className="border-b hover:bg-foreground/5">
         {columns.map((column) => (
           <td key={column.id} className={`px-4 py-3 ${column.className || ''}`}>
             {renderCell(row, column, rowIndex)}
@@ -129,12 +129,12 @@ const DataTable = ({
     <div>
       <div className="rounded-md border overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-foreground/5 border-b">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.id}
-                  className={`px-4 py-3 text-left font-medium text-gray-700 ${column.headerClassName || ''}`}
+                  className={`px-4 py-3 text-left font-medium  ${column.headerClassName || ''}`}
                 >
                   {column.name}
                 </th>
@@ -162,7 +162,7 @@ const DataTable = ({
             <button
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1 || loading}
-              className="px-3 py-1 rounded border text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 rounded border text-sm font-medium hover:bg-foreground/10 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Previous
             </button>
@@ -188,7 +188,7 @@ const DataTable = ({
                   className={`px-3 py-1 rounded border text-sm font-medium ${
                     currentPage === page
                       ? 'bg-blue-600 text-white border-blue-600'
-                      : 'hover:bg-gray-50 disabled:opacity-50'
+                      : 'hover:bg-foreground/10 disabled:opacity-50'
                   }`}
                 >
                   {page}
@@ -200,7 +200,7 @@ const DataTable = ({
             <button
               onClick={() => onPageChange(currentPage + 1)}
               disabled={currentPage === lastPage || loading}
-              className="px-3 py-1 rounded border text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 rounded border text-sm font-medium hover:bg-foreground/10 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
             </button>

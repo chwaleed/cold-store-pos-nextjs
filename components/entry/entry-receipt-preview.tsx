@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Printer } from 'lucide-react';
+import { ArrowLeft, Printer, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -64,6 +64,42 @@ export function EntryReceiptPreview({ entryId }: EntryReceiptPreviewProps) {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadUrduReceipt = async () => {
+    try {
+      const response = await fetch(`/api/entry/${entryId}/urdu-receipt`);
+      
+      if (!response.ok) {
+        toast({
+          title: 'Error',
+          description: 'Failed to generate Urdu receipt',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `entry-receipt-${entry?.receiptNo}-urdu.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: 'Success',
+        description: 'Urdu receipt downloaded successfully',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to download Urdu receipt',
+        variant: 'destructive',
+      });
+    }
   };
 
   if (loading) {
@@ -247,10 +283,16 @@ export function EntryReceiptPreview({ entryId }: EntryReceiptPreviewProps) {
           <ArrowLeft className="mr-1.5 h-4 w-4" />
           Back
         </Button>
-        <Button size="sm" onClick={handlePrint}>
-          <Printer className="mr-1.5 h-4 w-4" />
-          Print
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={handleDownloadUrduReceipt}>
+            <FileDown className="mr-1.5 h-4 w-4" />
+            Urdu Receipt
+          </Button>
+          <Button size="sm" onClick={handlePrint}>
+            <Printer className="mr-1.5 h-4 w-4" />
+            Print
+          </Button>
+        </div>
       </div>
 
       {/* Receipt Header */}

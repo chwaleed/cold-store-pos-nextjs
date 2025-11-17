@@ -55,6 +55,7 @@ import {
 import { productTypeSchema, type ProductTypeFormData } from '@/schema/config';
 import { ProductType, ProductSubType } from '@/types/config';
 import useStore from '@/app/(root)/(store)/store';
+import DataTable from '@/components/dataTable/data-table';
 
 interface ProductTypeWithDetails extends ProductType {
   subtypes?: ProductSubType[];
@@ -73,6 +74,8 @@ export function ProductTypeManager() {
   const [editMode, setEditMode] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   const form = useForm<ProductTypeFormData>({
     resolver: zodResolver(productTypeSchema),
@@ -168,6 +171,45 @@ export function ProductTypeManager() {
     setDialogOpen(true);
   };
 
+  const columns = [
+    { name: 'Name', accessor: 'name', id: 'name', className: 'font-medium' },
+    {
+      name: 'Subtypes',
+      accessor: (row: any) => (
+        <Badge variant="secondary">{row._count?.subTypes || 0} Sub Types</Badge>
+      ),
+      id: 'subtypes',
+    },
+    {
+      name: 'Actions',
+      accessor: (row: any) => (
+        <div className="flex gap-2">
+          <Button variant="ghost" size="icon" onClick={() => handleEdit(row)}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setSelectedId(row.id);
+              setDeleteDialogOpen(true);
+            }}
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
+      ),
+      id: 'actions',
+      className: 'text-right',
+    },
+  ];
+
+  const totalPages = Math.ceil(productTypes.length / itemsPerPage);
+  const paginatedData = productTypes.slice(
+    (page - 1) * itemsPerPage,
+    page * itemsPerPage
+  );
+
   return (
     <>
       <Card>
@@ -186,60 +228,16 @@ export function ProductTypeManager() {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="space-y-2">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          ) : productTypes.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No product types found. Add one to get started.
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Subtypes</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {productTypes.map((productType) => (
-                  <TableRow key={productType.id}>
-                    <TableCell className="font-medium">
-                      {productType.name}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">
-                        {productType._count?.subTypes || 0} Sub Types
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(productType)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setSelectedId(productType.id);
-                          setDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+          <DataTable
+            columns={columns}
+            data={paginatedData}
+            loading={loading}
+            emptyMessage="No product types found. Add one to get started."
+            skeletonRows={5}
+            currentPage={page}
+            lastPage={totalPages}
+            onPageChange={setPage}
+          />
         </CardContent>
       </Card>
 

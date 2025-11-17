@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const customerId = searchParams.get('customerId');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
 
     if (!customerId) {
       return NextResponse.json(
@@ -22,47 +24,70 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const ledgerEntries = await prisma.ledger.findMany({
+    const skip = (page - 1) * limit;
+
+    const [ledgerEntries, total] = await Promise.all([
+      prisma.ledger.findMany({
+        where: {
+          customerId: parseInt(customerId),
+        },
+        include: {
+          entryReceipt: {
+            select: {
+              id: true,
+              receiptNo: true,
+              entryDate: true,
+            },
+          },
+          clearanceReceipt: {
+            select: {
+              id: true,
+              clearanceNo: true,
+              clearanceDate: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.ledger.count({
+        where: {
+          customerId: parseInt(customerId),
+        },
+      }),
+    ]);
+
+    // Calculate running balance (need to get all entries for accurate balance calculation)
+    const allEntries = await prisma.ledger.findMany({
       where: {
         customerId: parseInt(customerId),
       },
-      include: {
-        entryReceipt: {
-          select: {
-            id: true,
-            receiptNo: true,
-            entryDate: true,
-          },
-        },
-        clearanceReceipt: {
-          select: {
-            id: true,
-            clearanceNo: true,
-            clearanceDate: true,
-          },
-        },
-      },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: 'asc',
       },
     });
 
-    // Calculate running balance
     let balance = 0;
-    const entriesWithBalance = ledgerEntries
-      .reverse()
-      .map((entry) => {
-        balance += entry.debitAmount - entry.creditAmount;
-        return {
-          ...entry,
-          balance,
-        };
-      })
-      .reverse();
+    const balanceMap = new Map<number, number>();
+    allEntries.forEach((entry) => {
+      balance += entry.debitAmount - entry.creditAmount;
+      balanceMap.set(entry.id, balance);
+    });
+
+    const entriesWithBalance = ledgerEntries.map((entry) => ({
+      ...entry,
+      balance: balanceMap.get(entry.id) || 0,
+    }));
 
     return NextResponse.json({
       success: true,
       data: entriesWithBalance,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      total,
     });
   } catch (error) {
     console.error('Error fetching ledger entries:', error);

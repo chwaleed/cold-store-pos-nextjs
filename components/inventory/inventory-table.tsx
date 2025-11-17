@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { format } from 'date-fns';
+import { constructFrom, format } from 'date-fns';
 import { RefreshCw, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -99,13 +99,6 @@ export function InventoryTable({ filters }: InventoryTableProps) {
     fetchInventory(pageNo);
   };
 
-  const getDaysLeftColor = (daysLeft: number | null) => {
-    if (daysLeft === null) return 'text-muted-foreground';
-    if (daysLeft <= 0) return 'text-red-600 font-bold';
-    if (daysLeft <= 7) return 'text-orange-600 font-semibold';
-    return 'text-green-600';
-  };
-
   const columns = [
     {
       name: 'Recipt No',
@@ -167,10 +160,10 @@ export function InventoryTable({ filters }: InventoryTableProps) {
       name: 'Available Qty',
       accessor: (row: InventoryItem) => (
         <div className="text-right">
-          <span className="font-medium">{row.availableQty.toFixed(2)}</span>
+          <span className="font-medium">{row.availableQty}</span>
           {row.hasKhaliJali && row.remainingKjQuantity !== null && (
             <p className="text-xs text-muted-foreground leading-tight">
-              KJ: {row.remainingKjQuantity.toFixed(2)}
+              KJ: {row.remainingKjQuantity}
             </p>
           )}
         </div>
@@ -196,7 +189,7 @@ export function InventoryTable({ filters }: InventoryTableProps) {
           )}
           {!row.hasDoubleRentEnabled && (
             <p className="text-sm text-muted-foreground">
-              {row.daysInStorage} days
+              {-row.daysInStorage} days
             </p>
           )}
         </div>
@@ -226,7 +219,6 @@ export function InventoryTable({ filters }: InventoryTableProps) {
     {
       name: 'KJ',
       accessor: (row: any) => {
-        console.log(row);
         if (row.hasKhaliJali) {
           return (
             <div className="text-xs leading-tight">
@@ -234,7 +226,10 @@ export function InventoryTable({ filters }: InventoryTableProps) {
                 {row.remainingKjQuantity} × {row?.kjUnitPrice?.toFixed(2)}{' '}
               </p>
               <p className="text-muted-foreground">
-                = {row.remainingKjQuantity * row?.kjUnitPrice?.toFixed(2)}
+                ={' '}
+                {(
+                  row.remainingKjQuantity * row?.kjUnitPrice?.toFixed(2)
+                ).toFixed(2)}
               </p>
             </div>
           );
@@ -248,7 +243,13 @@ export function InventoryTable({ filters }: InventoryTableProps) {
     },
     {
       name: 'Total Value',
-      accessor: (row: InventoryItem) => `PKR ${row.grandTotal.toFixed(2)}`,
+      accessor: (row: InventoryItem) => {
+        console.log(row);
+        if (row.hasDoubleRentEnabled && row.daysInStorage < 0) {
+          return `PKR ${(row.grandTotal * 2).toFixed(2)}`;
+        }
+        return `PKR ${row.grandTotal.toFixed(2)}`;
+      },
       id: 'totalValue',
       className: 'text-right font-bold',
       headerClassName: 'text-right',
@@ -261,10 +262,6 @@ export function InventoryTable({ filters }: InventoryTableProps) {
         <h1 className="text-2xl font-bold">Current Stock</h1>
         <div className="space-y-1">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <p className="text-sm text-muted-foreground">Total Items: </p>
-              <p className="text-xl font-bold">{summary.totalItems}</p>
-            </div>
             <div className="flex items-center gap-2">
               <p className="text-sm text-muted-foreground">Total Quantity: </p>
               <p className="text-xl font-bold">{summary.totalQuantity}</p>

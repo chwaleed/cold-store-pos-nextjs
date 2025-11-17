@@ -14,7 +14,7 @@ import { CategoryList } from '@/components/expense/category-list';
 
 export default function ExpensesPage() {
   return (
-    <div className="w-full h-full bg-white rounded-xl space-y-6 p-6">
+    <div className="w-full h-full bg-background rounded-xl space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Expenses</h1>

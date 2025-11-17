@@ -16,10 +16,14 @@ import Bread from '@/components/dashboard/breadcrumb';
 import axios from 'axios';
 import { KeyboardShortcutsProvider } from '@/components/keyboard-shortcuts/keyboard-shortcuts-provider';
 import useStore from './(store)/store';
+import { useBackupScheduler } from '@/lib/use-backup-scheduler';
 
 const RootLayout = ({ children }: RootLayoutProps) => {
   const [storeName, setStoreName] = useState<string | null>('Ahmad ');
   const state = useStore((state) => state);
+
+  // Initialize backup scheduler
+  useBackupScheduler();
 
   const fetchFilters = async () => {
     try {

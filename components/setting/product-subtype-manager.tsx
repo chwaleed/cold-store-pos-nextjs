@@ -62,6 +62,7 @@ import {
   type ProductSubTypeFormData,
 } from '@/schema/config';
 import { ProductType, ProductSubType } from '@/types/config';
+import DataTable from '@/components/dataTable/data-table';
 
 interface ProductSubTypeWithType extends ProductSubType {
   productType: ProductType;
@@ -78,6 +79,8 @@ export function ProductSubTypeManager() {
   const [editMode, setEditMode] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   const form = useForm<ProductSubTypeFormData>({
     resolver: zodResolver(productSubTypeSchema),
@@ -196,6 +199,45 @@ export function ProductSubTypeManager() {
     setDialogOpen(true);
   };
 
+  const columns = [
+    { name: 'Name', accessor: 'name', id: 'name', className: 'font-medium' },
+    {
+      name: 'Product Type',
+      accessor: (row: any) => (
+        <Badge variant="outline">{row.productType.name}</Badge>
+      ),
+      id: 'productType',
+    },
+    {
+      name: 'Actions',
+      accessor: (row: any) => (
+        <div className="flex gap-2">
+          <Button variant="ghost" size="icon" onClick={() => handleEdit(row)}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setSelectedId(row.id);
+              setDeleteDialogOpen(true);
+            }}
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
+      ),
+      id: 'actions',
+      className: 'text-right',
+    },
+  ];
+
+  const totalPages = Math.ceil(productSubTypes.length / itemsPerPage);
+  const paginatedData = productSubTypes.slice(
+    (page - 1) * itemsPerPage,
+    page * itemsPerPage
+  );
+
   return (
     <>
       <Card>
@@ -214,63 +256,21 @@ export function ProductSubTypeManager() {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="space-y-2">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          ) : productTypes.length === 0 ? (
+          {productTypes.length === 0 && !loading ? (
             <div className="text-center py-8 text-muted-foreground">
               Please add product types first before adding subtypes.
             </div>
-          ) : productSubTypes.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No product subtypes found. Add one to get started.
-            </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Product Type</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {productSubTypes.map((subType) => (
-                  <TableRow key={subType.id}>
-                    <TableCell className="font-medium">
-                      {subType.name}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {subType.productType.name}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(subType)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setSelectedId(subType.id);
-                          setDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <DataTable
+              columns={columns}
+              data={paginatedData}
+              loading={loading}
+              emptyMessage="No product subtypes found. Add one to get started."
+              skeletonRows={5}
+              currentPage={page}
+              lastPage={totalPages}
+              onPageChange={setPage}
+            />
           )}
         </CardContent>
       </Card>

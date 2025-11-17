@@ -24,15 +24,21 @@ export default function CustomerDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showAddCash, setShowAddCash] = useState(false);
   const [showEditCustomer, setShowEditCustomer] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const fetchData = async () => {
     if (!customerId) return;
 
     try {
       setLoading(true);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '10',
+      });
       const [customerRes, ledgerRes] = await Promise.all([
         fetch(`/api/customer/${customerId}`),
-        fetch(`/api/ledger?customerId=${customerId}`),
+        fetch(`/api/ledger?customerId=${customerId}&${params.toString()}`),
       ]);
 
       const customerData = await customerRes.json();
@@ -50,6 +56,7 @@ export default function CustomerDetailPage() {
 
       if (ledgerData.success) {
         setLedgerEntries(ledgerData.data);
+        setTotalPages(ledgerData.totalPages || 1);
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -65,10 +72,18 @@ export default function CustomerDetailPage() {
 
   useEffect(() => {
     if (customerId) {
+      setPage(1);
       fetchData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerId]);
+
+  useEffect(() => {
+    if (customerId) {
+      fetchData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   const handleViewReceipt = (entry: LedgerWithReceipt) => {
     if (entry.type === 'adding_inventory' && entry.entryReceiptId) {
@@ -299,9 +314,12 @@ export default function CustomerDetailPage() {
               <DataTable
                 columns={ledgerColumns}
                 data={ledgerEntries}
-                loading={false}
+                loading={loading}
                 emptyMessage="No ledger entries found"
                 skeletonRows={5}
+                currentPage={page}
+                lastPage={totalPages}
+                onPageChange={setPage}
               />
             </div>
 

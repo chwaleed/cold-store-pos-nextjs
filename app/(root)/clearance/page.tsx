@@ -6,7 +6,7 @@ import { ClearanceTable } from '../../../components/clearance/clearance-table';
 
 export default function ClearancePage() {
   return (
-    <div className=" w-full h-full bg-white rounded-xl p-6 space-y-6">
+    <div className=" w-full h-full bg-background rounded-2xl p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Clearance</h1>

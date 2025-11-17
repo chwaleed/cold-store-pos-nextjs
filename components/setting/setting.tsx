@@ -6,6 +6,7 @@ import { ProductTypeManager } from '@/components/setting/product-type-manager';
 import { ProductSubTypeManager } from '@/components/setting/product-subtype-manager';
 import { RoomManager } from '@/components/setting/room-manager';
 import { PackTypeManager } from '@/components/setting/pack-type-manager';
+import { BackupManager } from '@/components/setting/backup-manager';
 import { Settings2 } from 'lucide-react';
 
 export function Setting() {
@@ -30,11 +31,12 @@ export function Setting() {
             onValueChange={setActiveTab}
             className="space-y-4"
           >
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="products">Product Types</TabsTrigger>
               <TabsTrigger value="subtypes">Subtypes</TabsTrigger>
               <TabsTrigger value="rooms">Rooms</TabsTrigger>
               <TabsTrigger value="packs">Pack Types</TabsTrigger>
+              <TabsTrigger value="backup">Backup & Restore</TabsTrigger>
             </TabsList>
 
             <TabsContent value="products" className="space-y-4">
@@ -51,6 +53,10 @@ export function Setting() {
 
             <TabsContent value="packs" className="space-y-4">
               <PackTypeManager />
+            </TabsContent>
+
+            <TabsContent value="backup" className="space-y-4">
+              <BackupManager />
             </TabsContent>
           </Tabs>
         </div>

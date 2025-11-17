@@ -90,3 +90,4 @@ export * from './config';
 export * from './clearance';
 export * from './expense';
 export * from './setting';
+export * from './backup';

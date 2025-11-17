@@ -53,7 +53,7 @@ export function ClearanceTable() {
         const data = await response.json();
         if (data.success) {
           setReceipts(data.data);
-          setTotalPages(data.pagination.totalPages);
+          setTotalPages(data.totalPages);
         } else {
           toast({
             title: 'Error',
@@ -89,10 +89,10 @@ export function ClearanceTable() {
     { name: 'Receipt No', accessor: 'receiptNo', id: 'receiptNo' },
     {
       name: 'Customer',
-      accessor: (row) => `${row.customer?.name}`,
+      accessor: (row: any) => `${row.customer?.name}`,
       id: 'customerName',
     },
-    { name: 'Car No', accessor: (row) => `${row.carNo}`, id: 'carNo' },
+    { name: 'Car No', accessor: (row: any) => `${row.carNo}`, id: 'carNo' },
     {
       name: 'Clearance Date',
       accessor: (row: ClearanceReceipt) =>
@@ -101,7 +101,7 @@ export function ClearanceTable() {
     },
     {
       name: 'Items',
-      accessor: (row: EntryReceipt) => (
+      accessor: (row: any) => (
         <Badge variant="secondary">{row.itemsCount || 0} items</Badge>
       ),
       id: 'items',
@@ -113,7 +113,7 @@ export function ClearanceTable() {
     },
     {
       name: 'Actions',
-      accessor: (row: EntryReceipt) => (
+      accessor: (row: any) => (
         <div className="flex  gap-2">
           <Button
             variant="ghost"
@@ -125,6 +125,7 @@ export function ClearanceTable() {
           </Button>
         </div>
       ),
+      id: 'actions',
     },
     // Add more columns/actions as needed
   ];

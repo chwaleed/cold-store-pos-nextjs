@@ -11,7 +11,7 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "seed": "ts-node prisma/fake-data.ts"
+    "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.4.2",
@@ -51,6 +51,7 @@
     "next-themes": "^0.3.0",
     "nextjs-toploader": "^1.6.12",
     "pdfmake": "^0.2.20",
+    "puppeteer": "^24.30.0",
     "raw-loader": "^4.0.2",
     "react": "^18",
     "react-apexcharts": "^1.4.1",

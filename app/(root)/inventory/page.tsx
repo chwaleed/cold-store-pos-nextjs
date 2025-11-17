@@ -23,7 +23,7 @@ export default function InventoryPage() {
   });
 
   return (
-    <div className="w-full h-full bg-white rounded-xl space-y-2 p-4">
+    <div className="w-full h-full bg-background rounded-xl space-y-2 p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Inventory</h1>

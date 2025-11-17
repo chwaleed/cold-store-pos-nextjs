@@ -1327,3 +1327,166 @@ export const generateStockReportPDF = (
 
   return pdfMake.createPdf(docDefinition);
 };
+
+export const generateEntryReceiptPDF = (receiptData: any) => {
+  const content: Content[] = [
+    // Header (ہیڈر)
+    {
+      columns: [
+        {
+          width: '*',
+          text: 'Receipt Book',
+          style: 'header',
+          alignment: 'left',
+        },
+        {
+          width: 'auto',
+          text: urduText.receiptBook,
+          style: 'urduHeader',
+          alignment: 'right',
+        },
+      ],
+    },
+    {
+      text: 'Ahmad Waqas Cold Storage',
+      style: 'header',
+      alignment: 'center',
+    },
+    {
+      text: urduText.header,
+      style: 'urduHeader',
+      alignment: 'center',
+      fontSize: 20, // (بڑا فونٹ)
+      bold: true,
+      margin: [0, 5, 0, 10],
+    },
+
+    // Receipt No and Date (رسید نمبر اور تاریخ)
+    {
+      table: {
+        widths: ['*', 'auto', '*', 'auto'],
+        body: [
+          [
+            // Receipt No (رسید نمبر)
+            {
+              text: receiptData.receiptNo || ' ۔۔۔۔۔ ',
+              style: 'urduValue',
+              alignment: 'left',
+              margin: [0, 5, 0, 0],
+            },
+            {
+              text: urduText.receiptNo,
+              style: 'urduLabel',
+              alignment: 'right',
+              margin: [0, 5, 0, 0],
+            },
+            // Date (تاریخ)
+            {
+              text: receiptData.date
+                ? format(new Date(receiptData.date), 'dd-MM-yyyy')
+                : ' ۔۔۔۔۔ ',
+              style: 'urduValue',
+              alignment: 'left',
+              margin: [0, 5, 0, 0],
+            },
+            {
+              text: urduText.date,
+              style: 'urduLabel',
+              alignment: 'right',
+              margin: [0, 5, 0, 0],
+            },
+          ],
+        ],
+      },
+      layout: 'noBorders',
+      margin: [0, 0, 0, 10], // (نیچے مارجن)
+    },
+
+    // Main Content Table (مرکزی مواد کا ٹیبل)
+    {
+      table: {
+        widths: ['*'],
+        body: [
+          [
+            {
+              stack: [
+                createReceiptRow(
+                  urduText.secretary,
+                  receiptData.secretary || ''
+                ),
+                createReceiptRow(urduText.count, receiptData.quantity || ''),
+                createReceiptRow(urduText.roomNo, receiptData.roomNo || ''),
+                createReceiptRow(urduText.rackNo, receiptData.rackNo || ''),
+                createReceiptRow(urduText.marka, receiptData.marka || ''),
+                createReceiptRow(urduText.variety, receiptData.variety || ''),
+                createReceiptRow(
+                  urduText.rentPacking,
+                  receiptData.rentPacking || ''
+                ),
+                createReceiptRow(
+                  urduText.vehicleNo,
+                  receiptData.vehicleNo || ''
+                ),
+                createReceiptRow(urduText.season, receiptData.season || ''),
+                createReceiptRow(urduText.details, receiptData.details || ''),
+                createReceiptRow(urduText.note, receiptData.note || ''),
+              ],
+            },
+          ],
+        ],
+      },
+      // (تصویر جیسا ٹیبل لے آؤٹ)
+      layout: {
+        hLineWidth: (i, node) =>
+          i === 0 || i === node.table.body.length ? 1 : 0,
+        vLineWidth: (i, node) =>
+          i === 0 || i === node.table.widths!.length ? 1 : 0,
+        paddingTop: (i) => 10,
+        paddingBottom: (i) => 10,
+      },
+    },
+
+    // Signature (دستخط)
+    {
+      text: `${urduText.signature} : ...............................`,
+      style: 'urduLabel',
+      alignment: 'right',
+      margin: [0, 40, 10, 0], // (اوپر اور دائیں مارجن)
+    },
+  ];
+
+  const docDefinition: TDocumentDefinitions = {
+    content,
+    // (اسٹائلز)
+    styles: {
+      header: {
+        fontSize: 16,
+        bold: true,
+        font: 'Roboto', // (انگلش ہیڈر کے لیے روبوٹو)
+      },
+      urduHeader: {
+        fontSize: 14,
+        font: 'NotoNastaliqUrdu', // (اردو ہیڈر کے لیے نوٹو)
+      },
+      // (اردو لیبل کے لیے اسٹائل)
+      urduLabel: {
+        font: 'NotoNastaliqUrdu',
+        fontSize: 14,
+        bold: true,
+        margin: [0, 0, 10, 0], // (دائیں مارجن)
+      },
+      // (اردو ویلیو کے لیے اسٹائل)
+      urduValue: {
+        font: 'NotoNastaliqUrdu',
+        fontSize: 12,
+        margin: [10, 0, 0, 0], // (بائیں مارجن)
+      },
+    },
+    defaultStyle: {
+      font: 'NotoNastaliqUrdu', // (پوری ڈاکومنٹ کے لیے ڈیفالٹ اردو فونٹ)
+    },
+    pageMargins: [40, 40, 40, 40] as [number, number, number, number],
+  };
+
+  return pdfMake.createPdf(docDefinition);
+};
