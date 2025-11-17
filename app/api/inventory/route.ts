@@ -16,6 +16,8 @@ export async function GET(request: NextRequest) {
     const showZeroStock = searchParams.get('showZeroStock') === 'true';
     const search = searchParams.get('search');
     const customerId = searchParams.get('customerId');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
 
     // Build where clause
     const where: any = {};
@@ -151,7 +153,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate summary properly
     const summary = {
-      totalRecords: inventory.length, // number of rows
+      totalItems: inventory.length, // Total number of items across all pages
       totalQuantity: inventory.reduce(
         (sum, item) => sum + (item.availableQty || 0),
         0
@@ -162,10 +164,23 @@ export async function GET(request: NextRequest) {
       ),
     };
 
+    // Implement pagination
+    const totalItems = inventory.length;
+    const totalPages = Math.ceil(totalItems / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedInventory = inventory.slice(startIndex, endIndex);
+
     return NextResponse.json({
       success: true,
-      data: inventory,
+      data: paginatedInventory,
       summary,
+      pagination: {
+        currentPage: page,
+        lastPage: totalPages,
+        perPage: limit,
+        total: totalItems,
+      },
     });
   } catch (error: any) {
     return NextResponse.json(
