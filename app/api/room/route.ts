@@ -6,7 +6,7 @@ import { roomSchema } from '@/schema/config';
 export async function GET() {
   try {
     const rooms = await prisma.room.findMany({
-      orderBy: { name: 'asc' },
+      orderBy: { name: 'desc' },
       include: {
         _count: {
           select: { entryItems: true },

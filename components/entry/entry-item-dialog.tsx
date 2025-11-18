@@ -103,12 +103,6 @@ export function EntryItemDialog({
     // Validate box number against room capacity before submitting
     const selectedRoom = rooms.find((r) => r.id === data.roomId);
     const roomCapacity = selectedRoom?.capacity || null;
-    const boxValue = data.boxNo ? parseInt(data.boxNo) : null;
-
-    if (roomCapacity !== null && boxValue !== null && boxValue > roomCapacity) {
-      // Prevent submission if box number exceeds capacity
-      return;
-    }
 
     setSubmitting(true);
     try {
@@ -344,11 +338,7 @@ export function EntryItemDialog({
                           Box number exceeds room capacity ({roomCapacity})
                         </p>
                       )}
-                      {!exceedsCapacity && roomCapacity !== null && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Room capacity: {roomCapacity}
-                        </p>
-                      )}
+
                       <FormMessage />
                     </FormItem>
                   );

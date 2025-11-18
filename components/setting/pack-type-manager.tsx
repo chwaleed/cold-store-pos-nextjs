@@ -184,7 +184,7 @@ export function PackTypeManager() {
     {
       name: 'Actions',
       accessor: (row: any) => (
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-end">
           <Button variant="ghost" size="icon" onClick={() => handleEdit(row)}>
             <Pencil className="h-4 w-4" />
           </Button>
@@ -201,6 +201,7 @@ export function PackTypeManager() {
         </div>
       ),
       id: 'actions',
+      headerClassName: 'text-end',
       className: 'text-right',
     },
   ];

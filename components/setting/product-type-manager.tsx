@@ -179,11 +179,13 @@ export function ProductTypeManager() {
         <Badge variant="secondary">{row._count?.subTypes || 0} Sub Types</Badge>
       ),
       id: 'subtypes',
+      headerClassName: 'text-center',
+      className: 'text-center',
     },
     {
       name: 'Actions',
       accessor: (row: any) => (
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-end">
           <Button variant="ghost" size="icon" onClick={() => handleEdit(row)}>
             <Pencil className="h-4 w-4" />
           </Button>
@@ -200,6 +202,7 @@ export function ProductTypeManager() {
         </div>
       ),
       id: 'actions',
+      headerClassName: 'text-end',
       className: 'text-right',
     },
   ];

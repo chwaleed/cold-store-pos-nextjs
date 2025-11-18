@@ -32,12 +32,6 @@ export const roomSchema = z.object({
   type: z.enum(['Cold', 'Hot'], {
     errorMap: () => ({ message: 'Room type must be either Cold or Hot' }),
   }),
-  capacity: z
-    .number()
-    .int()
-    .positive('Capacity must be a positive number')
-    .optional()
-    .nullable(),
 });
 
 export const updateRoomSchema = z.object({

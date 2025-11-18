@@ -83,7 +83,6 @@ export function RoomManager() {
     defaultValues: {
       name: '',
       type: 'Cold',
-      capacity: null,
     },
   });
 
@@ -148,7 +147,6 @@ export function RoomManager() {
     form.reset({
       name: room.name,
       type: room.type,
-      capacity: room.capacity,
     });
     setDialogOpen(true);
   };
@@ -183,7 +181,6 @@ export function RoomManager() {
     form.reset({
       name: '',
       type: 'Cold',
-      capacity: null,
     });
     setDialogOpen(true);
   };
@@ -206,16 +203,14 @@ export function RoomManager() {
         </Badge>
       ),
       id: 'type',
+      headerClassName: 'text-center',
+      className: 'text-center',
     },
-    {
-      name: 'Capacity',
-      accessor: (row: any) => (row.capacity ? `${row.capacity} units` : 'N/A'),
-      id: 'capacity',
-    },
+
     {
       name: 'Actions',
       accessor: (row: any) => (
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-end">
           <Button variant="ghost" size="icon" onClick={() => handleEdit(row)}>
             <Pencil className="h-4 w-4" />
           </Button>
@@ -231,6 +226,8 @@ export function RoomManager() {
           </Button>
         </div>
       ),
+      headerClassName: 'text-right',
+
       id: 'actions',
       className: 'text-right',
     },
@@ -323,28 +320,7 @@ export function RoomManager() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="capacity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Capacity (optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="e.g., 5000"
-                        {...field}
-                        value={field.value || ''}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value ? parseInt(value) : null);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+
               <DialogFooter>
                 <Button
                   type="button"
