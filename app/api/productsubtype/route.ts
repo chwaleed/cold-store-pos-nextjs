@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     const productSubTypes = await prisma.productSubType.findMany({
       where,
-      orderBy: { name: 'asc' },
+      orderBy: { name: 'desc' },
       include: {
         productType: includeType != 'false' ? true : false,
       },

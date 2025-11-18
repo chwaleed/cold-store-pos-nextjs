@@ -6,7 +6,7 @@ import { productTypeSchema } from '@/schema/config';
 export async function GET() {
   try {
     const productTypes = await prisma.productType.findMany({
-      orderBy: { name: 'asc' },
+      orderBy: { name: 'desc' },
       include: {
         _count: {
           select: { subTypes: true },

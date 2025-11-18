@@ -21,9 +21,13 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/api/s3-bucket/route.js"],
-  "exclude": [
-    "node_modules",
-    "src-tauri"
-  ]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "app/api/s3-bucket/route.js",
+    "lib/pdf-generator.tssad"
+  ],
+  "exclude": ["node_modules", "src-tauri"]
 }

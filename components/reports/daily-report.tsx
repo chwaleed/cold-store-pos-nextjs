@@ -22,7 +22,7 @@ import { CalendarIcon, Download, Printer, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
-import { generateCustomerReportPDF } from '@/lib/pdf-generator';
+import { generateCustomerReportPDF } from '@/lib/pdf-generator.client';
 import { CustomerSearchSelect } from '@/components/ui/customer-search-select';
 import useStore from '@/app/(root)/(store)/store';
 

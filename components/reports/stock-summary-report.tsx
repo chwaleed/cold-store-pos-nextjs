@@ -15,7 +15,7 @@ import { Download, Printer, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { generateStockReportPDF } from '@/lib/pdf-generator';
+import { generateStockReportPDF } from '@/lib/pdf-generator.client';
 import useStore from '@/app/(root)/(store)/store';
 
 export function StockSummaryReport() {

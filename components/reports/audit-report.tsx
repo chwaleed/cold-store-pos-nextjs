@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { YearMonthPicker } from '@/components/ui/year-month-picker';
-import { generateAuditReportPDF } from '@/lib/pdf-generator';
+import { generateAuditReportPDF } from '@/lib/pdf-generator.client';
 
 export function AuditReport() {
   const [period, setPeriod] = useState<string>('month');
