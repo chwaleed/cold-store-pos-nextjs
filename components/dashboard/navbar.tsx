@@ -3,7 +3,6 @@ import React from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { NAVBAR_ITEMS } from '@/constant/navbarMenu';
-import { ScrollAreaDemo } from '../scrollarea/scrollarea';
 
 function Navbar() {
   // Get the current pathname from Next.js router
@@ -30,8 +29,6 @@ function Navbar() {
               {item.title}
             </Link>
           ))}
-          {/* Include ScrollAreaDemo component */}
-          <ScrollAreaDemo />
         </nav>
       </div>
     </>

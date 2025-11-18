@@ -1,7 +1,6 @@
 'use client';
 import Link from 'next/link';
 import { TriangleAlert } from 'lucide-react';
-import { ScrollAreaDemo } from '../scrollarea/scrollarea';
 import { SheetContent } from '@/components/ui/sheet';
 import { NAVBAR_ITEMS } from '@/constant/navbarMenu';
 import { usePathname } from 'next/navigation';
@@ -40,9 +39,6 @@ export function NavbarSheet() {
               {item.title}
             </Link>
           ))}
-
-          {/* Include ScrollAreaDemo component */}
-          <ScrollAreaDemo />
         </nav>
       </SheetContent>
     </>
