@@ -28,18 +28,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,6 +43,7 @@ import {
 import { packTypeSchema, type PackTypeFormData } from '@/schema/config';
 import { PackType } from '@/types/config';
 import DataTable from '@/components/dataTable/data-table';
+import useStore from '@/app/(root)/(store)/store';
 
 interface PackTypeWithCount extends PackType {
   _count?: {
@@ -61,8 +52,10 @@ interface PackTypeWithCount extends PackType {
 }
 
 export function PackTypeManager() {
-  const [packTypes, setPackTypes] = useState<PackTypeWithCount[]>([]);
-  const [loading, setLoading] = useState(true);
+  const packTypes = useStore((state) => state.packTypes);
+  const loading = useStore((state) => state.loading);
+  const handlePackType = useStore((state) => state.handlePackType);
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -77,27 +70,6 @@ export function PackTypeManager() {
       name: '',
     },
   });
-
-  useEffect(() => {
-    fetchPackTypes();
-  }, []);
-
-  const fetchPackTypes = async () => {
-    try {
-      const response = await fetch('/api/packtype');
-      const data = await response.json();
-
-      if (data.success) {
-        setPackTypes(data.data);
-      } else {
-        toast.error(data.error || 'Failed to fetch pack types');
-      }
-    } catch (error) {
-      toast.error('Failed to fetch pack types');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const onSubmit = async (data: PackTypeFormData) => {
     setSubmitting(true);
@@ -118,6 +90,10 @@ export function PackTypeManager() {
       const result = await response.json();
 
       if (result.success) {
+        editMode
+          ? handlePackType(result.data, 'edit')
+          : handlePackType(result.data, 'add');
+
         toast.success(
           editMode
             ? 'Pack type updated successfully'
@@ -125,8 +101,6 @@ export function PackTypeManager() {
         );
         form.reset();
         setDialogOpen(false);
-        // Refresh data immediately
-        await fetchPackTypes();
       } else {
         toast.error(result.error || 'Operation failed');
       }
@@ -157,11 +131,11 @@ export function PackTypeManager() {
       const result = await response.json();
 
       if (result.success) {
+        handlePackType(selectedId, 'remove');
         toast.success('Pack type deleted successfully');
         setDeleteDialogOpen(false);
         setSelectedId(null);
         // Refresh data immediately
-        await fetchPackTypes();
       } else {
         toast.error(result.error || 'Failed to delete pack type');
       }

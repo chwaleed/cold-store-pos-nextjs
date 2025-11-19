@@ -5,11 +5,13 @@ interface StoreState {
   subType: any[];
   rooms: any[];
   packTypes: any[];
+  loading: boolean;
 
   setTypes: (typesData: any[]) => void;
   setSubTypes: (subTypesData: any[]) => void;
   setRooms: (roomsData: any[]) => void;
   setPackTypes: (packTypesData: any[]) => void;
+  setLoading: (loading: boolean) => void;
 
   handleType: (typeData: any, operation: 'add' | 'remove' | 'edit') => void;
   handleSubType: (
@@ -28,11 +30,13 @@ const useStore = create<StoreState>((set, get) => ({
   subType: [],
   rooms: [],
   packTypes: [],
+  loading: true,
 
   setTypes: (typesData) => set(() => ({ types: typesData })),
   setSubTypes: (subTypesData) => set(() => ({ subType: subTypesData })),
   setRooms: (roomsData) => set(() => ({ rooms: roomsData })),
   setPackTypes: (packTypesData) => set(() => ({ packTypes: packTypesData })),
+  setLoading: (loading) => set(() => ({ loading })),
 
   // ---------------- TYPE ----------------
   handleType: (typeData, operation) => {
@@ -60,12 +64,27 @@ const useStore = create<StoreState>((set, get) => ({
     if (operation === 'add') {
       set((state) => ({
         subType: [...state.subType, subTypeData],
+        types: state.types.map((type) =>
+          subTypeData.productTypeId == type.id
+            ? { ...type, _count: { subTypes: type._count.subTypes + 1 } }
+            : type
+        ),
       }));
     }
 
     if (operation === 'remove') {
       set((state) => ({
-        subType: state.subType.filter((subType) => subType.id !== subTypeData),
+        subType: state.subType.filter(
+          (subType) => subType.id !== subTypeData.id
+        ),
+        types: state.types.map((type) =>
+          subTypeData.typeId == type.id
+            ? {
+                ...type,
+                _count: { subTypes: type._count.subTypes - 1 },
+              }
+            : type
+        ),
       }));
     }
 

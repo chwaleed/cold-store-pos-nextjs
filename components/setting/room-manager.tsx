@@ -60,6 +60,7 @@ import {
 import { roomSchema, type RoomFormData } from '@/schema/config';
 import { Room } from '@/types/config';
 import DataTable from '@/components/dataTable/data-table';
+import useStore from '@/app/(root)/(store)/store';
 
 interface RoomWithCount extends Room {
   _count?: {
@@ -68,8 +69,10 @@ interface RoomWithCount extends Room {
 }
 
 export function RoomManager() {
-  const [rooms, setRooms] = useState<RoomWithCount[]>([]);
-  const [loading, setLoading] = useState(true);
+  const rooms = useStore((state) => state.rooms);
+  const loading = useStore((state) => state.loading);
+  const handleRoom = useStore((state) => state.handleRoom);
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -85,27 +88,6 @@ export function RoomManager() {
       type: 'Cold',
     },
   });
-
-  useEffect(() => {
-    fetchRooms();
-  }, []);
-
-  const fetchRooms = async () => {
-    try {
-      const response = await fetch('/api/room');
-      const data = await response.json();
-
-      if (data.success) {
-        setRooms(data.data);
-      } else {
-        toast.error(data.error || 'Failed to fetch rooms');
-      }
-    } catch (error) {
-      toast.error('Failed to fetch rooms');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const onSubmit = async (data: RoomFormData) => {
     setSubmitting(true);
@@ -124,13 +106,15 @@ export function RoomManager() {
       const result = await response.json();
 
       if (result.success) {
+        editMode
+          ? handleRoom(result.data, 'edit')
+          : handleRoom(result.data, 'add');
+
         toast.success(
           editMode ? 'Room updated successfully' : 'Room created successfully'
         );
         form.reset();
         setDialogOpen(false);
-        // Refresh data immediately
-        await fetchRooms();
       } else {
         toast.error(result.error || 'Operation failed');
       }
@@ -162,11 +146,10 @@ export function RoomManager() {
       const result = await response.json();
 
       if (result.success) {
+        handleRoom(selectedId, 'remove');
         toast.success('Room deleted successfully');
         setDeleteDialogOpen(false);
         setSelectedId(null);
-        // Refresh data immediately
-        await fetchRooms();
       } else {
         toast.error(result.error || 'Failed to delete room');
       }

@@ -67,8 +67,8 @@ interface ProductTypeWithDetails extends ProductType {
 export function ProductTypeManager() {
   const productTypes = useStore((state) => state.types);
   const handleProductTypes = useStore((state) => state.handleType);
+  const loading = useStore((state) => state.loading);
 
-  const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);

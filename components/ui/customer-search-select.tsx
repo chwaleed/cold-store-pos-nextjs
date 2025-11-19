@@ -123,7 +123,7 @@ export function CustomerSearchSelect({
         {/* Override all muted/opacity inside command */}
         <Command
           shouldFilter={false}
-          className="[&_*]:!text-black [&_*]:pointer-events-auto"
+          className="[&_*]:!text-foreground [&_*]:pointer-events-auto"
         >
           <CommandInput
             placeholder="Search customer..."
@@ -172,7 +172,7 @@ export function CustomerSearchSelect({
                   }}
                   // needed for some browsers
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="!text-foreground cursor-pointer !opacity-100 data-[selected]:!opacity-100 data-[disabled]:!opacity-100 hover:!text-black hover:!opacity-100"
+                  className="!text-background cursor-pointer !opacity-100 data-[selected]:!opacity-100 data-[disabled]:!opacity-100 hover:!text-black hover:!opacity-100"
                 >
                   <Check
                     className={cn(

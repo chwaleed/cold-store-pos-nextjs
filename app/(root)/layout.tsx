@@ -26,6 +26,7 @@ const RootLayout = ({ children }: RootLayoutProps) => {
   useBackupScheduler();
 
   const fetchFilters = async () => {
+    state.setLoading(true);
     try {
       const [types, subTypes, rooms, packTypes] = await Promise.all([
         axios.get('/api/producttype'),
@@ -47,6 +48,8 @@ const RootLayout = ({ children }: RootLayoutProps) => {
       }
     } catch (error) {
       console.error('Error fetching filters:', error);
+    } finally {
+      state.setLoading(false);
     }
   };
 

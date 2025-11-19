@@ -70,11 +70,10 @@ interface ProductSubTypeWithType extends ProductSubType {
 }
 
 export function ProductSubTypeManager() {
-  const [productSubTypes, setProductSubTypes] = useState<
-    ProductSubTypeWithType[]
-  >([]);
-  const [productTypes, setProductTypes] = useState<ProductType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const productSubTypes = useStore((state) => state.subType);
+  const productTypes = useStore((state) => state.types);
+  const loading = useStore((state) => state.loading);
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -91,36 +90,6 @@ export function ProductSubTypeManager() {
       productTypeId: 0,
     },
   });
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [subTypesRes, typesRes] = await Promise.all([
-        fetch('/api/productsubtype'),
-        fetch('/api/producttype'),
-      ]);
-
-      const [subTypesData, typesData] = await Promise.all([
-        subTypesRes.json(),
-        typesRes.json(),
-      ]);
-
-      if (subTypesData.success) {
-        setProductSubTypes(subTypesData.data);
-      }
-
-      if (typesData.success) {
-        setProductTypes(typesData.data);
-      }
-    } catch (error) {
-      toast.error('Failed to fetch data');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const onSubmit = async (data: ProductSubTypeFormData) => {
     setSubmitting(true);
@@ -141,6 +110,14 @@ export function ProductSubTypeManager() {
       const result = await response.json();
 
       if (result.success) {
+        if (editMode && selectedId) {
+          handleSubType(result.data, 'edit');
+        } else {
+          handleSubType(result.data, 'add');
+        }
+      }
+
+      if (result.success) {
         toast.success(
           editMode
             ? 'Product subtype updated successfully'
@@ -148,8 +125,6 @@ export function ProductSubTypeManager() {
         );
         form.reset();
         setDialogOpen(false);
-        // Refresh data immediately
-        await fetchData();
       } else {
         toast.error(result.error || 'Operation failed');
       }
@@ -181,11 +156,16 @@ export function ProductSubTypeManager() {
       const result = await response.json();
 
       if (result.success) {
+        const subType = productSubTypes.find(
+          (subType) => subType.id === selectedId
+        );
+        handleSubType(
+          { id: selectedId, typeId: subType.productTypeId },
+          'remove'
+        );
         toast.success('Product subtype deleted successfully');
         setDeleteDialogOpen(false);
         setSelectedId(null);
-        // Refresh data immediately
-        await fetchData();
       } else {
         toast.error(result.error || 'Failed to delete product subtype');
       }
