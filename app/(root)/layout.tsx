@@ -5,7 +5,7 @@ interface RootLayoutProps {
   children: React.ReactNode;
 }
 import Link from 'next/link';
-import { Menu, TriangleAlert } from 'lucide-react';
+import { Menu, Snowflake } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetTrigger } from '@/components/ui/sheet';
 import { ModeToggle } from '@/components/darkmode/darkmode';
@@ -19,7 +19,7 @@ import useStore from './(store)/store';
 import { useBackupScheduler } from '@/lib/use-backup-scheduler';
 
 const RootLayout = ({ children }: RootLayoutProps) => {
-  const [storeName, setStoreName] = useState<string | null>('Ahmad ');
+  const [storeName, setStoreName] = useState<string | null>('Ahmad Cold Store');
   const state = useStore((state) => state);
 
   // Initialize backup scheduler
@@ -72,8 +72,8 @@ const RootLayout = ({ children }: RootLayoutProps) => {
                   href="/"
                   className="flex items-center gap-2 font-semibold"
                 >
-                  <TriangleAlert className="h-6 w-6" />
-                  <span className="">{storeName} Inc</span>
+                  <Snowflake className="h-6 w-6" />
+                  <span className="">{storeName} </span>
                 </Link>
               </div>
               <Navbar />

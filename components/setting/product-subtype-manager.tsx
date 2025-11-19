@@ -63,6 +63,7 @@ import {
 } from '@/schema/config';
 import { ProductType, ProductSubType } from '@/types/config';
 import DataTable from '@/components/dataTable/data-table';
+import useStore from '@/app/(root)/(store)/store';
 
 interface ProductSubTypeWithType extends ProductSubType {
   productType: ProductType;
@@ -81,6 +82,7 @@ export function ProductSubTypeManager() {
   const [submitting, setSubmitting] = useState(false);
   const [page, setPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const handleSubType = useStore((state) => state.handleSubType);
 
   const form = useForm<ProductSubTypeFormData>({
     resolver: zodResolver(productSubTypeSchema),

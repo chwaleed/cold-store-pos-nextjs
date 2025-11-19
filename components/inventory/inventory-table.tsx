@@ -30,6 +30,7 @@ interface InventoryItem {
   remainingKjQuantity: number | null;
   hasDoubleRentEnabled: boolean;
   grandTotal: number;
+  isDoubled: boolean;
 }
 
 interface InventoryTableProps {
@@ -50,7 +51,6 @@ export function InventoryTable({ filters }: InventoryTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [summary, setSummary] = useState({
-    totalItems: 0,
     totalQuantity: 0,
     totalValue: 0,
   });
@@ -76,9 +76,7 @@ export function InventoryTable({ filters }: InventoryTableProps) {
         setItems(data.data || []);
         setCurrentPage(data.pagination?.currentPage || 1);
         setLastPage(data.pagination?.lastPage || 1);
-        setSummary(
-          data.summary || { totalItems: 0, totalQuantity: 0, totalValue: 0 }
-        );
+        setSummary(data.summary || { totalQuantity: 0, totalValue: 0 });
       } else {
         toast.error('Failed to load inventory');
       }
@@ -176,22 +174,13 @@ export function InventoryTable({ filters }: InventoryTableProps) {
       name: 'Days in Storage',
       accessor: (row: InventoryItem) => (
         <div className="text-center">
-          {row.hasDoubleRentEnabled && (
-            <p
-              className={`text-sm font-semibold ${
-                row.displayDays < 0 ? 'text-red-600' : 'text-muted-foreground'
-              }`}
-            >
-              {row.displayDays < 0
-                ? `${row.displayDays} days`
-                : `${row.daysInStorage} days`}
-            </p>
-          )}
-          {!row.hasDoubleRentEnabled && (
-            <p className="text-sm text-muted-foreground">
-              {-row.daysInStorage} days
-            </p>
-          )}
+          <p
+            className={`text-sm font-semibold ${
+              row.isDoubled ? 'text-red-600' : 'text-muted-foreground'
+            }`}
+          >
+            {row.daysInStorage} days
+          </p>
         </div>
       ),
       id: 'daysInStorage',
@@ -244,10 +233,6 @@ export function InventoryTable({ filters }: InventoryTableProps) {
     {
       name: 'Total Value',
       accessor: (row: InventoryItem) => {
-        console.log(row);
-        if (row.hasDoubleRentEnabled && row.daysInStorage < 0) {
-          return `PKR ${(row.grandTotal * 2).toFixed(2)}`;
-        }
         return `PKR ${row.grandTotal.toFixed(2)}`;
       },
       id: 'totalValue',

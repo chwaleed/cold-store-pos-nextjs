@@ -27,6 +27,8 @@ export async function GET() {
       },
     });
 
+    console.log(eligibleItems);
+
     if (eligibleItems.length === 0) {
       return NextResponse.json({ success: true, updated: 0 });
     }

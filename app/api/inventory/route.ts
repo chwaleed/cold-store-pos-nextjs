@@ -140,16 +140,16 @@ export async function GET(request: NextRequest) {
       );
 
       // Double rent calculation
-      const isDoubleRent =
-        item.productType.doubleRentAfter30Days && daysInStorage > 30;
-      const currentPrice = isDoubleRent ? item.unitPrice * 2 : item.unitPrice;
-      const totalValue = availableQty * currentPrice;
 
-      // For types with doubleRentAfter30Days, show negative days after 30 days
-      const displayDays =
-        item.productType.doubleRentAfter30Days && daysInStorage > 30
-          ? -(daysInStorage - 30)
-          : daysInStorage;
+      const totalValue = availableQty * item.unitPrice;
+
+      let grandTotal =
+        availableQty * item.unitPrice +
+        availableKjQty * (item.kjUnitPrice || 0);
+
+      if (item.isDoubled) {
+        grandTotal = grandTotal + availableQty * item.unitPrice;
+      }
 
       return {
         id: item.id,
@@ -162,31 +162,20 @@ export async function GET(request: NextRequest) {
         boxNo: item.boxNo,
         availableQty,
         unitPrice: item.unitPrice,
-        currentPrice,
-        totalValue,
         daysInStorage,
-        displayDays,
+        isDoubled: item.isDoubled,
         kjQuantity: item.kjQuantity,
         kjUnitPrice: item.kjUnitPrice,
         kjTotal: item.kjTotal,
-        isDoubleRent,
-        grandTotal:
-          availableQty * currentPrice +
-          availableKjQty * (item.kjUnitPrice || 0),
+        grandTotal,
         hasKhaliJali: item.hasKhaliJali,
         remainingKjQuantity: item.remainingKjQuantity,
         reciptNo: item.entryReceipt?.receiptNo,
         hasDoubleRentEnabled: item.productType.doubleRentAfter30Days,
       };
     });
-    // --- REMOVED: .filter((item) => item !== null) ---
 
-    // --- IMPORTANT NOTE ON 'summary' ---
-    // This summary is now calculated ONLY for the items on the current page.
-    // If you need a grand total summary for ALL items,
-    // that requires a separate, complex query.
     const summary = {
-      totalItems: inventory.length, // This is page items. Use 'totalItems' from count for all items.
       totalQuantity: inventory.reduce(
         (sum, item) => sum + (item.availableQty || 0),
         0

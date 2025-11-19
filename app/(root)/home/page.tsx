@@ -9,52 +9,55 @@ import {
   Calendar,
   Phone,
   MapPin,
+  MoreHorizontal,
+  ArrowUpRight,
+  ArrowRight,
 } from 'lucide-react';
 import axios from 'axios';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button'; // Assuming you have a button component, or use standard button
 import '@/styles/skeleton.css';
+import { useRouter } from 'next/navigation';
 
-// Make the main component a client component
 export default function ColdStoreDashboard() {
   const [recentCustomers, setRecentCustomers] = useState<any[]>([]);
   const [recentEntryReceipts, setRecentEntryReceipts] = useState<any[]>([]);
   const [recentClearanceReceipts, setRecentClearanceReceipts] = useState<any[]>(
     []
   );
+  const router = useRouter();
+
   const [stats, setStats] = useState<any[]>([
     {
       label: 'Total Customers',
       value: '-',
       icon: Users,
-      color: 'bg-primary/10 text-primary',
-      iconColor: 'bg-primary',
-      change: '',
+      trend: '+2.5%',
+      trendUp: true,
     },
     {
       label: 'Active Entries',
       value: '-',
       icon: Package,
-      color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-      iconColor: 'bg-blue-500',
-      change: '',
+      trend: '+12',
+      trendUp: true,
     },
     {
       label: 'Clearances Today',
       value: '-',
       icon: Truck,
-      color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
-      iconColor: 'bg-purple-500',
-      change: '',
+      trend: 'On track',
+      trendUp: true,
     },
     {
       label: 'Monthly Revenue',
       value: '-',
       icon: TrendingUp,
-      color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
-      iconColor: 'bg-orange-500',
-      change: '',
+      trend: '+8.2%',
+      trendUp: true,
     },
   ]);
+
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,6 +66,7 @@ export default function ColdStoreDashboard() {
       setLoading(true);
       setError(null);
       try {
+        // Simulating API call structure
         const [customersRes, entryRes, clearanceRes, statsRes] =
           await Promise.all([
             axios.get('/api/customer/recent?limit=5'),
@@ -75,42 +79,16 @@ export default function ColdStoreDashboard() {
         setRecentEntryReceipts(entryRes?.data?.data || []);
         setRecentClearanceReceipts(clearanceRes?.data?.data || []);
 
-        // Map stats API to the UI structure
         const s = statsRes?.data?.data || {};
-        setStats([
+        setStats((prev) => [
+          { ...prev[0], value: s.totalCustomers?.toString() || '-' },
+          { ...prev[1], value: s.activeEntries?.toString() || '-' },
+          { ...prev[2], value: s.clearancesToday?.toString() || '-' },
           {
-            label: 'Total Customers',
-            value: s.totalCustomers?.toString() || '-',
-            icon: Users,
-            color: 'bg-primary/10 text-primary',
-            iconColor: 'bg-primary',
-            change: '',
-          },
-          {
-            label: 'Active Entries',
-            value: s.activeEntries?.toString() || '-',
-            icon: Package,
-            color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-            iconColor: 'bg-blue-500',
-            change: '',
-          },
-          {
-            label: 'Clearances Today',
-            value: s.clearancesToday?.toString() || '-',
-            icon: Truck,
-            color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
-            iconColor: 'bg-purple-500',
-            change: '',
-          },
-          {
-            label: 'Monthly Revenue',
+            ...prev[3],
             value: s.monthlyRevenue
               ? `₨${Number(s.monthlyRevenue).toLocaleString()}`
               : '-',
-            icon: TrendingUp,
-            color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
-            iconColor: 'bg-orange-500',
-            change: '',
           },
         ]);
       } catch (err: any) {
@@ -124,270 +102,264 @@ export default function ColdStoreDashboard() {
     loadData();
   }, []);
 
+  // Helper to render initials
+  const getInitials = (name: string) => name.slice(0, 2).toUpperCase();
+
   return (
-    <div className=" w-full h-full rounded-2xl bg-background p-4 md:p-8">
-      <div className=" mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">
-            Cold Store Management
-          </h1>
-          <p className="text-muted-foreground">
-            Dashboard Overview -{' '}
-            {new Date().toLocaleDateString('en-US', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </p>
+    <div className="w-full h-full  bg-background rounded-2xl p-4 md:p-6">
+      <div className="mx-auto  space-y-6">
+        {/* Header Section */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              Dashboard
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Cold Store Overview &bull;{' '}
+              {new Date().toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </p>
+          </div>
         </div>
-        {loading && (
+
+        {loading ? (
+          <DashboardSkeleton />
+        ) : (
           <>
-            {/* Stats skeletons */}
-            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {Array.from({ length: 4 }).map((_, i) => (
+            {error && (
+              <div className="p-3 text-sm bg-destructive/10 text-destructive rounded-md border border-destructive/20">
+                Error loading data: {error}
+              </div>
+            )}
+
+            {/* Stats Row */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {stats.map((stat, i) => (
                 <div
                   key={i}
-                  className="bg-card rounded-xl shadow-sm transition-all duration-300 p-6 border border-border"
+                  className="bg-card p-4 rounded-xl border shadow-sm hover:shadow-md transition-shadow space-y-2"
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 rounded-lg shadow-sm">
-                      <Skeleton className="h-6 w-6 rounded-full" />
-                    </div>
-                    <Skeleton className="h-4 w-16 rounded-full" />
+                  <div className="flex items-center justify-between text-muted-foreground">
+                    <span className="text-xs font-medium uppercase tracking-wider">
+                      {stat.label}
+                    </span>
+                    <stat.icon className="w-4 h-4" />
                   </div>
-
-                  <Skeleton className="h-4 w-28 mb-2" />
-                  <Skeleton className="h-8 w-full" />
+                  <div className="flex items-baseline justify-between">
+                    <h3 className="text-2xl font-bold text-foreground">
+                      {stat.value}
+                    </h3>
+                    <span
+                      className={`text-xs font-medium ${stat.trendUp ? 'text-green-600 bg-green-500/10' : 'text-red-600 bg-red-500/10'} px-1.5 py-0.5 rounded-full`}
+                    >
+                      {stat.trend}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
 
-            {/* Recent Activity skeletons */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 3 }).map((_, cardIdx) => (
-                <div
-                  key={cardIdx}
-                  className="bg-card rounded-xl shadow-sm border border-border overflow-hidden"
-                >
-                  <div className="bg-muted p-6">
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-6 w-6 rounded-full" />
-                      <Skeleton className="h-6 w-40" />
-                    </div>
+            {/* Recent Activity Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full">
+              {/* Customers Column */}
+              <div className="bg-card rounded-xl border shadow-sm flex flex-col h-full">
+                <div className="p-4 border-b flex items-center justify-between bg-muted/10">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-blue-600" />
+                    <h3 className="font-semibold text-sm">Recent Customers</h3>
                   </div>
-                  <div className="p-6">
-                    <div className="space-y-4">
-                      {Array.from({ length: 3 }).map((__, i) => (
-                        <div
-                          key={i}
-                          className="p-4 rounded-lg bg-secondary/50 transition-colors cursor-pointer border border-border"
-                        >
-                          <Skeleton className="h-4 w-48 mb-2" />
-                          <Skeleton className="h-4 w-32 mb-1" />
-                          <Skeleton className="h-4 w-24" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  <button
+                    onClick={() => router.push('customers')}
+                    className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
+                  >
+                    View All <ArrowRight className="w-3 h-3" />
+                  </button>
                 </div>
-              ))}
-            </div>
-          </>
-        )}
-        {error && (
-          <div className="mb-4 text-sm text-destructive">Error: {error}</div>
-        )}
-
-        {/* Stats Grid */}
-        {!loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {stats.map((stat: any, index: number) => (
-              <div
-                key={index}
-                className="bg-card rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-6 border border-border"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`${stat.iconColor} p-3 rounded-lg shadow-sm`}>
-                    <stat.icon className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-primary text-sm font-semibold bg-primary/10 px-2 py-1 rounded-full">
-                    {stat.change}
-                  </span>
-                </div>
-                <h3 className="text-muted-foreground text-sm font-medium mb-1">
-                  {stat.label}
-                </h3>
-                <p className="text-3xl font-bold text-foreground">
-                  {stat.value}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Recent Activity Grid */}
-        {!loading && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Recent Customers */}
-            <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
-              <div className="bg-primary p-6">
-                <div className="flex items-center gap-3">
-                  <Users className="w-6 h-6 text-primary-foreground" />
-                  <h2 className="text-xl font-bold text-primary-foreground">
-                    Recent Customers
-                  </h2>
-                </div>
-              </div>
-              <div className="p-6">
-                {recentCustomers.length > 0 ? (
-                  <div className="space-y-4">
-                    {recentCustomers.map((customer: any) => (
+                <div className="divide-y">
+                  {recentCustomers.length > 0 ? (
+                    recentCustomers.map((customer) => (
                       <div
                         key={customer.id}
-                        className="p-4 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer border border-border"
+                        className="p-3 flex items-center gap-3 hover:bg-muted/40 transition-colors group cursor-pointer"
                       >
-                        <h3 className="font-semibold text-foreground mb-2">
-                          {customer.name}
-                        </h3>
-                        <div className="space-y-1 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <Phone className="w-4 h-4" />
-                            <span>{customer.phone}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4" />
-                            <span>{customer.village}</span>
-                          </div>
+                        <div className="h-9 w-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold shrink-0">
+                          {getInitials(customer.name)}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">
-                    No recent customers
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Recent Entry Receipts */}
-            <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
-              <div className="bg-blue-500 p-6">
-                <div className="flex items-center gap-3">
-                  <Package className="w-6 h-6 text-white" />
-                  <h2 className="text-xl font-bold text-white">
-                    Entry Receipts
-                  </h2>
-                </div>
-              </div>
-              <div className="p-6">
-                {recentEntryReceipts.length > 0 ? (
-                  <div className="space-y-4">
-                    {recentEntryReceipts.map((receipt: any) => (
-                      <div
-                        key={receipt.id}
-                        className="p-4 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer border border-border"
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="font-semibold text-foreground">
-                            {receipt.receiptNo}
-                          </span>
-                          <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full font-medium">
-                            Active
-                          </span>
-                        </div>
-                        <div className="space-y-1 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4" />
-                            <span>{receipt.customer?.name || '-'}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Truck className="w-4 h-4" />
-                            <span>{receipt.carNo}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            <span>
-                              {receipt.entryDate
-                                ? new Date(
-                                    receipt.entryDate
-                                  ).toLocaleDateString()
-                                : '-'}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">
+                            {customer.name}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                            <span className="flex items-center gap-1 truncate">
+                              <MapPin className="w-3 h-3" /> {customer.village}
                             </span>
                           </div>
                         </div>
+                        <div className="text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button className="h-7 w-7 flex items-center justify-center rounded-full hover:bg-muted border border-transparent hover:border-border">
+                            <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                          </button>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">
-                    No recent entry receipts
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Recent Clearance Receipts */}
-            <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
-              <div className="bg-purple-500 p-6">
-                <div className="flex items-center gap-3">
-                  <Truck className="w-6 h-6 text-white" />
-                  <h2 className="text-xl font-bold text-white">Clearances</h2>
+                    ))
+                  ) : (
+                    <EmptyState label="No customers" />
+                  )}
                 </div>
               </div>
-              <div className="p-6">
-                {recentClearanceReceipts.length > 0 ? (
-                  <div className="space-y-4">
-                    {recentClearanceReceipts.map((receipt: any) => (
+
+              {/* Entries Column */}
+              <div className="bg-card rounded-xl border shadow-sm flex flex-col h-full">
+                <div className="p-4 border-b flex items-center justify-between bg-muted/10">
+                  <div className="flex items-center gap-2">
+                    <Package className="w-4 h-4 text-orange-600" />
+                    <h3 className="font-semibold text-sm">Recent Entries</h3>
+                  </div>
+                  <button
+                    onClick={() => router.push('records')}
+                    className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
+                  >
+                    View All <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="divide-y">
+                  {recentEntryReceipts.length > 0 ? (
+                    recentEntryReceipts.map((receipt) => (
                       <div
                         key={receipt.id}
-                        className="p-4 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer border border-border"
+                        className="p-3 hover:bg-muted/40 transition-colors cursor-pointer"
                       >
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="font-semibold text-foreground">
-                            {receipt.clearanceNo}
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-mono text-xs font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded border">
+                            #{receipt.receiptNo}
                           </span>
-                          <span className="text-xs bg-purple-500/20 text-purple-600 dark:text-purple-400 px-2 py-1 rounded-full font-medium">
-                            Cleared
+                          <span className="text-[10px] font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100">
+                            Stored
                           </span>
                         </div>
-                        <div className="space-y-1 text-sm text-muted-foreground">
+                        <div className="flex justify-between items-center mt-2">
                           <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4" />
-                            <span>{receipt.customer?.name || '-'}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Truck className="w-4 h-4" />
-                            <span>{receipt.carNo || 'N/A'}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            <span>
-                              {receipt.clearanceDate
-                                ? new Date(
-                                    receipt.clearanceDate
-                                  ).toLocaleDateString()
-                                : '-'}
+                            <div className="h-6 w-6 rounded-full bg-orange-100 flex items-center justify-center text-[10px] font-bold text-orange-700">
+                              {getInitials(receipt.customer?.name || '?')}
+                            </div>
+                            <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
+                              {receipt.customer?.name}
                             </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Truck className="w-3 h-3" /> {receipt.carNo}
                           </div>
                         </div>
                       </div>
-                    ))}
+                    ))
+                  ) : (
+                    <EmptyState label="No entries" />
+                  )}
+                </div>
+              </div>
+
+              {/* Clearances Column */}
+              <div className="bg-card rounded-xl border shadow-sm flex flex-col h-full">
+                <div className="p-4 border-b flex items-center justify-between bg-muted/10">
+                  <div className="flex items-center gap-2">
+                    <Truck className="w-4 h-4 text-purple-600" />
+                    <h3 className="font-semibold text-sm">Recent Clearances</h3>
                   </div>
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">
-                    No recent clearance receipts
-                  </p>
-                )}
+                  <button
+                    onClick={() => router.push('clearance')}
+                    className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
+                  >
+                    View All <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="divide-y">
+                  {recentClearanceReceipts.length > 0 ? (
+                    recentClearanceReceipts.map((receipt) => (
+                      <div
+                        key={receipt.id}
+                        className="p-3 hover:bg-muted/40 transition-colors cursor-pointer"
+                      >
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-medium text-foreground">
+                              {receipt.customer?.name}
+                            </h4>
+                          </div>
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {receipt.clearanceDate
+                              ? new Date(
+                                  receipt.clearanceDate
+                                ).toLocaleDateString(undefined, {
+                                  month: 'numeric',
+                                  day: 'numeric',
+                                })
+                              : '-'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center mt-1 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            #{receipt.clearanceNo}
+                          </span>
+                          <div className="flex items-center gap-1 text-purple-600">
+                            Success <ArrowUpRight className="w-3 h-3" />
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <EmptyState label="No clearances" />
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>
   );
 }
 
-// (removed duplicate export default function)
+// Sub-components for cleaner code
+
+function EmptyState({ label }: { label: string }) {
+  return (
+    <div className="p-8 flex flex-col items-center justify-center text-muted-foreground space-y-2">
+      <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+        <MoreHorizontal className="w-4 h-4 opacity-50" />
+      </div>
+      <span className="text-xs">{label}</span>
+    </div>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-24 rounded-xl border bg-card p-4">
+            <Skeleton className="h-4 w-24 mb-4" />
+            <Skeleton className="h-8 w-16" />
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-[300px] rounded-xl border bg-card">
+            <div className="p-4 border-b">
+              <Skeleton className="h-5 w-32" />
+            </div>
+            <div className="p-4 space-y-4">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

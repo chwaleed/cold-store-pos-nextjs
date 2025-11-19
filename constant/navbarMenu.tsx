@@ -1,14 +1,12 @@
 import {
   Home,
-  Package,
-  ShoppingCart,
   Archive,
   Settings,
-  Star,
   PackageOpen,
   DollarSign,
   FileText,
   Warehouse,
+  User2,
 } from 'lucide-react';
 import { NavItem } from '@/types/Navbar';
 
@@ -36,7 +34,7 @@ export const NAVBAR_ITEMS: NavItem[] = [
   {
     title: 'Customers',
     path: '/customers',
-    icon: <ShoppingCart className="h-4 w-4" />,
+    icon: <User2 className="h-4 w-4" />,
   },
 
   {
