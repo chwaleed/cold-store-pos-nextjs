@@ -126,6 +126,7 @@
     remainingKjQuantity Float?   // Tracks remaining KJ after partial clearances
     kjUnitPrice        Float?
     kjTotal            Float?   // kjQuantity × kjUnitPrice
+    isDoubled          Boolean  @default(false)
     
     grandTotal        Float    // totalPrice + kjTotal
     createdAt         DateTime @default(now())

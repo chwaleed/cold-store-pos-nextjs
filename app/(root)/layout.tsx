@@ -50,8 +50,15 @@ const RootLayout = ({ children }: RootLayoutProps) => {
     }
   };
 
+  const doublePrices = async () => {
+    try {
+      await axios.get('/api/inventory/apply-double');
+    } catch (error) {}
+  };
+
   useEffect(() => {
     fetchFilters();
+    doublePrices();
   }, []);
 
   return (

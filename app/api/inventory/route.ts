@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { differenceInDays } from 'date-fns';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -124,8 +122,6 @@ export async function GET(request: NextRequest) {
     // --- End of modified block ---
 
     const today = new Date();
-
-    console.log(`Fetched ${entryItems.length} items for page ${page}`);
 
     // Calculate inventory with double rent logic
     // This 'inventory' array will now only contain the items for the current page
