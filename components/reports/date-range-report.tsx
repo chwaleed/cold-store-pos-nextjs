@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -17,30 +23,47 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
-import { CalendarIcon, Download, Printer, X } from 'lucide-react';
+import {
+  CalendarIcon,
+  Download,
+  Printer,
+  X,
+  Search,
+  Filter,
+  ArrowUpRight,
+  ArrowDownLeft,
+  FileSpreadsheet,
+  FileText,
+  ChevronDown,
+  Package,
+  BarChart3,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { generateOverallReportPDF } from '@/lib/pdf-generator.client';
-
-interface ProductType {
-  id: number;
-  name: string;
-}
-
-interface ProductSubType {
-  id: number;
-  name: string;
-  productTypeId: number;
-}
+import useStore from '@/app/(root)/(store)/store'; // Assuming you have this store like the previous file
 
 export function DateRangeReport() {
-  const [productTypes, setProductTypes] = useState<ProductType[]>([]);
-  const [productSubTypes, setProductSubTypes] = useState<ProductSubType[]>([]);
-  const [filteredSubTypes, setFilteredSubTypes] = useState<ProductSubType[]>(
-    []
-  );
+  // Using store for consistency with your previous file
+  const { types: productTypes, subType: productSubTypes } = useStore();
+  const [filteredSubTypes, setFilteredSubTypes] = useState<any[]>([]);
 
   const [selectedType, setSelectedType] = useState<string | undefined>(
     undefined
@@ -94,83 +117,92 @@ export function DateRangeReport() {
   };
 
   const handlePrint = () => {
-    if (!reportData) {
-      toast.error('Please generate report first');
-      return;
-    }
-
+    if (!reportData) return;
     const productType = selectedType
       ? productTypes.find((t) => t.id.toString() === selectedType)?.name
       : undefined;
     const productSubType = selectedSubType
       ? productSubTypes.find((st) => st.id.toString() === selectedSubType)?.name
       : undefined;
-
     const filters = {
       period,
       date: date.toISOString(),
       productType,
       productSubType,
     };
-
     const doc = generateOverallReportPDF(reportData, filters);
     doc.print();
   };
 
   const downloadPDF = () => {
-    if (!reportData) {
-      toast.error('Please generate report first');
-      return;
-    }
-
+    if (!reportData) return;
     const productType = selectedType
       ? productTypes.find((t) => t.id.toString() === selectedType)?.name
       : undefined;
     const productSubType = selectedSubType
       ? productSubTypes.find((st) => st.id.toString() === selectedSubType)?.name
       : undefined;
-
     const filters = {
       period,
       date: date.toISOString(),
       productType,
       productSubType,
     };
-
     const doc = generateOverallReportPDF(reportData, filters);
     doc.download(`overall-report-${format(date, 'yyyy-MM-dd')}.pdf`);
-    toast.success('PDF downloaded successfully');
+    toast.success('PDF downloaded');
   };
 
   const exportToExcel = () => {
-    if (!reportData) {
-      toast.error('No report data to export');
-      return;
-    }
+    if (!reportData) return;
 
     const wb = XLSX.utils.book_new();
 
+    const productTypeName = selectedType
+      ? productTypes.find((t) => t.id.toString() === selectedType)?.name
+      : 'All Types';
+    const productSubTypeName = selectedSubType
+      ? productSubTypes.find((st) => st.id.toString() === selectedSubType)?.name
+      : 'All Sub-Types';
+
     // Summary Sheet
     const summaryData = [
-      ['Overall Business Report'],
-      ['Period', period],
-      ['Date', format(date, 'PPP')],
-      [],
-      ['ENTRY SUMMARY'],
-      ['Total Amount', reportData.summary.totalEntryAmount],
-      ['Total Quantity', reportData.summary.totalEntryQuantity],
-      [],
-      ['CLEARANCE SUMMARY'],
-      ['Total Amount', reportData.summary.totalClearanceAmount],
-      ['Total Quantity', reportData.summary.totalClearanceQuantity],
-      [],
-      ['BY PRODUCT TYPE'],
+      ['OVERALL BUSINESS REPORT'],
+      ['Generated On', format(new Date(), 'PPP p')],
       [
-        'Type',
+        'Period',
+        period === 'day' ? 'Daily' : period === 'month' ? 'Monthly' : 'Yearly',
+      ],
+      ['Date', format(date, 'PPP')],
+      ['Product Type Filter', productTypeName],
+      ['Product Sub-Type Filter', productSubTypeName],
+      [],
+      ['METRICS OVERVIEW'],
+      ['Metric', 'Value'],
+      [
+        'Total Entry Amount',
+        `₨ ${reportData.summary.totalEntryAmount.toFixed(2)}`,
+      ],
+      [
+        'Total Entry Quantity',
+        reportData.summary.totalEntryQuantity.toFixed(2),
+      ],
+      [
+        'Total Clearance Amount',
+        `₨ ${reportData.summary.totalClearanceAmount.toFixed(2)}`,
+      ],
+      [
+        'Total Clearance Quantity',
+        reportData.summary.totalClearanceQuantity.toFixed(2),
+      ],
+      [],
+      ['PRODUCT BREAKDOWN'],
+      [
+        'Product Type',
         'Entry Qty',
-        'Entry Amount',
+        'Entry Amount (₨)',
         'Clearance Qty',
-        'Clearance Amount',
+        'Clearance Amount (₨)',
       ],
     ];
 
@@ -191,145 +223,188 @@ export function DateRangeReport() {
       summaryData.push([
         type,
         entry.quantity,
-        entry.amount,
+        entry.amount.toFixed(2),
         clearance.quantity,
-        clearance.amount,
+        clearance.amount.toFixed(2),
       ]);
     });
 
     const ws = XLSX.utils.aoa_to_sheet(summaryData);
+    ws['!cols'] = [
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 18 },
+      { wch: 15 },
+      { wch: 20 },
+    ];
     XLSX.utils.book_append_sheet(wb, ws, 'Summary');
 
     // Entries Sheet
     if (reportData.entries.length > 0) {
-      const entryData = [
+      const entryRows = [
+        ['ENTRY RECEIPTS DETAIL'],
+        [],
         [
           'Receipt No',
           'Customer',
           'Date',
           'Product Type',
+          'Sub Type',
           'Quantity',
-          'Amount',
+          'Unit Price',
+          'Total Amount',
         ],
       ];
-
       reportData.entries.forEach((entry: any) => {
         entry.items.forEach((item: any) => {
-          entryData.push([
+          entryRows.push([
             entry.receiptNo,
             entry.customer.name,
             format(new Date(entry.entryDate), 'PP'),
-            `${item.productType.name}${item.productSubType ? ` - ${item.productSubType.name}` : ''}`,
+            item.productType.name,
+            item.productSubType?.name || '-',
             item.quantity,
-            item.totalPrice,
+            Number(item.unitPrice || 0).toFixed(2),
+            Number(item.totalPrice || 0).toFixed(2),
           ]);
         });
       });
-
-      const wsEntry = XLSX.utils.aoa_to_sheet(entryData);
-      XLSX.utils.book_append_sheet(wb, wsEntry, 'Entries');
+      const wsEntry = XLSX.utils.aoa_to_sheet(entryRows);
+      wsEntry['!cols'] = [
+        { wch: 15 },
+        { wch: 20 },
+        { wch: 15 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 15 },
+      ];
+      XLSX.utils.book_append_sheet(wb, wsEntry, 'Entry Receipts');
     }
 
-    // Clearances Sheet
+    // Clearance Sheet
     if (reportData.clearances.length > 0) {
-      const clearanceData = [
+      const clearRows = [
+        ['CLEARANCE RECEIPTS DETAIL'],
+        [],
         [
           'Clearance No',
           'Customer',
           'Date',
           'Product Type',
+          'Sub Type',
           'Quantity',
-          'Amount',
+          'Unit Price',
+          'Total Amount',
         ],
       ];
-
-      reportData.clearances.forEach((clearance: any) => {
-        clearance.clearedItems.forEach((item: any) => {
-          clearanceData.push([
-            clearance.clearanceNo,
-            clearance.customer.name,
-            format(new Date(clearance.clearanceDate), 'PP'),
-            `${item.entryItem.productType.name}${item.entryItem.productSubType ? ` - ${item.entryItem.productSubType.name}` : ''}`,
+      reportData.clearances.forEach((cl: any) => {
+        cl.clearedItems.forEach((item: any) => {
+          clearRows.push([
+            cl.clearanceNo,
+            cl.customer.name,
+            format(new Date(cl.clearanceDate), 'PP'),
+            item.entryItem.productType.name,
+            item.entryItem.productSubType?.name || '-',
             item.clearQuantity,
-            item.totalAmount,
+            Number(item.unitPrice || 0).toFixed(2),
+            Number(item.totalAmount || 0).toFixed(2),
           ]);
         });
       });
-
-      const wsClearance = XLSX.utils.aoa_to_sheet(clearanceData);
-      XLSX.utils.book_append_sheet(wb, wsClearance, 'Clearances');
+      const wsClear = XLSX.utils.aoa_to_sheet(clearRows);
+      wsClear['!cols'] = [
+        { wch: 15 },
+        { wch: 20 },
+        { wch: 15 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 15 },
+      ];
+      XLSX.utils.book_append_sheet(wb, wsClear, 'Clearance Receipts');
     }
 
-    const fileName = `overall_report_${period}_${format(date, 'yyyy-MM-dd')}.xlsx`;
-    XLSX.writeFile(wb, fileName);
-    toast.success('Report exported successfully');
+    XLSX.writeFile(wb, `overall_report_${format(date, 'yyyy-MM-dd')}.xlsx`);
+    toast.success('Excel exported');
   };
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Overall Report Filters</CardTitle>
+    <div className="flex flex-col mt-4 gap-6  mx-auto">
+      {/* --- Header --- */}
+
+      {/* --- Filters --- */}
+      <Card className="border-l-4 border-l-blue-500 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Filter className="h-5 w-5 text-blue-500" />
+            Report Criteria
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Time Controls */}
             <div className="space-y-2">
-              <Label>Period</Label>
-              <Select value={period} onValueChange={setPeriod}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="day">Daily</SelectItem>
-                  <SelectItem value="month">Monthly</SelectItem>
-                  <SelectItem value="year">Yearly</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label className="text-xs font-medium uppercase text-muted-foreground">
+                Time Period
+              </Label>
+              <div className="flex gap-2">
+                <Select value={period} onValueChange={setPeriod}>
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="day">Daily</SelectItem>
+                    <SelectItem value="month">Monthly</SelectItem>
+                    <SelectItem value="year">Yearly</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        'flex-1 justify-start text-left font-normal px-3',
+                        !date && 'text-muted-foreground'
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {date ? format(date, 'PP') : <span>Pick date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={(newDate) => newDate && setDate(newDate)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !date && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, 'PPP') : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={(newDate) => newDate && setDate(newDate)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
+            {/* Product Type */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>Product Type (Optional)</Label>
+                <Label className="text-xs font-medium uppercase text-muted-foreground">
+                  Product Type
+                </Label>
                 {selectedType && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2"
+                  <span
                     onClick={() => setSelectedType(undefined)}
+                    className="text-xs text-red-500 cursor-pointer hover:underline flex items-center"
                   >
-                    <X className="h-3 w-3" />
-                  </Button>
+                    Clear
+                  </span>
                 )}
               </div>
               <Select value={selectedType} onValueChange={setSelectedType}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All types" />
+                  <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
                   {productTypes.map((type) => (
@@ -341,18 +416,19 @@ export function DateRangeReport() {
               </Select>
             </div>
 
+            {/* Sub Type */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>Product SubType (Optional)</Label>
+                <Label className="text-xs font-medium uppercase text-muted-foreground">
+                  Sub Type
+                </Label>
                 {selectedSubType && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2"
+                  <span
                     onClick={() => setSelectedSubType(undefined)}
+                    className="text-xs text-red-500 cursor-pointer hover:underline"
                   >
-                    <X className="h-3 w-3" />
-                  </Button>
+                    Clear
+                  </span>
                 )}
               </div>
               <Select
@@ -361,7 +437,7 @@ export function DateRangeReport() {
                 disabled={!selectedType}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="All subtypes" />
+                  <SelectValue placeholder="All Subtypes" />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredSubTypes.map((subType) => (
@@ -372,93 +448,112 @@ export function DateRangeReport() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <div className="flex gap-2">
-            <Button onClick={generateReport} disabled={loading}>
-              {loading ? 'Generating...' : 'Generate Report'}
-            </Button>
-            {reportData && (
-              <>
-                <Button onClick={downloadPDF} variant="outline">
-                  <Download className="mr-2 h-4 w-4" />
-                  Download PDF
-                </Button>
-                <Button onClick={handlePrint} variant="outline">
-                  <Printer className="mr-2 h-4 w-4" />
-                  Print
-                </Button>
-                <Button onClick={exportToExcel} variant="outline">
-                  <Download className="mr-2 h-4 w-4" />
-                  Export Excel
-                </Button>
-              </>
-            )}
+            {/* Action Button */}
+            <div className="flex items-end">
+              <Button
+                onClick={generateReport}
+                disabled={loading}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                {loading ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span> Generating...
+                  </>
+                ) : (
+                  <>
+                    <Search className="mr-2 h-4 w-4" /> Generate Report
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {reportData && (
-        <div ref={printRef} className="print:p-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Overall Business Report</CardTitle>
-              <div className="text-sm text-muted-foreground">
-                <p>
-                  Period: {period} - {format(date, 'PPP')}
-                </p>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Entry Amount</p>
-                  <p className="text-2xl font-bold">
-                    ₨ {reportData.summary.totalEntryAmount.toFixed(2)}
-                  </p>
-                </div>
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">
-                    Entry Quantity
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {reportData.summary.totalEntryQuantity.toFixed(2)}
-                  </p>
-                </div>
-                <div className="p-4 bg-orange-50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">
-                    Clearance Amount
-                  </p>
-                  <p className="text-2xl font-bold">
-                    ₨ {reportData.summary.totalClearanceAmount.toFixed(2)}
-                  </p>
-                </div>
-                <div className="p-4 bg-teal-50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">
-                    Clearance Quantity
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {reportData.summary.totalClearanceQuantity.toFixed(2)}
-                  </p>
-                </div>
-              </div>
+      <div className="flex flex-col md:flex-row justify-end items-start md:items-center gap-4">
+        {reportData && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                Export Data
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={downloadPDF}>
+                <FileText className="mr-2 h-4 w-4" /> Download PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handlePrint}>
+                <Printer className="mr-2 h-4 w-4" /> Print Report
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportToExcel}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" /> Export Excel
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
 
-              <div>
-                <h3 className="text-lg font-semibold mb-3">
+      {/* --- Report Content --- */}
+      {reportData ? (
+        <div
+          ref={printRef}
+          className="space-y-6 animate-in fade-in-50 duration-500"
+        >
+          {/* 1. Key Metrics */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <MetricCard
+              title="Entry Amount"
+              value={`₨ ${reportData.summary.totalEntryAmount.toFixed(2)}`}
+              icon={<ArrowDownLeft className="text-blue-500" />}
+              className="border-l-4 border-l-blue-500"
+            />
+            <MetricCard
+              title="Entry Quantity"
+              value={reportData.summary.totalEntryQuantity.toFixed(2)}
+              icon={<Package className="text-blue-500" />}
+              className="border-l-4 border-l-blue-500"
+            />
+            <MetricCard
+              title="Clearance Amount"
+              value={`₨ ${reportData.summary.totalClearanceAmount.toFixed(2)}`}
+              icon={<ArrowUpRight className="text-emerald-500" />}
+              className="border-l-4 border-l-emerald-500"
+            />
+            <MetricCard
+              title="Clearance Quantity"
+              value={reportData.summary.totalClearanceQuantity.toFixed(2)}
+              icon={<Package className="text-emerald-500" />}
+              className="border-l-4 border-l-emerald-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            {/* 2. Product Breakdown (Left/Top) */}
+            <Card className="xl:col-span-1 h-fit">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <BarChart3 className="h-4 w-4" />
                   Summary by Product Type
-                </h3>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="p-2 text-left">Product Type</th>
-                        <th className="p-2 text-right">Entry Qty</th>
-                        <th className="p-2 text-right">Entry Amount</th>
-                        <th className="p-2 text-right">Clearance Qty</th>
-                        <th className="p-2 text-right">Clearance Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead>Type</TableHead>
+                        <TableHead className="text-right text-blue-600">
+                          In
+                        </TableHead>
+                        <TableHead className="text-right text-emerald-600">
+                          Out
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {Array.from(
                         new Set([
                           ...Object.keys(reportData.summary.entryByType),
@@ -473,120 +568,221 @@ export function DateRangeReport() {
                           type
                         ] || { quantity: 0, amount: 0 };
                         return (
-                          <tr key={type} className="border-t">
-                            <td className="p-2 font-medium">{type}</td>
-                            <td className="p-2 text-right">
-                              {entry.quantity.toFixed(2)}
-                            </td>
-                            <td className="p-2 text-right">
-                              ₨ {entry.amount.toFixed(2)}
-                            </td>
-                            <td className="p-2 text-right">
-                              {clearance.quantity.toFixed(2)}
-                            </td>
-                            <td className="p-2 text-right">
-                              ₨ {clearance.amount.toFixed(2)}
-                            </td>
-                          </tr>
+                          <TableRow key={type}>
+                            <TableCell className="font-medium">
+                              {type}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="font-medium">
+                                {entry.quantity}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                ₨ {entry.amount.toLocaleString()}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="font-medium">
+                                {clearance.quantity}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                ₨ {clearance.amount.toLocaleString()}
+                              </div>
+                            </TableCell>
+                          </TableRow>
                         );
                       })}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              <div>
-                <h3 className="text-lg font-semibold mb-3">
-                  Entry Details ({reportData.entries.length} receipts)
-                </h3>
-                <div className="overflow-x-auto max-h-96 overflow-y-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50 sticky top-0">
-                      <tr>
-                        <th className="p-2 text-left">Receipt No</th>
-                        <th className="p-2 text-left">Customer</th>
-                        <th className="p-2 text-left">Date</th>
-                        <th className="p-2 text-left">Product</th>
-                        <th className="p-2 text-right">Quantity</th>
-                        <th className="p-2 text-right">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {reportData.entries.map((entry: any) =>
-                        entry.items.map((item: any, idx: number) => (
-                          <tr key={`${entry.id}-${idx}`} className="border-t">
-                            <td className="p-2">{entry.receiptNo}</td>
-                            <td className="p-2">{entry.customer.name}</td>
-                            <td className="p-2">
-                              {format(new Date(entry.entryDate), 'PP')}
-                            </td>
-                            <td className="p-2">
-                              {item.productType.name}
-                              {item.productSubType &&
-                                ` - ${item.productSubType.name}`}
-                            </td>
-                            <td className="p-2 text-right">{item.quantity}</td>
-                            <td className="p-2 text-right">
-                              ₨ {item.totalPrice.toFixed(2)}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+            {/* 3. Detailed Tabs (Right/Bottom) */}
+            <Card className="xl:col-span-2">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Transaction Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="entries" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="entries">
+                      Entries ({reportData.entries.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="clearances">
+                      Clearances ({reportData.clearances.length})
+                    </TabsTrigger>
+                  </TabsList>
 
-              <div>
-                <h3 className="text-lg font-semibold mb-3">
-                  Clearance Details ({reportData.clearances.length} receipts)
-                </h3>
-                <div className="overflow-x-auto max-h-96 overflow-y-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50 sticky top-0">
-                      <tr>
-                        <th className="p-2 text-left">Clearance No</th>
-                        <th className="p-2 text-left">Customer</th>
-                        <th className="p-2 text-left">Date</th>
-                        <th className="p-2 text-left">Product</th>
-                        <th className="p-2 text-right">Quantity</th>
-                        <th className="p-2 text-right">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {reportData.clearances.map((clearance: any) =>
-                        clearance.clearedItems.map((item: any, idx: number) => (
-                          <tr
-                            key={`${clearance.id}-${idx}`}
-                            className="border-t"
-                          >
-                            <td className="p-2">{clearance.clearanceNo}</td>
-                            <td className="p-2">{clearance.customer.name}</td>
-                            <td className="p-2">
-                              {format(new Date(clearance.clearanceDate), 'PP')}
-                            </td>
-                            <td className="p-2">
-                              {item.entryItem.productType.name}
-                              {item.entryItem.productSubType &&
-                                ` - ${item.entryItem.productSubType.name}`}
-                            </td>
-                            <td className="p-2 text-right">
-                              {item.clearQuantity}
-                            </td>
-                            <td className="p-2 text-right">
-                              ₨ {item.totalAmount.toFixed(2)}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                  <TabsContent
+                    value="entries"
+                    className="border rounded-md overflow-hidden"
+                  >
+                    <div className="max-h-[500px] overflow-y-auto">
+                      <Table>
+                        <TableHeader className="bg-background/50 sticky top-0 z-10">
+                          <TableRow>
+                            <TableHead>Receipt No</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead className="text-right">
+                              Total Items
+                            </TableHead>
+                            <TableHead className="text-right">
+                              Total Qty
+                            </TableHead>
+                            <TableHead className="text-right">
+                              Total Amount
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {reportData.entries.length === 0 && (
+                            <TableRow>
+                              <TableCell
+                                colSpan={6}
+                                className="text-center py-8 text-muted-foreground"
+                              >
+                                No entries found
+                              </TableCell>
+                            </TableRow>
+                          )}
+                          {reportData.entries.map((entry: any) => {
+                            const totalItems = entry.items.length;
+                            const totalQty = entry.items.reduce(
+                              (sum: number, item: any) => sum + item.quantity,
+                              0
+                            );
+                            return (
+                              <TableRow key={entry.id}>
+                                <TableCell className="font-mono text-xs">
+                                  {entry.receiptNo}
+                                </TableCell>
+                                <TableCell className="font-medium">
+                                  {entry.customer.name}
+                                </TableCell>
+                                <TableCell className="text-muted-foreground text-xs">
+                                  {format(new Date(entry.entryDate), 'PP')}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {totalItems}
+                                </TableCell>
+                                <TableCell className="text-right font-medium">
+                                  {totalQty}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  ₨ {entry.totalAmount.toFixed(2)}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent
+                    value="clearances"
+                    className="border rounded-md overflow-hidden"
+                  >
+                    <div className="max-h-[500px] overflow-y-auto">
+                      <Table>
+                        <TableHeader className="bg-background/50 sticky top-0 z-10">
+                          <TableRow>
+                            <TableHead>Clearance No</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead className="text-right">
+                              Total Items
+                            </TableHead>
+                            <TableHead className="text-right">
+                              Total Qty
+                            </TableHead>
+                            <TableHead className="text-right">
+                              Total Amount
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {reportData.clearances.length === 0 && (
+                            <TableRow>
+                              <TableCell
+                                colSpan={6}
+                                className="text-center py-8 text-muted-foreground"
+                              >
+                                No clearances found
+                              </TableCell>
+                            </TableRow>
+                          )}
+                          {reportData.clearances.map((clearance: any) => {
+                            const totalItems = clearance.clearedItems.length;
+                            const totalQty = clearance.clearedItems.reduce(
+                              (sum: number, item: any) =>
+                                sum + item.clearQuantity,
+                              0
+                            );
+                            return (
+                              <TableRow key={clearance.id}>
+                                <TableCell className="font-mono text-xs">
+                                  {clearance.clearanceNo}
+                                </TableCell>
+                                <TableCell className="font-medium">
+                                  {clearance.customer.name}
+                                </TableCell>
+                                <TableCell className="text-muted-foreground text-xs">
+                                  {format(
+                                    new Date(clearance.clearanceDate),
+                                    'PP'
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {totalItems}
+                                </TableCell>
+                                <TableCell className="text-right font-medium">
+                                  {totalQty}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  ₨ {clearance.totalAmount.toFixed(2)}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      ) : (
+        // Empty State
+        <div className="flex flex-col items-center justify-center h-[400px] bg-background/50 rounded-xl border border-dashed">
+          <div className="bg-foreground/10 p-4 rounded-full mb-4 shadow-sm">
+            <BarChart3 className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-medium">No Report Generated</h3>
+          <p className="text-muted-foreground max-w-sm text-center mt-2">
+            Select parameters above and click "Generate Report" to see business
+            analytics.
+          </p>
         </div>
       )}
     </div>
+  );
+}
+
+// Helper Stats Component
+function MetricCard({ title, value, icon, className }: any) {
+  return (
+    <Card className={cn('shadow-sm', className)}>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between space-y-0 pb-2">
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          {icon}
+        </div>
+        <div className="text-2xl font-bold">{value}</div>
+      </CardContent>
+    </Card>
   );
 }

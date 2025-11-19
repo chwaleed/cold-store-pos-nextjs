@@ -151,50 +151,170 @@ export function DailyReport() {
 
   const exportToExcel = () => {
     if (!reportData) return;
-    // ... (Keep existing excel logic here) ...
-    // For brevity, reusing the logic you provided, just wrapped in the function
+
     const wb = XLSX.utils.book_new();
-    const customerInfo = [
-      ['Customer Report'],
-      ['Customer Name', reportData.customer.name],
+
+    // Summary Sheet
+    const summaryData = [
+      ['CUSTOMER REPORT'],
+      ['Generated On', format(new Date(), 'PPP p')],
+      [],
+      ['CUSTOMER INFORMATION'],
+      ['Name', reportData.customer.name],
       ['Phone', reportData.customer.phone || 'N/A'],
+      [
+        'Period',
+        period === 'day'
+          ? 'Daily'
+          : period === 'month'
+            ? 'Monthly'
+            : period === 'year'
+              ? 'Yearly'
+              : 'Lifetime',
+      ],
       ['Date', format(date, 'PPP')],
       [],
+      ['FINANCIAL SUMMARY'],
+      ['Net Balance', `₨ ${Math.abs(reportData.balance).toFixed(2)}`],
+      [
+        'Balance Status',
+        reportData.balance > 0
+          ? 'Receivable from Customer'
+          : reportData.balance < 0
+            ? 'Payable to Customer'
+            : 'Settled',
+      ],
     ];
-    // ... Add the rest of your excel logic logic here ...
-    const ws = XLSX.utils.aoa_to_sheet(customerInfo);
-    XLSX.utils.book_append_sheet(wb, ws, 'Report');
-    XLSX.writeFile(wb, `report_${reportData.customer.name}.xlsx`);
-    toast.success('Excel exported');
+
+    if (reportData.entryData) {
+      summaryData.push(
+        [],
+        ['ENTRY SUMMARY'],
+        ['Total Amount', `₨ ${reportData.entryData.totalAmount.toFixed(2)}`],
+        ['Total Quantity', reportData.entryData.totalQuantity],
+        ['Number of Receipts', reportData.entryData.receipts.length]
+      );
+    }
+
+    if (reportData.clearanceData) {
+      summaryData.push(
+        [],
+        ['CLEARANCE SUMMARY'],
+        [
+          'Total Amount',
+          `₨ ${reportData.clearanceData.totalAmount.toFixed(2)}`,
+        ],
+        ['Total Quantity', reportData.clearanceData.totalQuantity],
+        ['Number of Receipts', reportData.clearanceData.receipts.length]
+      );
+    }
+
+    const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
+    ws1['!cols'] = [{ wch: 25 }, { wch: 30 }];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Summary');
+
+    // Entry Receipts Sheet
+    if (
+      reportData.entryData?.receipts &&
+      reportData.entryData.receipts.length > 0
+    ) {
+      const entryData = [
+        ['ENTRY RECEIPTS'],
+        [],
+        [
+          'Receipt No',
+          'Date',
+          'Product Type',
+          'Sub Type',
+          'Quantity',
+          'Unit Price',
+          'Total Amount',
+        ],
+      ];
+
+      reportData.entryData.receipts.forEach((receipt: any) => {
+        receipt.items.forEach((item: any) => {
+          entryData.push([
+            receipt.receiptNo,
+            format(new Date(receipt.entryDate), 'PP'),
+            item.productType.name,
+            item.productSubType?.name || '-',
+            item.quantity,
+            Number(item.unitPrice || 0).toFixed(2),
+            Number(item.totalPrice || 0).toFixed(2),
+          ]);
+        });
+      });
+
+      const ws2 = XLSX.utils.aoa_to_sheet(entryData);
+      ws2['!cols'] = [
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 15 },
+      ];
+      XLSX.utils.book_append_sheet(wb, ws2, 'Entry Receipts');
+    }
+
+    // Clearance Receipts Sheet
+    if (
+      reportData.clearanceData?.receipts &&
+      reportData.clearanceData.receipts.length > 0
+    ) {
+      const clearanceData = [
+        ['CLEARANCE RECEIPTS'],
+        [],
+        [
+          'Clearance No',
+          'Date',
+          'Product Type',
+          'Sub Type',
+          'Quantity',
+          'Unit Price',
+          'Total Amount',
+        ],
+      ];
+
+      reportData.clearanceData.receipts.forEach((receipt: any) => {
+        receipt.clearedItems.forEach((item: any) => {
+          clearanceData.push([
+            receipt.clearanceNo,
+            format(new Date(receipt.clearanceDate), 'PP'),
+            item.entryItem.productType.name,
+            item.entryItem.productSubType?.name || '-',
+            item.clearQuantity,
+            Number(item.unitPrice || 0).toFixed(2),
+            Number(item.totalAmount || 0).toFixed(2),
+          ]);
+        });
+      });
+
+      const ws3 = XLSX.utils.aoa_to_sheet(clearanceData);
+      ws3['!cols'] = [
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 15 },
+      ];
+      XLSX.utils.book_append_sheet(wb, ws3, 'Clearance Receipts');
+    }
+
+    XLSX.writeFile(
+      wb,
+      `customer_report_${reportData.customer.name}_${format(date, 'yyyy-MM-dd')}.xlsx`
+    );
+    toast.success('Excel exported successfully');
   };
 
   return (
-    <div className="flex flex-col gap-6 p-2  mx-auto">
+    <div className="flex flex-col mt-4  mx-auto">
       {/* --- Header Section --- */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        {reportData && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Download className="h-4 w-4" />
-                Export Report
-                <ChevronDown className="h-4 w-4 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={downloadPDF}>
-                <FileText className="mr-2 h-4 w-4" /> Download PDF
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handlePrint}>
-                <Printer className="mr-2 h-4 w-4" /> Print Report
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={exportToExcel}>
-                <FileSpreadsheet className="mr-2 h-4 w-4" /> Export Excel
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </div>
 
       {/* --- Filters Card --- */}
       <Card className="border-l-4 border-l-primary shadow-sm">
@@ -218,7 +338,7 @@ export function DailyReport() {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 ">
               <Label className="text-xs font-medium uppercase text-muted-foreground">
                 Time Period
               </Label>
@@ -353,11 +473,36 @@ export function DailyReport() {
         </CardContent>
       </Card>
 
+      <div className="flex mt-3  flex-col md:flex-row justify-end  items-start md:items-center gap-4">
+        {reportData && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                Export Report
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={downloadPDF}>
+                <FileText className="mr-2 h-4 w-4" /> Download PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handlePrint}>
+                <Printer className="mr-2 h-4 w-4" /> Print Report
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportToExcel}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" /> Export Excel
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+
       {/* --- Report Display --- */}
       {reportData ? (
         <div
           ref={printRef}
-          className="space-y-6 animate-in fade-in-50 duration-500"
+          className="space-y-6 mt-3 animate-in fade-in-50 duration-500"
         >
           {/* Report Summary Header */}
           <Card className="bg-muted/30">
@@ -567,8 +712,8 @@ export function DailyReport() {
         </div>
       ) : (
         // Empty State
-        <div className="flex flex-col items-center justify-center h-[400px] bg-background rounded-xl border border-dashed">
-          <div className="bg-background p-4 rounded-full mb-4 shadow-sm">
+        <div className="flex mt-3 flex-col items-center justify-center h-[400px] bg-background rounded-xl border border-dashed">
+          <div className="bg-foreground/10 p-4 rounded-full mb-4 shadow-sm">
             <FileText className="h-8 w-8 text-muted-foreground" />
           </div>
           <h3 className="text-lg font-medium">No Report Generated</h3>

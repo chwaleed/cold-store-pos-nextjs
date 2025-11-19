@@ -180,6 +180,48 @@ export const buildOverallReportHTML = (reportData: any, filters: any) => {
     )
     .join('\n');
 
+  const entryReceiptRows = (reportData.entries || [])
+    .map((receipt: any) => {
+      const totalItems = (receipt.items || []).length;
+      const totalQty = (receipt.items || []).reduce(
+        (sum: number, item: any) => sum + (item.quantity || 0),
+        0
+      );
+
+      return `
+      <tr>
+        <td class="right">${format(new Date(receipt.entryDate || receipt.date), 'PP')}</td>
+        <td>${receipt.receiptNo || receipt.id}</td>
+        <td>${receipt.customer?.name || '-'}</td>
+        <td class="right">${totalItems}</td>
+        <td class="right">${totalQty}</td>
+        <td class="ltr">Rs. ${(receipt.totalAmount || 0).toFixed(2)}</td>
+      </tr>
+    `;
+    })
+    .join('\n');
+
+  const clearanceReceiptRows = (reportData.clearances || [])
+    .map((receipt: any) => {
+      const totalItems = (receipt.clearedItems || []).length;
+      const totalQty = (receipt.clearedItems || []).reduce(
+        (sum: number, item: any) => sum + (item.clearQuantity || 0),
+        0
+      );
+
+      return `
+      <tr>
+        <td class="right">${format(new Date(receipt.clearanceDate || receipt.date), 'PP')}</td>
+        <td>${receipt.clearanceNo || receipt.id}</td>
+        <td>${receipt.customer?.name || '-'}</td>
+        <td class="right">${totalItems}</td>
+        <td class="right">${totalQty}</td>
+        <td class="ltr">Rs. ${(receipt.totalAmount || 0).toFixed(2)}</td>
+      </tr>
+    `;
+    })
+    .join('\n');
+
   const body = `
     <div class="small">Period: ${filters?.period || 'All'}</div>
 
@@ -212,30 +254,91 @@ export const buildOverallReportHTML = (reportData: any, filters: any) => {
     `
         : ''
     }
+
+    ${
+      entryReceiptRows.length > 0
+        ? `
+      <h3>Entry Receipts</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Receipt No</th>
+            <th>Customer</th>
+            <th>Total Items</th>
+            <th>Total Qty</th>
+            <th>Total Amount</th>
+          </tr>
+        </thead>
+        <tbody>${entryReceiptRows}</tbody>
+      </table>
+    `
+        : ''
+    }
+
+    ${
+      clearanceReceiptRows.length > 0
+        ? `
+      <h3>Clearance Receipts</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Clearance No</th>
+            <th>Customer</th>
+            <th>Total Items</th>
+            <th>Total Qty</th>
+            <th>Total Amount</th>
+          </tr>
+        </thead>
+        <tbody>${clearanceReceiptRows}</tbody>
+      </table>
+    `
+        : ''
+    }
   `;
 
   return wrapHtml('Overall Report', body);
 };
 
 export const buildAuditReportHTML = (reportData: any) => {
+  const periodType =
+    reportData?.period?.type === 'month' ? 'Monthly' : 'Yearly';
+  const profitMargin = reportData?.financial?.profitMargin;
+  const profitMarginValue =
+    typeof profitMargin === 'string'
+      ? parseFloat(profitMargin)
+      : profitMargin || 0;
+
   const body = `
-    <div class="small">Period: ${reportData?.period || 'All'}</div>
+    <div class="small">Period: ${periodType} - ${reportData?.period?.year || 'N/A'}</div>
 
     <table>
       <tbody>
-        <tr><td>Total Revenue</td><td class="ltr">Rs. ${(reportData?.financial?.totalRevenue || 0).toFixed(2)}</td></tr>
-        <tr><td>Total Expenses</td><td class="ltr">Rs. ${(reportData?.financial?.totalExpenses || 0).toFixed(2)}</td></tr>
-        <tr><td>Net Profit/Loss</td><td class="ltr">Rs. ${(reportData?.financial?.profitLoss || 0).toFixed(2)}</td></tr>
-        <tr><td>Profit Margin</td><td class="right">${(reportData?.financial?.profitMargin || 0).toFixed(2)}%</td></tr>
+        <tr><td>Total Revenue</td><td class="ltr">Rs. ${Number(reportData?.financial?.totalRevenue || 0).toFixed(2)}</td></tr>
+        <tr><td>Total Costs</td><td class="ltr">Rs. ${Number(reportData?.financial?.totalCosts || 0).toFixed(2)}</td></tr>
+        <tr><td>Net Profit/Loss</td><td class="ltr">Rs. ${Number(reportData?.financial?.profitLoss || 0).toFixed(2)}</td></tr>
+        <tr><td>Profit Margin</td><td class="right">${Number(profitMarginValue).toFixed(2)}%</td></tr>
+        <tr><td>Outstanding Balance</td><td class="ltr">Rs. ${Number(reportData?.financial?.outstandingBalance || 0).toFixed(2)}</td></tr>
       </tbody>
     </table>
 
-    <h3>Customer Balance</h3>
+    <h3>Operations Summary</h3>
     <table>
       <tbody>
-        <tr><td>Total Outstanding</td><td class="ltr">Rs. ${(reportData?.customerBalance?.totalOutstanding || 0).toFixed(2)}</td></tr>
-        <tr><td>Total Receivable</td><td class="ltr">Rs. ${(reportData?.customerBalance?.totalReceivable || 0).toFixed(2)}</td></tr>
-        <tr><td>Total Payable</td><td class="ltr">Rs. ${(reportData?.customerBalance?.totalPayable || 0).toFixed(2)}</td></tr>
+        <tr><td>Entry Amount</td><td class="ltr">Rs. ${Number(reportData?.entry?.totalAmount || 0).toFixed(2)}</td></tr>
+        <tr><td>Entry Quantity</td><td class="right">${Number(reportData?.entry?.totalQuantity || 0)}</td></tr>
+        <tr><td>Clearance Amount</td><td class="ltr">Rs. ${Number(reportData?.clearance?.totalAmount || 0).toFixed(2)}</td></tr>
+        <tr><td>Clearance Quantity</td><td class="right">${Number(reportData?.clearance?.totalQuantity || 0)}</td></tr>
+      </tbody>
+    </table>
+    
+    <h3>Inventory Status</h3>
+    <table>
+      <tbody>
+        <tr><td>Total Inventory Value</td><td class="ltr">Rs. ${Number(reportData?.inventory?.totalValue || 0).toFixed(2)}</td></tr>
+        <tr><td>Items in Stock</td><td class="right">${Number(reportData?.inventory?.itemCount || 0)}</td></tr>
+        <tr><td>Total Quantity</td><td class="right">${Number(reportData?.inventory?.totalQuantity || 0)}</td></tr>
       </tbody>
     </table>
   `;
