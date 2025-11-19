@@ -122,6 +122,12 @@ export async function GET(request: NextRequest) {
       (sum, item) => sum + item.remainingQuantity * item.unitPrice,
       0
     );
+    const totalKjValue = inventoryItems.reduce(
+      (sum, item) =>
+        sum + (item.remainingKjQuantity ?? 0) * (item.kjUnitPrice ?? 0),
+      0
+    );
+
     const totalInventoryQuantity = inventoryItems.reduce(
       (sum, item) => sum + item.remainingQuantity,
       0
@@ -157,7 +163,7 @@ export async function GET(request: NextRequest) {
     // Costs = Total Entry Amount (what we stored for customers) + Expenses
     // Note: In a cold storage business, we charge for storage, not for selling goods
     // So profit = Clearance charges + Entry charges - Expenses
-    const totalRevenue = totalClearanceAmount + totalEntryAmount;
+    const totalRevenue = totalEntryAmount;
     const totalCosts = totalExpenses;
     const profitLoss = totalRevenue - totalCosts;
 
@@ -237,7 +243,7 @@ export async function GET(request: NextRequest) {
         count: expenses.length,
       },
       inventory: {
-        totalValue: totalInventoryValue,
+        totalValue: totalInventoryValue + totalKjValue,
         totalQuantity: totalInventoryQuantity,
         itemCount: inventoryItems.length,
       },

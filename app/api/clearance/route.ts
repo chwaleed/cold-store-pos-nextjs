@@ -324,7 +324,6 @@ export async function POST(request: NextRequest) {
         },
       },
     });
-    const clearanceNo = `CL-${dateStr}-${String(count + 1).padStart(4, '0')}`;
 
     // Create clearance receipt with cleared items in a transaction
     const clearance = await prisma.$transaction(async (tx) => {
@@ -337,6 +336,10 @@ export async function POST(request: NextRequest) {
           clearanceDate: validatedData.clearanceDate || new Date(),
           totalAmount,
           description: validatedData.description || null,
+          creditAmount:
+            validatedData?.paymentAmount && validatedData.paymentAmount > 0
+              ? validatedData.paymentAmount
+              : 0,
           clearedItems: {
             create: clearedItemsData,
           },

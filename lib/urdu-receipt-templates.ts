@@ -490,6 +490,7 @@ export function generateClearanceReceiptHTML(
       const unitPrice = entryItem?.unitPrice?.toFixed(2) || '0.00';
       const totalPrice = (quantity * (entryItem?.unitPrice || 0)).toFixed(2);
       const entryReceiptNo = entryItem?.entryReceipt?.receiptNo || '-';
+      const creditAmount = item.creditAmount || 0;
 
       let row = `
           <tr>
@@ -805,6 +806,15 @@ export function generateClearanceReceiptHTML(
             <span class="label">گاڑی نمبر:</span>
             <span class="value">${clearance.carNo}</span>
           </div>
+         ${
+           clearance?.creditAmount > 0
+             ? ` <div class="info-item">
+            <span class="label">رقم جمع:</span>
+            <span class="value">RS ${clearance.creditAmount.toFixed(2)}</span>
+          </div>`
+             : ''
+         }
+          
         </div>
       </div>
 

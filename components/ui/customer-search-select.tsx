@@ -172,7 +172,7 @@ export function CustomerSearchSelect({
                   }}
                   // needed for some browsers
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="!text-black cursor-pointer !opacity-100 data-[selected]:!opacity-100 data-[disabled]:!opacity-100 hover:!text-black hover:!opacity-100"
+                  className="!text-foreground cursor-pointer !opacity-100 data-[selected]:!opacity-100 data-[disabled]:!opacity-100 hover:!text-black hover:!opacity-100"
                 >
                   <Check
                     className={cn(

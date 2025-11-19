@@ -45,6 +45,7 @@ export async function GET(
         { status: 404 }
       );
     }
+    console.log('Clearance fetched for PDF:', clearance);
 
     // Generate HTML from template
     const html = generateClearanceReceiptHTML(clearance as any);

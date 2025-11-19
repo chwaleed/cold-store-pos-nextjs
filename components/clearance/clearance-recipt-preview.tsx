@@ -70,8 +70,10 @@ export function ClearnceReceiptPreview({
 
   const handleDownloadUrduReceipt = async () => {
     try {
-      const response = await fetch(`/api/clearance/${clearanceId}/urdu-receipt`);
-      
+      const response = await fetch(
+        `/api/clearance/${clearanceId}/urdu-receipt`
+      );
+
       if (!response.ok) {
         toast({
           title: 'Error',
@@ -277,7 +279,11 @@ export function ClearnceReceiptPreview({
           Back
         </Button>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={handleDownloadUrduReceipt}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleDownloadUrduReceipt}
+          >
             <FileDown className="mr-1.5 h-4 w-4" />
             Urdu Receipt
           </Button>
@@ -301,7 +307,7 @@ export function ClearnceReceiptPreview({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+        <div className="grid grid-cols-3 md:grid-cols-5 gap-3 text-sm">
           <div>
             <p className="text-xs text-muted-foreground">Customer</p>
             <p className="font-medium">{clearnceItem.customer.name}</p>
@@ -315,6 +321,15 @@ export function ClearnceReceiptPreview({
             <p className="text-xs text-muted-foreground">Items</p>
             <p className="font-medium">{clearnceItem.clearedItems?.length}</p>
           </div>
+          {clearnceItem.creditAmount > 0 && (
+            <div className="text-sm">
+              <p className="text-xs text-muted-foreground">Credit Amount</p>
+              <p className="font-medium">
+                PKR {clearnceItem.creditAmount.toFixed(2)}
+              </p>
+            </div>
+          )}
+
           <div>
             <p className="text-xs text-muted-foreground">Total</p>
             <p className="font-medium">
