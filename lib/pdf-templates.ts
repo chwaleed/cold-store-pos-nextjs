@@ -229,12 +229,27 @@ export const buildOverallReportHTML = (reportData: any, filters: any) => {
       <thead>
         <tr><th>Summary</th><th></th></tr>
       </thead>
-      <tbody>
-        <tr><td>Total Entry Amount</td><td class="ltr">Rs. ${(reportData.summary?.totalEntryAmount || 0).toFixed(2)}</td></tr>
-        <tr><td>Total Entry Quantity</td><td class="right">${reportData.summary?.totalEntryQuantity || 0}</td></tr>
-        <tr><td>Total Clearance Amount</td><td class="ltr">Rs. ${(reportData.summary?.totalClearanceAmount || 0).toFixed(2)}</td></tr>
-        <tr><td>Total Clearance Quantity</td><td class="right">${reportData.summary?.totalClearanceQuantity || 0}</td></tr>
-      </tbody>
+   <tbody>
+  <tr>
+    <td class="urdu">کل اندراج کی رقم</td>
+    <td class="ltr">Rs. ${(reportData.summary?.totalEntryAmount || 0).toFixed(2)}</td>
+  </tr>
+  <tr>
+    <td class="urdu">کل اندراج کی مقدار</td>
+    <td class="right">${reportData.summary?.totalEntryQuantity || 0}</td>
+  </tr>
+  <tr>
+    <td class="urdu">کل نکاسی کی رقم</td>
+    <td class="ltr">Rs. ${(reportData.summary?.totalClearanceAmount || 0).toFixed(2)}</td>
+  </tr>
+  <tr>
+    <td class="urdu">کل نکاسی کی مقدار</td>
+    <td class="right">${reportData.summary?.totalClearanceQuantity || 0}</td>
+  </tr>
+</tbody>
+
+
+
     </table>
 
     ${
@@ -311,36 +326,37 @@ export const buildAuditReportHTML = (reportData: any) => {
       : profitMargin || 0;
 
   const body = `
-    <div class="small">Period: ${periodType} - ${reportData?.period?.year || 'N/A'}</div>
+   <div class="small urdu">مدت: ${periodType} - ${reportData?.period?.year || 'N/A'}</div>
 
-    <table>
-      <tbody>
-        <tr><td>Total Revenue</td><td class="ltr">Rs. ${Number(reportData?.financial?.totalRevenue || 0).toFixed(2)}</td></tr>
-        <tr><td>Total Costs</td><td class="ltr">Rs. ${Number(reportData?.financial?.totalCosts || 0).toFixed(2)}</td></tr>
-        <tr><td>Net Profit/Loss</td><td class="ltr">Rs. ${Number(reportData?.financial?.profitLoss || 0).toFixed(2)}</td></tr>
-        <tr><td>Profit Margin</td><td class="right">${Number(profitMarginValue).toFixed(2)}%</td></tr>
-        <tr><td>Outstanding Balance</td><td class="ltr">Rs. ${Number(reportData?.financial?.outstandingBalance || 0).toFixed(2)}</td></tr>
-      </tbody>
-    </table>
+<table>
+  <tbody>
+    <tr><td class="urdu">کل آمدنی</td><td class="ltr">Rs. ${Number(reportData?.financial?.totalRevenue || 0).toFixed(2)}</td></tr>
+    <tr><td class="urdu">کل اخراجات</td><td class="ltr">Rs. ${Number(reportData?.financial?.totalCosts || 0).toFixed(2)}</td></tr>
+    <tr><td class="urdu">خالص منافع / نقصان</td><td class="ltr">Rs. ${Number(reportData?.financial?.profitLoss || 0).toFixed(2)}</td></tr>
+    <tr><td class="urdu">منافع کی شرح</td><td class="right">${Number(profitMarginValue).toFixed(2)}%</td></tr>
+    <tr><td class="urdu">بقایاجات</td><td class="ltr">Rs. ${Number(reportData?.financial?.outstandingBalance || 0).toFixed(2)}</td></tr>
+  </tbody>
+</table>
 
-    <h3>Operations Summary</h3>
-    <table>
-      <tbody>
-        <tr><td>Entry Amount</td><td class="ltr">Rs. ${Number(reportData?.entry?.totalAmount || 0).toFixed(2)}</td></tr>
-        <tr><td>Entry Quantity</td><td class="right">${Number(reportData?.entry?.totalQuantity || 0)}</td></tr>
-        <tr><td>Clearance Amount</td><td class="ltr">Rs. ${Number(reportData?.clearance?.totalAmount || 0).toFixed(2)}</td></tr>
-        <tr><td>Clearance Quantity</td><td class="right">${Number(reportData?.clearance?.totalQuantity || 0)}</td></tr>
-      </tbody>
-    </table>
-    
-    <h3>Inventory Status</h3>
-    <table>
-      <tbody>
-        <tr><td>Total Inventory Value</td><td class="ltr">Rs. ${Number(reportData?.inventory?.totalValue || 0).toFixed(2)}</td></tr>
-        <tr><td>Items in Stock</td><td class="right">${Number(reportData?.inventory?.itemCount || 0)}</td></tr>
-        <tr><td>Total Quantity</td><td class="right">${Number(reportData?.inventory?.totalQuantity || 0)}</td></tr>
-      </tbody>
-    </table>
+<h3 class="urdu">آپریشنز خلاصہ</h3>
+<table>
+  <tbody>
+    <tr><td class="urdu">اندراج کی رقم</td><td class="ltr">Rs. ${Number(reportData?.entry?.totalAmount || 0).toFixed(2)}</td></tr>
+    <tr><td class="urdu">اندراج کی مقدار</td><td class="right">${Number(reportData?.entry?.totalQuantity || 0)}</td></tr>
+    <tr><td class="urdu">نکاسی کی رقم</td><td class="ltr">Rs. ${Number(reportData?.clearance?.totalAmount || 0).toFixed(2)}</td></tr>
+    <tr><td class="urdu">نکاسی کی مقدار</td><td class="right">${Number(reportData?.clearance?.totalQuantity || 0)}</td></tr>
+  </tbody>
+</table>
+
+<h3 class="urdu">اسٹاک کی صورتحال</h3>
+<table>
+  <tbody>
+    <tr><td class="urdu">کل اسٹاک مالیت</td><td class="ltr">Rs. ${Number(reportData?.inventory?.totalValue || 0).toFixed(2)}</td></tr>
+    <tr><td class="urdu">اسٹاک میں موجود اشیاء</td><td class="right">${Number(reportData?.inventory?.itemCount || 0)}</td></tr>
+    <tr><td class="urdu">کل مقدار</td><td class="right">${Number(reportData?.inventory?.totalQuantity || 0)}</td></tr>
+  </tbody>
+</table>
+
   `;
 
   return wrapHtml('Audit Report', body);
