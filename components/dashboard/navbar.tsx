@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { NAVBAR_ITEMS } from '@/constant/navbarMenu';
@@ -19,7 +19,7 @@ function Navbar() {
               key={item.path}
               href={item.path}
               className={`flex items-center gap-3 rounded-lg px-3 py-2 ${
-                pathname === item.path
+                pathname.includes(item.path)
                   ? 'bg-muted text-foreground' // Apply active styles if current path matches item path
                   : 'text-muted-foreground hover:text-foreground' // Apply default styles otherwise
               } transition-all hover:text-primary`}

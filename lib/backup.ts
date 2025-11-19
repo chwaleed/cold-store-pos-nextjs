@@ -4,7 +4,8 @@ import * as path from 'path';
 import { BackupMetadata, BackupSettings } from '@/schema/backup';
 import { BackupInfo } from '@/types/backup';
 
-const BACKUP_VERSION = '1.0.0';
+const BACKUP_VERSION = '2.0.0'; // Updated to support SQLite file backup
+const DB_FILE_PATH = path.join(process.cwd(), 'prisma', 'dev.db'); // SQLite database file path
 
 /**
  * Get all data from database for backup
@@ -109,7 +110,8 @@ export async function getAllDatabaseData() {
 }
 
 /**
- * Create a backup file
+ * Create a backup file - copies SQLite database file directly
+ * More reliable and efficient than JSON export
  */
 export async function createBackup(
   backupPath: string
@@ -120,18 +122,28 @@ export async function createBackup(
       fs.mkdirSync(backupPath, { recursive: true });
     }
 
+    // Check if database file exists
+    if (!fs.existsSync(DB_FILE_PATH)) {
+      throw new Error('Database file not found');
+    }
+
     // Generate backup filename with timestamp
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const fileName = `backup-${timestamp}.json`;
-    const filePath = path.join(backupPath, fileName);
+    const dbFileName = `backup-${timestamp}.db`;
+    const metaFileName = `backup-${timestamp}.meta.json`;
+    const dbFilePath = path.join(backupPath, dbFileName);
+    const metaFilePath = path.join(backupPath, metaFileName);
 
-    // Get all data
-    const backupData = await getAllDatabaseData();
+    // Get metadata
+    const metadata = await getBackupMetadata();
 
-    // Write to file
-    fs.writeFileSync(filePath, JSON.stringify(backupData, null, 2), 'utf-8');
+    // Copy database file
+    fs.copyFileSync(DB_FILE_PATH, dbFilePath);
 
-    return { fileName, filePath };
+    // Write metadata file
+    fs.writeFileSync(metaFilePath, JSON.stringify(metadata, null, 2), 'utf-8');
+
+    return { fileName: dbFileName, filePath: dbFilePath };
   } catch (error) {
     console.error('Error creating backup:', error);
     throw new Error('Failed to create backup file');
@@ -139,7 +151,57 @@ export async function createBackup(
 }
 
 /**
- * Restore data from backup file
+ * Get backup metadata without exporting all data
+ */
+async function getBackupMetadata(): Promise<BackupMetadata> {
+  try {
+    const counts = await db.$transaction([
+      db.customer.count(),
+      db.productType.count(),
+      db.productSubType.count(),
+      db.room.count(),
+      db.packType.count(),
+      db.entryReceipt.count(),
+      db.entryItem.count(),
+      db.clearanceReceipt.count(),
+      db.clearedItem.count(),
+      db.ledger.count(),
+      db.expenseCategory.count(),
+      db.expense.count(),
+      db.setting.count(),
+    ]);
+
+    const totalRecords = counts.reduce((sum, count) => sum + count, 0);
+
+    return {
+      version: BACKUP_VERSION,
+      timestamp: new Date().toISOString(),
+      databaseType: 'sqlite',
+      recordCount: totalRecords,
+      tables: [
+        'Customer',
+        'ProductType',
+        'ProductSubType',
+        'Room',
+        'PackType',
+        'EntryReceipt',
+        'EntryItem',
+        'ClearanceReceipt',
+        'ClearedItem',
+        'Ledger',
+        'ExpenseCategory',
+        'Expense',
+        'Setting',
+      ],
+    };
+  } catch (error) {
+    console.error('Error getting backup metadata:', error);
+    throw new Error('Failed to retrieve backup metadata');
+  }
+}
+
+/**
+ * Restore data from backup file (supports both SQLite .db and legacy JSON formats)
  */
 export async function restoreFromBackup(
   backupFilePath: string
@@ -150,11 +212,106 @@ export async function restoreFromBackup(
       throw new Error('Backup file not found');
     }
 
+    const fileExtension = path.extname(backupFilePath).toLowerCase();
+
+    // SQLite database file backup (new format)
+    if (fileExtension === '.db') {
+      return await restoreFromSQLiteBackup(backupFilePath);
+    }
+
+    // JSON backup (legacy format)
+    if (fileExtension === '.json') {
+      return await restoreFromJSONBackup(backupFilePath);
+    }
+
+    throw new Error('Unsupported backup file format. Use .db or .json files.');
+  } catch (error) {
+    console.error('Error restoring from backup:', error);
+    throw new Error(
+      `Failed to restore from backup: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
+}
+
+/**
+ * Restore from SQLite database file
+ */
+async function restoreFromSQLiteBackup(
+  backupFilePath: string
+): Promise<number> {
+  try {
+    // Disconnect Prisma client to release database file
+    await db.$disconnect();
+
+    // Backup current database before replacing
+    const currentDbBackup = DB_FILE_PATH + '.before-restore';
+    if (fs.existsSync(DB_FILE_PATH)) {
+      fs.copyFileSync(DB_FILE_PATH, currentDbBackup);
+    }
+
+    try {
+      // Replace database file with backup
+      fs.copyFileSync(backupFilePath, DB_FILE_PATH);
+
+      // Reconnect to database
+      await db.$connect();
+
+      // Get record count from metadata if available
+      const metaFilePath = backupFilePath.replace('.db', '.meta.json');
+      if (fs.existsSync(metaFilePath)) {
+        const metadata = JSON.parse(fs.readFileSync(metaFilePath, 'utf-8'));
+        return metadata.recordCount || 0;
+      }
+
+      // If no metadata, count records from restored database
+      const counts = await db.$transaction([
+        db.customer.count(),
+        db.productType.count(),
+        db.productSubType.count(),
+        db.room.count(),
+        db.packType.count(),
+        db.entryReceipt.count(),
+        db.entryItem.count(),
+        db.clearanceReceipt.count(),
+        db.clearedItem.count(),
+        db.ledger.count(),
+        db.expenseCategory.count(),
+        db.expense.count(),
+        db.setting.count(),
+      ]);
+
+      // Clean up the backup of old database after successful restore
+      if (fs.existsSync(currentDbBackup)) {
+        fs.unlinkSync(currentDbBackup);
+      }
+
+      return counts.reduce((sum, count) => sum + count, 0);
+    } catch (error) {
+      // Restore original database if restoration failed
+      if (fs.existsSync(currentDbBackup)) {
+        fs.copyFileSync(currentDbBackup, DB_FILE_PATH);
+        await db.$connect();
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error restoring from SQLite backup:', error);
+    throw new Error(
+      `Failed to restore SQLite backup: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
+}
+
+/**
+ * Restore from JSON backup (legacy format)
+ */
+async function restoreFromJSONBackup(backupFilePath: string): Promise<number> {
+  try {
     const fileContent = fs.readFileSync(backupFilePath, 'utf-8');
     const backupData = JSON.parse(fileContent);
 
     if (!backupData.metadata || !backupData.data) {
-      throw new Error('Invalid backup file format');
+      throw new Error('Invalid JSON backup file format');
     }
 
     // Clear existing data in reverse order (to handle foreign key constraints)
@@ -288,7 +445,7 @@ export async function restoreFromBackup(
 }
 
 /**
- * List all backups in a directory
+ * List all backups in a directory (supports both .db and .json formats)
  */
 export function listBackups(backupPath: string): BackupInfo[] {
   try {
@@ -298,7 +455,9 @@ export function listBackups(backupPath: string): BackupInfo[] {
 
     const files = fs.readdirSync(backupPath);
     const backupFiles = files.filter(
-      (file) => file.startsWith('backup-') && file.endsWith('.json')
+      (file) =>
+        file.startsWith('backup-') &&
+        (file.endsWith('.db') || file.endsWith('.json'))
     );
 
     return backupFiles
@@ -308,13 +467,22 @@ export function listBackups(backupPath: string): BackupInfo[] {
 
         let metadata;
         try {
-          const content = fs.readFileSync(filePath, 'utf-8');
-          const data = JSON.parse(content);
-          metadata = data.metadata;
+          // For .db files, read accompanying .meta.json file
+          if (file.endsWith('.db')) {
+            const metaFilePath = filePath.replace('.db', '.meta.json');
+            if (fs.existsSync(metaFilePath)) {
+              const metaContent = fs.readFileSync(metaFilePath, 'utf-8');
+              metadata = JSON.parse(metaContent);
+            }
+          } else if (file.endsWith('.json')) {
+            // For legacy JSON backups
+            const content = fs.readFileSync(filePath, 'utf-8');
+            const data = JSON.parse(content);
+            metadata = data.metadata;
+          }
         } catch (error) {
           // If we can't read metadata, just skip it
         }
-
         return {
           fileName: file,
           filePath,

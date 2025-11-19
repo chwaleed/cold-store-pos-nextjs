@@ -113,6 +113,7 @@ export async function PUT(
         : 0;
       const grandTotal = totalPrice + kjTotal;
       newTotalAmount += grandTotal;
+      console.log('procssed item = ');
 
       // Get the existing item to preserve remaining quantities
       const existingItem = item.id ? existingItemsMap.get(item.id) : null;
@@ -126,7 +127,6 @@ export async function PUT(
         boxNo: item.boxNo || null,
         marka: item.marka || null,
         quantity: item.quantity,
-        // Preserve remaining quantity if item was partially cleared
         remainingQuantity: existingItem
           ? Math.min(item.quantity, existingItem.remainingQuantity)
           : item.quantity,
@@ -144,6 +144,7 @@ export async function PUT(
         grandTotal,
       };
     });
+    console.log('processed items = ', processedItems);
 
     // Update entry receipt, items, and ledger in transaction
     const updatedReceipt = await prisma.$transaction(async (tx) => {

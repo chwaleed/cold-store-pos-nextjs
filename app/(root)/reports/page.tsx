@@ -1,16 +1,8 @@
 'use client';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DailyReport } from '@/components/reports/daily-report';
 import { DateRangeReport } from '@/components/reports/date-range-report';
-import { StockSummaryReport } from '@/components/reports/stock-summary-report';
 import { ExpenseReport } from '@/components/reports/expense-report';
 import { AuditReport } from '@/components/reports/audit-report';
 
@@ -27,10 +19,9 @@ export default function ReportsPage() {
       </div>
 
       <Tabs defaultValue="customer" className="w-full">
-        <TabsList className="grid w-full max-w-4xl grid-cols-5">
+        <TabsList className="grid w-full max-w-4xl grid-cols-4">
           <TabsTrigger value="customer">Customer</TabsTrigger>
           <TabsTrigger value="overall">Overall</TabsTrigger>
-          <TabsTrigger value="stock">Stock</TabsTrigger>
           <TabsTrigger value="expense">Expenses</TabsTrigger>
           <TabsTrigger value="audit">Audit</TabsTrigger>
         </TabsList>
@@ -41,10 +32,6 @@ export default function ReportsPage() {
 
         <TabsContent value="overall" className="space-y-4">
           <DateRangeReport />
-        </TabsContent>
-
-        <TabsContent value="stock" className="space-y-4">
-          <StockSummaryReport />
         </TabsContent>
 
         <TabsContent value="expense" className="space-y-4">

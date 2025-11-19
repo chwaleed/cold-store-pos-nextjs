@@ -10,7 +10,7 @@ export default function EntryPreviewPage({
   const entryId = parseInt(params.id);
 
   return (
-    <div className="w-full rounded-xl bg-white h-full mx-auto p-4">
+    <div className="w-full rounded-2xl bg-background  h-full mx-auto p-4">
       <EntryReceiptPreview entryId={entryId} />
     </div>
   );

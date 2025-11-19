@@ -11,7 +11,7 @@ export const entryItemSchema = z
     marka: z.string().optional().nullable(),
     quantity: z.number().positive('Quantity must be greater than 0'),
     unitPrice: z.number().nonnegative('Unit price must be 0 or greater'),
-
+    id: z.number().int().positive().optional(),
     // Khali Jali fields
     hasKhaliJali: z.boolean().default(false),
     kjQuantity: z.number().positive().optional().nullable(),

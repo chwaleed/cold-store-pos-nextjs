@@ -120,6 +120,7 @@ export function EntryEditForm({ entryId }: EntryEditFormProps) {
             kjQuantity: item.kjQuantity || undefined,
             kjUnitPrice: item.kjUnitPrice || undefined,
           }));
+          console.log('formatted items = ', formattedItems);
 
           form.reset({
             customerId: entry.customerId,
@@ -153,6 +154,7 @@ export function EntryEditForm({ entryId }: EntryEditFormProps) {
 
   const onSubmit = async (data: EntryReceiptFormData) => {
     try {
+      console.log('Submitting data = ', data);
       setLoading(true);
       const response = await fetch(`/api/entry/${entryId}`, {
         method: 'PUT',
@@ -304,9 +306,10 @@ export function EntryEditForm({ entryId }: EntryEditFormProps) {
         {/* Items table - Note: Cannot delete items in edit mode */}
         <div className="space-y-2">
           <div className="text-sm text-muted-foreground">
-            Note: Click the pencil icon to edit item details (quantity, price, etc.).
-            Items with cleared quantity cannot be edited. When finished editing all items,
-            click &quot;Update Entry&quot; to save all changes.
+            Note: Click the pencil icon to edit item details (quantity, price,
+            etc.). Items with cleared quantity cannot be edited. When finished
+            editing all items, click &quot;Update Entry&quot; to save all
+            changes.
           </div>
           <ItemTable
             control={form.control}
