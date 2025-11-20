@@ -135,12 +135,8 @@ export function AddDirectCashDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="debit">
-                  Debit (Customer Owes Money)
-                </SelectItem>
-                <SelectItem value="credit">
-                  Credit (Customer Paid Money)
-                </SelectItem>
+                <SelectItem value="debit">بنام</SelectItem>
+                <SelectItem value="credit">جمع</SelectItem>
               </SelectContent>
             </Select>
             {errors.type && (
