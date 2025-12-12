@@ -106,7 +106,7 @@ export default function ColdStoreDashboard() {
   const getInitials = (name: string) => name.slice(0, 2).toUpperCase();
 
   return (
-    <div className="w-full h-full  bg-background rounded-2xl p-4 md:p-6">
+    <div className="w-full h-full   bg-background rounded-2xl p-4 md:p-6">
       <div className="mx-auto  space-y-6">
         {/* Header Section */}
         <div className="flex items-center justify-between">
