@@ -27,6 +27,9 @@ module.exports = {
       },
     },
     extend: {
+      fontFamily: {
+        urdu: ['"Noto Nastaliq Urdu"', ...defaultTheme.fontFamily.sans],
+      },
       colors: {
         chartbody: '#0F0F0F',
         bodydark1: '#DEE4EE',

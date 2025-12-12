@@ -131,12 +131,16 @@ export function AddDirectCashDialog({
                 setValue('type', value as 'debit' | 'credit')
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="font-urdu">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="debit">بنام</SelectItem>
-                <SelectItem value="credit">جمع</SelectItem>
+                <SelectItem className="font-urdu" value="debit">
+                  بنام
+                </SelectItem>
+                <SelectItem className="font-urdu" value="credit">
+                  جمع
+                </SelectItem>
               </SelectContent>
             </Select>
             {errors.type && (
