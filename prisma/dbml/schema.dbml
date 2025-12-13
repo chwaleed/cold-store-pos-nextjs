@@ -186,13 +186,13 @@ Ref: EntryReceipt.customerId > Customer.id [delete: Cascade]
 
 Ref: EntryItem.entryReceiptId > EntryReceipt.id [delete: Cascade]
 
-Ref: EntryItem.productTypeId > ProductType.id
+Ref: EntryItem.productTypeId > ProductType.id [delete: Cascade]
 
-Ref: EntryItem.productSubTypeId > ProductSubType.id
+Ref: EntryItem.productSubTypeId > ProductSubType.id [delete: Cascade]
 
-Ref: EntryItem.packTypeId > PackType.id
+Ref: EntryItem.packTypeId > PackType.id [delete: Cascade]
 
-Ref: EntryItem.roomId > Room.id
+Ref: EntryItem.roomId > Room.id [delete: Cascade]
 
 Ref: ClearanceReceipt.customerId > Customer.id [delete: Cascade]
 

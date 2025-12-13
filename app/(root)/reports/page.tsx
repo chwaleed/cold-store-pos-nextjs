@@ -3,6 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DailyReport } from '@/components/reports/daily-report';
 import { DateRangeReport } from '@/components/reports/date-range-report';
+import { CustomerWiseReport } from '@/components/reports/customer-wise-report';
 import { ExpenseReport } from '@/components/reports/expense-report';
 import { AuditReport } from '@/components/reports/audit-report';
 
@@ -19,8 +20,9 @@ export default function ReportsPage() {
       </div>
 
       <Tabs defaultValue="customer" className="w-full">
-        <TabsList className="grid w-full max-w-4xl grid-cols-4">
+        <TabsList className="grid w-full max-w-5xl grid-cols-5">
           <TabsTrigger value="customer">Customer</TabsTrigger>
+          <TabsTrigger value="customer-wise">Customer-Wise</TabsTrigger>
           <TabsTrigger value="overall">Overall</TabsTrigger>
           <TabsTrigger value="expense">Expenses</TabsTrigger>
           <TabsTrigger value="audit">Audit</TabsTrigger>
@@ -28,6 +30,10 @@ export default function ReportsPage() {
 
         <TabsContent value="customer" className="space-y-4">
           <DailyReport />
+        </TabsContent>
+
+        <TabsContent value="customer-wise" className="space-y-4">
+          <CustomerWiseReport />
         </TabsContent>
 
         <TabsContent value="overall" className="space-y-4">

@@ -62,34 +62,39 @@ export async function PUT(
   }
 }
 
-// DELETE category
+// DELETE category (with cascade delete)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    // Check if category has expenses
-    const expenseCount = await prisma.expense.count({
-      where: { categoryId: parseInt(params.id) },
+    const categoryId = parseInt(params.id);
+
+    // Check if category exists and get expense count
+    const category = await prisma.expenseCategory.findUnique({
+      where: { id: categoryId },
+      include: {
+        _count: {
+          select: { expenses: true },
+        },
+      },
     });
 
-    if (expenseCount > 0) {
+    if (!category) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Cannot delete category with existing expenses',
-        },
-        { status: 400 }
+        { success: false, error: 'Category not found' },
+        { status: 404 }
       );
     }
 
+    // Delete category - this will cascade delete all related expenses
     await prisma.expenseCategory.delete({
-      where: { id: parseInt(params.id) },
+      where: { id: categoryId },
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Category deleted successfully',
+      message: `Category and ${category._count.expenses} related expenses deleted successfully`,
     });
   } catch (error: any) {
     return NextResponse.json(

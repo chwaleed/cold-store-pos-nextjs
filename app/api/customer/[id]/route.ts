@@ -126,7 +126,7 @@ export async function PUT(
   }
 }
 
-// DELETE /api/customer/[id] - Delete customer
+// DELETE /api/customer/[id] - Delete customer (with cascade delete)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -141,7 +141,7 @@ export async function DELETE(
       );
     }
 
-    // Check if customer has any receipts or ledger entries
+    // Check if customer exists
     const customer = await prisma.customer.findUnique({
       where: { id: customerId },
       include: {
@@ -162,27 +162,20 @@ export async function DELETE(
       );
     }
 
-    if (
-      customer._count.entryReceipts > 0 ||
-      customer._count.clearanceReceipts > 0 ||
-      customer._count.ledger > 0
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Cannot delete customer with existing transactions',
-        },
-        { status: 400 }
-      );
-    }
-
+    // Delete customer - this will cascade delete all related records
+    // (EntryReceipts, ClearanceReceipts, Ledger entries, EntryItems, ClearedItems)
     await prisma.customer.delete({
       where: { id: customerId },
     });
 
+    const totalDeleted =
+      customer._count.entryReceipts +
+      customer._count.clearanceReceipts +
+      customer._count.ledger;
+
     return NextResponse.json({
       success: true,
-      message: 'Customer deleted successfully',
+      message: `Customer and ${totalDeleted} related records deleted successfully`,
     });
   } catch (error) {
     console.error('Error deleting customer:', error);

@@ -9,6 +9,7 @@ import {
   CardDescription,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -37,6 +38,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import {
   CalendarIcon,
@@ -74,8 +76,10 @@ export function DailyReport() {
     undefined
   );
   const [reportType, setReportType] = useState<string>('both');
-  const [period, setPeriod] = useState<string>('day');
-  const [date, setDate] = useState<Date>(new Date());
+  const [fromDate, setFromDate] = useState<Date>(new Date());
+  const [toDate, setToDate] = useState<Date>(new Date());
+  const [isDetailed, setIsDetailed] = useState<boolean>(true);
+  const [markaSearch, setMarkaSearch] = useState<string>('');
   const [reportData, setReportData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
@@ -104,10 +108,12 @@ export function DailyReport() {
       const params = new URLSearchParams({
         customerId: selectedCustomer.toString(),
         reportType,
-        period,
-        date: date.toISOString(),
+        fromDate: fromDate.toISOString(),
+        toDate: toDate.toISOString(),
+        detailed: isDetailed.toString(),
         ...(selectedType && { productTypeId: selectedType }),
         ...(selectedSubType && { productSubTypeId: selectedSubType }),
+        ...(markaSearch.trim() && { marka: markaSearch.trim() }),
       });
 
       const res = await fetch(`/api/reports/customer?${params}`);
@@ -129,9 +135,10 @@ export function DailyReport() {
   const handlePrint = () => {
     if (!reportData) return;
     const doc = generateCustomerReportPDF(reportData, {
-      period,
-      date: date.toISOString(),
+      fromDate: fromDate.toISOString(),
+      toDate: toDate.toISOString(),
       reportType,
+      detailed: isDetailed,
     });
     doc.print();
   };
@@ -139,12 +146,13 @@ export function DailyReport() {
   const downloadPDF = () => {
     if (!reportData) return;
     const doc = generateCustomerReportPDF(reportData, {
-      period,
-      date: date.toISOString(),
+      fromDate: fromDate.toISOString(),
+      toDate: toDate.toISOString(),
       reportType,
+      detailed: isDetailed,
     });
     doc.download(
-      `customer_report_${reportData.customer.name}_${format(date, 'yyyy-MM-dd')}.pdf`
+      `customer_report_${reportData.customer.name}_${format(fromDate, 'yyyy-MM-dd')}_to_${format(toDate, 'yyyy-MM-dd')}.pdf`
     );
     toast.success('PDF downloaded');
   };
@@ -162,17 +170,8 @@ export function DailyReport() {
       ['CUSTOMER INFORMATION'],
       ['Name', reportData.customer.name],
       ['Phone', reportData.customer.phone || 'N/A'],
-      [
-        'Period',
-        period === 'day'
-          ? 'Daily'
-          : period === 'month'
-            ? 'Monthly'
-            : period === 'year'
-              ? 'Yearly'
-              : 'Lifetime',
-      ],
-      ['Date', format(date, 'PPP')],
+      ['Date Range', `${format(fromDate, 'PPP')} - ${format(toDate, 'PPP')}`],
+      ['Report Type', isDetailed ? 'Detailed' : 'Summary'],
       [],
       ['FINANCIAL SUMMARY'],
       ['Net Balance', `₨ ${Math.abs(reportData.balance).toFixed(2)}`],
@@ -213,7 +212,160 @@ export function DailyReport() {
     ws1['!cols'] = [{ wch: 25 }, { wch: 30 }];
     XLSX.utils.book_append_sheet(wb, ws1, 'Summary');
 
-    // Entry Receipts Sheet
+    // Marka Summary Sheets (if marka search is used)
+    if (markaSearch) {
+      // Entry Marka Summary
+      if (reportData.entryMarkaData && reportData.entryMarkaData.length > 0) {
+        const entryMarkaSheetData = [
+          ['ENTRY MARKA SUMMARY'],
+          [],
+          ['Customer', 'Marka', 'Total Items'],
+        ];
+
+        reportData.entryMarkaData.forEach((item: any) => {
+          entryMarkaSheetData.push([
+            reportData.customer.name,
+            item.marka,
+            item.totalQuantity,
+          ]);
+        });
+
+        const ws2 = XLSX.utils.aoa_to_sheet(entryMarkaSheetData);
+        ws2['!cols'] = [{ wch: 25 }, { wch: 30 }, { wch: 15 }];
+        XLSX.utils.book_append_sheet(wb, ws2, 'Entry Marka Summary');
+      }
+
+      // Clearance Marka Summary
+      if (
+        reportData.clearanceMarkaData &&
+        reportData.clearanceMarkaData.length > 0
+      ) {
+        const clearanceMarkaSheetData = [
+          ['CLEARANCE MARKA SUMMARY'],
+          [],
+          ['Customer', 'Marka', 'Total Items'],
+        ];
+
+        reportData.clearanceMarkaData.forEach((item: any) => {
+          clearanceMarkaSheetData.push([
+            reportData.customer.name,
+            item.marka,
+            item.totalQuantity,
+          ]);
+        });
+
+        const ws3 = XLSX.utils.aoa_to_sheet(clearanceMarkaSheetData);
+        ws3['!cols'] = [{ wch: 25 }, { wch: 30 }, { wch: 15 }];
+        XLSX.utils.book_append_sheet(wb, ws3, 'Clearance Marka Summary');
+      }
+
+      // Current Stock Marka Summary
+      if (
+        reportData.currentStockMarkaData &&
+        reportData.currentStockMarkaData.length > 0
+      ) {
+        const currentStockMarkaSheetData = [
+          ['CURRENT STOCK MARKA SUMMARY'],
+          [],
+          ['Customer', 'Marka', 'Total Items'],
+        ];
+
+        reportData.currentStockMarkaData.forEach((item: any) => {
+          currentStockMarkaSheetData.push([
+            reportData.customer.name,
+            item.marka,
+            item.totalQuantity,
+          ]);
+        });
+
+        const ws4 = XLSX.utils.aoa_to_sheet(currentStockMarkaSheetData);
+        ws4['!cols'] = [{ wch: 25 }, { wch: 30 }, { wch: 15 }];
+        XLSX.utils.book_append_sheet(wb, ws4, 'Current Stock Marka');
+      }
+    }
+
+    // Product Summary Sheets (if not detailed)
+    if (!isDetailed) {
+      // Entry Summary
+      if (
+        reportData.entrySummaryData &&
+        reportData.entrySummaryData.length > 0
+      ) {
+        const entrySummarySheetData = [
+          ['ENTRY SUMMARY'],
+          [],
+          ['Customer', 'Product Type', 'Total Items'],
+        ];
+
+        reportData.entrySummaryData.forEach((item: any) => {
+          entrySummarySheetData.push([
+            reportData.customer.name,
+            item.subType
+              ? `${item.productType} (${item.subType})`
+              : item.productType,
+            item.totalQuantity,
+          ]);
+        });
+
+        const ws5 = XLSX.utils.aoa_to_sheet(entrySummarySheetData);
+        ws5['!cols'] = [{ wch: 25 }, { wch: 30 }, { wch: 15 }];
+        XLSX.utils.book_append_sheet(wb, ws5, 'Entry Summary');
+      }
+
+      // Clearance Summary
+      if (
+        reportData.clearanceSummaryData &&
+        reportData.clearanceSummaryData.length > 0
+      ) {
+        const clearanceSummarySheetData = [
+          ['CLEARANCE SUMMARY'],
+          [],
+          ['Customer', 'Product Type', 'Total Items'],
+        ];
+
+        reportData.clearanceSummaryData.forEach((item: any) => {
+          clearanceSummarySheetData.push([
+            reportData.customer.name,
+            item.subType
+              ? `${item.productType} (${item.subType})`
+              : item.productType,
+            item.totalQuantity,
+          ]);
+        });
+
+        const ws6 = XLSX.utils.aoa_to_sheet(clearanceSummarySheetData);
+        ws6['!cols'] = [{ wch: 25 }, { wch: 30 }, { wch: 15 }];
+        XLSX.utils.book_append_sheet(wb, ws6, 'Clearance Summary');
+      }
+
+      // Current Stock Summary
+      if (
+        reportData.currentStockSummaryData &&
+        reportData.currentStockSummaryData.length > 0
+      ) {
+        const currentStockSummarySheetData = [
+          ['CURRENT STOCK SUMMARY'],
+          [],
+          ['Customer', 'Product Type', 'Total Items'],
+        ];
+
+        reportData.currentStockSummaryData.forEach((item: any) => {
+          currentStockSummarySheetData.push([
+            reportData.customer.name,
+            item.subType
+              ? `${item.productType} (${item.subType})`
+              : item.productType,
+            item.totalQuantity,
+          ]);
+        });
+
+        const ws7 = XLSX.utils.aoa_to_sheet(currentStockSummarySheetData);
+        ws7['!cols'] = [{ wch: 25 }, { wch: 30 }, { wch: 15 }];
+        XLSX.utils.book_append_sheet(wb, ws7, 'Current Stock Summary');
+      }
+    }
+
+    // Entry Receipts Sheet (if detailed)
     if (
       reportData.entryData?.receipts &&
       reportData.entryData.receipts.length > 0
@@ -226,6 +378,7 @@ export function DailyReport() {
           'Date',
           'Product Type',
           'Sub Type',
+          'Marka',
           'Quantity',
           'Unit Price',
           'Total Amount',
@@ -239,6 +392,7 @@ export function DailyReport() {
             format(new Date(receipt.entryDate), 'PP'),
             item.productType.name,
             item.productSubType?.name || '-',
+            item.marka || '-',
             item.quantity,
             Number(item.unitPrice || 0).toFixed(2),
             Number(item.totalPrice || 0).toFixed(2),
@@ -246,20 +400,21 @@ export function DailyReport() {
         });
       });
 
-      const ws2 = XLSX.utils.aoa_to_sheet(entryData);
-      ws2['!cols'] = [
+      const ws8 = XLSX.utils.aoa_to_sheet(entryData);
+      ws8['!cols'] = [
         { wch: 15 },
         { wch: 15 },
         { wch: 20 },
         { wch: 20 },
+        { wch: 15 },
         { wch: 12 },
         { wch: 12 },
         { wch: 15 },
       ];
-      XLSX.utils.book_append_sheet(wb, ws2, 'Entry Receipts');
+      XLSX.utils.book_append_sheet(wb, ws8, 'Entry Receipts');
     }
 
-    // Clearance Receipts Sheet
+    // Clearance Receipts Sheet (if detailed)
     if (
       reportData.clearanceData?.receipts &&
       reportData.clearanceData.receipts.length > 0
@@ -272,6 +427,7 @@ export function DailyReport() {
           'Date',
           'Product Type',
           'Sub Type',
+          'Marka',
           'Quantity',
           'Unit Price',
           'Total Amount',
@@ -285,6 +441,7 @@ export function DailyReport() {
             format(new Date(receipt.clearanceDate), 'PP'),
             item.entryItem.productType.name,
             item.entryItem.productSubType?.name || '-',
+            item.entryItem.marka || '-',
             item.clearQuantity,
             Number(item.unitPrice || 0).toFixed(2),
             Number(item.totalAmount || 0).toFixed(2),
@@ -292,22 +449,23 @@ export function DailyReport() {
         });
       });
 
-      const ws3 = XLSX.utils.aoa_to_sheet(clearanceData);
-      ws3['!cols'] = [
+      const ws9 = XLSX.utils.aoa_to_sheet(clearanceData);
+      ws9['!cols'] = [
         { wch: 15 },
         { wch: 15 },
         { wch: 20 },
         { wch: 20 },
+        { wch: 15 },
         { wch: 12 },
         { wch: 12 },
         { wch: 15 },
       ];
-      XLSX.utils.book_append_sheet(wb, ws3, 'Clearance Receipts');
+      XLSX.utils.book_append_sheet(wb, ws9, 'Clearance Receipts');
     }
 
     XLSX.writeFile(
       wb,
-      `customer_report_${reportData.customer.name}_${format(date, 'yyyy-MM-dd')}.xlsx`
+      `customer_report_${reportData.customer.name}_${format(fromDate, 'yyyy-MM-dd')}_to_${format(toDate, 'yyyy-MM-dd')}.xlsx`
     );
     toast.success('Excel exported successfully');
   };
@@ -325,7 +483,7 @@ export function DailyReport() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6">
             {/* Row 1: Core Filters */}
             <div className="space-y-2">
               <Label className="text-xs font-medium uppercase text-muted-foreground">
@@ -338,83 +496,112 @@ export function DailyReport() {
               />
             </div>
 
-            <div className="space-y-2 ">
+            <div className="space-y-2">
               <Label className="text-xs font-medium uppercase text-muted-foreground">
-                Time Period
+                From Date
               </Label>
               <div className="flex gap-2">
-                <Select value={period} onValueChange={setPeriod}>
-                  <SelectTrigger className="w-[110px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="day">Daily</SelectItem>
-                    <SelectItem value="month">Monthly</SelectItem>
-                    <SelectItem value="year">Yearly</SelectItem>
-                    <SelectItem value="lifetime">Lifetime</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                {period !== 'lifetime' && (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          'flex-1 justify-start text-left font-normal px-3',
-                          !date && 'text-muted-foreground'
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {date ? format(date, 'PP') : <span>Pick date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={(newDate) => newDate && setDate(newDate)}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                )}
+                <Input
+                  type="date"
+                  value={format(fromDate, 'yyyy-MM-dd')}
+                  onChange={(e) => {
+                    const newDate = new Date(e.target.value);
+                    if (!isNaN(newDate.getTime())) {
+                      setFromDate(newDate);
+                    }
+                  }}
+                  className="flex-1"
+                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <CalendarIcon className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={fromDate}
+                      onSelect={(newDate) => newDate && setFromDate(newDate)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
             <div className="space-y-2">
               <Label className="text-xs font-medium uppercase text-muted-foreground">
-                Report Type
+                To Date
               </Label>
-              <Select value={reportType} onValueChange={setReportType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="both">All Transactions</SelectItem>
-                  <SelectItem value="entry">Entry Only</SelectItem>
-                  <SelectItem value="clearance">Clearance Only</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  value={format(toDate, 'yyyy-MM-dd')}
+                  onChange={(e) => {
+                    const newDate = new Date(e.target.value);
+                    if (!isNaN(newDate.getTime())) {
+                      setToDate(newDate);
+                    }
+                  }}
+                  className="flex-1"
+                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <CalendarIcon className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={toDate}
+                      onSelect={(newDate) => newDate && setToDate(newDate)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium uppercase text-muted-foreground">
+                  Report Type
+                </Label>
+                <Select value={reportType} onValueChange={setReportType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="both">All Transactions</SelectItem>
+                    <SelectItem value="entry">Entry Only</SelectItem>
+                    <SelectItem value="clearance">Clearance Only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="detailed"
+                  checked={isDetailed}
+                  onCheckedChange={(checked) => setIsDetailed(checked === true)}
+                />
+                <Label
+                  htmlFor="detailed"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Detailed Report
+                </Label>
+              </div>
             </div>
 
             {/* Row 2: Advanced/Product Filters */}
-            <div className="space-y-4">
+            <div className="space-y-2">
               <div className="flex justify-between">
                 <Label className="text-xs font-medium uppercase text-muted-foreground">
                   Product Filter
                 </Label>
-                {(selectedType || selectedSubType) && (
-                  <span
-                    className="text-xs text-red-500 cursor-pointer hover:underline"
-                    onClick={() => {
-                      setSelectedType(undefined);
-                      setSelectedSubType(undefined);
-                    }}
-                  >
-                    Clear
-                  </span>
-                )}
               </div>
               <div className="flex gap-2">
                 <Select value={selectedType} onValueChange={setSelectedType}>
@@ -432,7 +619,7 @@ export function DailyReport() {
                 <Select
                   value={selectedSubType}
                   onValueChange={setSelectedSubType}
-                  disabled={!selectedType}
+                  disabled={!selectedType || filteredSubTypes.length == 0}
                 >
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="Sub" />
@@ -449,6 +636,31 @@ export function DailyReport() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex  justify-between">
+                <Label className="text-xs font-medium uppercase text-muted-foreground">
+                  Marka Search
+                </Label>
+                {(selectedType || selectedSubType || markaSearch) && (
+                  <span
+                    className="text-xs text-red-500 cursor-pointer hover:underline"
+                    onClick={() => {
+                      setSelectedType(undefined);
+                      setSelectedSubType(undefined);
+                      setMarkaSearch('');
+                    }}
+                  >
+                    Clear All
+                  </span>
+                )}
+              </div>
+              <Input
+                placeholder="Search by marka..."
+                value={markaSearch}
+                onChange={(e) => setMarkaSearch(e.target.value)}
+                className="w-full"
+              />
             </div>
           </div>
 
@@ -521,9 +733,11 @@ export function DailyReport() {
                   Report Period
                 </div>
                 <div className="font-medium">
-                  {period === 'lifetime'
-                    ? 'Lifetime History'
-                    : format(date, 'MMMM do, yyyy')}
+                  {format(fromDate, 'MMM dd, yyyy')} -{' '}
+                  {format(toDate, 'MMM dd, yyyy')}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {isDetailed ? 'Detailed View' : 'Summary View'}
                 </div>
               </div>
             </CardHeader>
@@ -577,7 +791,8 @@ export function DailyReport() {
           </div>
 
           {/* Entry Details Section */}
-          {(reportType === 'both' || reportType === 'entry') &&
+          {isDetailed &&
+            (reportType === 'both' || reportType === 'entry') &&
             reportData.entryData?.receipts.length > 0 && (
               <Card>
                 <CardHeader className="bg-background/50 rounded-2xl border-b">
@@ -600,6 +815,7 @@ export function DailyReport() {
                         <TableHead>Receipt #</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Product</TableHead>
+                        <TableHead>Marka</TableHead>
                         <TableHead className="text-right">Qty</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
                       </TableRow>
@@ -627,6 +843,9 @@ export function DailyReport() {
                                 </span>
                               )}
                             </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {item.marka || '-'}
+                            </TableCell>
                             <TableCell className="text-right">
                               {item.quantity}
                             </TableCell>
@@ -643,7 +862,8 @@ export function DailyReport() {
             )}
 
           {/* Clearance Details Section */}
-          {(reportType === 'both' || reportType === 'clearance') &&
+          {isDetailed &&
+            (reportType === 'both' || reportType === 'clearance') &&
             reportData.clearanceData?.receipts.length > 0 && (
               <Card>
                 <CardHeader className="bg-background/50 rounded-2xl">
@@ -668,6 +888,7 @@ export function DailyReport() {
                         <TableHead>Clearance #</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Product</TableHead>
+                        <TableHead>Marka</TableHead>
                         <TableHead className="text-right">Qty</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
                       </TableRow>
@@ -695,6 +916,9 @@ export function DailyReport() {
                                 </span>
                               )}
                             </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {item.entryItem.marka || '-'}
+                            </TableCell>
                             <TableCell className="text-right">
                               {item.clearQuantity}
                             </TableCell>
@@ -709,6 +933,358 @@ export function DailyReport() {
                 </CardContent>
               </Card>
             )}
+
+          {/* Marka Summary Sections - When marka search is used */}
+          {markaSearch && (
+            <>
+              {/* Entry Marka Summary */}
+              {reportData.entryMarkaData &&
+                reportData.entryMarkaData.length > 0 && (
+                  <Card>
+                    <CardHeader className="bg-background/50 rounded-2xl border-b">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-foreground/10 rounded-md">
+                          <ArrowDown className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">
+                            Entry Marka Summary
+                          </CardTitle>
+                          <CardDescription>
+                            Total entry quantities by marka matching "
+                            {markaSearch}"
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Marka</TableHead>
+                            <TableHead className="text-right">
+                              Total Items
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {reportData.entryMarkaData.map(
+                            (item: any, idx: number) => (
+                              <TableRow key={idx}>
+                                <TableCell className="font-medium">
+                                  {reportData.customer.name}
+                                </TableCell>
+                                <TableCell>
+                                  <span className="font-medium text-foreground">
+                                    {item.marka}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-right font-medium">
+                                  {item.totalQuantity}
+                                </TableCell>
+                              </TableRow>
+                            )
+                          )}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                )}
+
+              {/* Clearance Marka Summary */}
+              {reportData.clearanceMarkaData &&
+                reportData.clearanceMarkaData.length > 0 && (
+                  <Card>
+                    <CardHeader className="bg-background/50 rounded-2xl border-b">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-foreground/10 rounded-md">
+                          <ArrowUp className="h-4 w-4 text-red-600" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">
+                            Clearance Marka Summary
+                          </CardTitle>
+                          <CardDescription>
+                            Total clearance quantities by marka matching "
+                            {markaSearch}"
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Marka</TableHead>
+                            <TableHead className="text-right">
+                              Total Items
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {reportData.clearanceMarkaData.map(
+                            (item: any, idx: number) => (
+                              <TableRow key={idx}>
+                                <TableCell className="font-medium">
+                                  {reportData.customer.name}
+                                </TableCell>
+                                <TableCell>
+                                  <span className="font-medium text-foreground">
+                                    {item.marka}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-right font-medium">
+                                  {item.totalQuantity}
+                                </TableCell>
+                              </TableRow>
+                            )
+                          )}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                )}
+
+              {/* Current Stock Marka Summary */}
+              {reportData.currentStockMarkaData &&
+                reportData.currentStockMarkaData.length > 0 && (
+                  <Card>
+                    <CardHeader className="bg-background/50 rounded-2xl border-b">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-foreground/10 rounded-md">
+                          <Search className="h-4 w-4 text-green-600" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">
+                            Current Stock Marka Summary
+                          </CardTitle>
+                          <CardDescription>
+                            Remaining stock by marka matching "{markaSearch}"
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Marka</TableHead>
+                            <TableHead className="text-right">
+                              Total Items
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {reportData.currentStockMarkaData.map(
+                            (item: any, idx: number) => (
+                              <TableRow key={idx}>
+                                <TableCell className="font-medium">
+                                  {reportData.customer.name}
+                                </TableCell>
+                                <TableCell>
+                                  <span className="font-medium text-foreground">
+                                    {item.marka}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-right font-medium">
+                                  {item.totalQuantity}
+                                </TableCell>
+                              </TableRow>
+                            )
+                          )}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                )}
+            </>
+          )}
+
+          {/* Product Summary Sections - When not detailed */}
+          {!isDetailed && (
+            <>
+              {/* Entry Summary */}
+              {reportData.entrySummaryData &&
+                reportData.entrySummaryData.length > 0 && (
+                  <Card>
+                    <CardHeader className="bg-background/50 rounded-2xl border-b">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-foreground/10 rounded-md">
+                          <ArrowDown className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">
+                            Entry Summary
+                          </CardTitle>
+                          <CardDescription>
+                            Total entry quantities by product type and subtype
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Product Type</TableHead>
+                            <TableHead className="text-right">
+                              Total Items
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {reportData.entrySummaryData.map(
+                            (item: any, idx: number) => (
+                              <TableRow key={idx}>
+                                <TableCell className="font-medium">
+                                  {reportData.customer.name}
+                                </TableCell>
+                                <TableCell>
+                                  <span className="font-medium text-foreground">
+                                    {item.productType}
+                                  </span>
+                                  {item.subType && (
+                                    <span className="text-muted-foreground ml-1 text-sm">
+                                      ({item.subType})
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right font-medium">
+                                  {item.totalQuantity}
+                                </TableCell>
+                              </TableRow>
+                            )
+                          )}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                )}
+
+              {/* Clearance Summary */}
+              {reportData.clearanceSummaryData &&
+                reportData.clearanceSummaryData.length > 0 && (
+                  <Card>
+                    <CardHeader className="bg-background/50 rounded-2xl border-b">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-foreground/10 rounded-md">
+                          <ArrowUp className="h-4 w-4 text-red-600" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">
+                            Clearance Summary
+                          </CardTitle>
+                          <CardDescription>
+                            Total clearance quantities by product type and
+                            subtype
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Product Type</TableHead>
+                            <TableHead className="text-right">
+                              Total Items
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {reportData.clearanceSummaryData.map(
+                            (item: any, idx: number) => (
+                              <TableRow key={idx}>
+                                <TableCell className="font-medium">
+                                  {reportData.customer.name}
+                                </TableCell>
+                                <TableCell>
+                                  <span className="font-medium text-foreground">
+                                    {item.productType}
+                                  </span>
+                                  {item.subType && (
+                                    <span className="text-muted-foreground ml-1 text-sm">
+                                      ({item.subType})
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right font-medium">
+                                  {item.totalQuantity}
+                                </TableCell>
+                              </TableRow>
+                            )
+                          )}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                )}
+
+              {/* Current Stock Summary */}
+              {reportData.currentStockSummaryData &&
+                reportData.currentStockSummaryData.length > 0 && (
+                  <Card>
+                    <CardHeader className="bg-background/50 rounded-2xl border-b">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-foreground/10 rounded-md">
+                          <FileText className="h-4 w-4 text-green-600" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">
+                            Current Stock Summary
+                          </CardTitle>
+                          <CardDescription>
+                            Remaining stock by product type and subtype
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Product Type</TableHead>
+                            <TableHead className="text-right">
+                              Total Items
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {reportData.currentStockSummaryData.map(
+                            (item: any, idx: number) => (
+                              <TableRow key={idx}>
+                                <TableCell className="font-medium">
+                                  {reportData.customer.name}
+                                </TableCell>
+                                <TableCell>
+                                  <span className="font-medium text-foreground">
+                                    {item.productType}
+                                  </span>
+                                  {item.subType && (
+                                    <span className="text-muted-foreground ml-1 text-sm">
+                                      ({item.subType})
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right font-medium">
+                                  {item.totalQuantity}
+                                </TableCell>
+                              </TableRow>
+                            )
+                          )}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                )}
+            </>
+          )}
         </div>
       ) : (
         // Empty State

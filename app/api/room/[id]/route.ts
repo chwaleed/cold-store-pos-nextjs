@@ -114,7 +114,7 @@ export async function PUT(
   }
 }
 
-// DELETE - Delete room
+// DELETE - Delete room (with cascade delete)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -129,7 +129,7 @@ export async function DELETE(
       );
     }
 
-    // Check if room exists and is in use
+    // Check if room exists
     const room = await prisma.room.findUnique({
       where: { id },
       include: {
@@ -146,24 +146,16 @@ export async function DELETE(
       );
     }
 
-    // Check if room is in use
-    if (room._count.entryItems > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Cannot delete room that has been used in entries',
-        },
-        { status: 400 }
-      );
-    }
-
+    // Delete the Room - database will cascade delete EntryItems
     await prisma.room.delete({
       where: { id },
     });
 
     return NextResponse.json({
       success: true,
-      data: { message: 'Room deleted successfully' },
+      data: {
+        message: `Room and ${room._count.entryItems} related entry items deleted successfully`,
+      },
     });
   } catch (error) {
     console.error('Error deleting room:', error);

@@ -363,10 +363,239 @@ export const buildAuditReportHTML = (reportData: any) => {
 };
 
 export const buildCustomerReportHTML = (reportData: any, filters: any) => {
-  // `reportData` from /api/reports/customer contains `entryData` and `clearanceData`.
-  // Flatten entries into item rows and clearances into cleared item rows so we
-  // show all records in the PDF.
+  const dateRange =
+    filters.fromDate && filters.toDate
+      ? `${format(new Date(filters.fromDate), 'PP')} - ${format(new Date(filters.toDate), 'PP')}`
+      : 'Date range not specified';
 
+  // Check if this is a marka search report
+  if (
+    filters.marka &&
+    (reportData.entryMarkaData ||
+      reportData.clearanceMarkaData ||
+      reportData.currentStockMarkaData)
+  ) {
+    let body = `
+      <div class="small">Report Type: ${filters.reportType} - Marka Search</div>
+      <div class="small">Customer: ${reportData.customer?.name || '-'}</div>
+      <div class="small">Date Range: ${dateRange}</div>
+      <div class="small">Marka Filter: "${filters.marka}"</div>
+    `;
+
+    // Entry Marka Summary
+    if (reportData.entryMarkaData && reportData.entryMarkaData.length > 0) {
+      const entryMarkaRows = reportData.entryMarkaData
+        .map(
+          (item: any) => `
+          <tr>
+            <td>${reportData.customer?.name || '-'}</td>
+            <td>${item.marka}</td>
+            <td class="right">${item.totalQuantity}</td>
+          </tr>
+        `
+        )
+        .join('\n');
+
+      body += `
+        <h3>Entry Marka Summary</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th><th>Marka</th><th>Total Items</th>
+            </tr>
+          </thead>
+          <tbody>${entryMarkaRows}</tbody>
+        </table>
+      `;
+    }
+
+    // Clearance Marka Summary
+    if (
+      reportData.clearanceMarkaData &&
+      reportData.clearanceMarkaData.length > 0
+    ) {
+      const clearanceMarkaRows = reportData.clearanceMarkaData
+        .map(
+          (item: any) => `
+          <tr>
+            <td>${reportData.customer?.name || '-'}</td>
+            <td>${item.marka}</td>
+            <td class="right">${item.totalQuantity}</td>
+          </tr>
+        `
+        )
+        .join('\n');
+
+      body += `
+        <h3>Clearance Marka Summary</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th><th>Marka</th><th>Total Items</th>
+            </tr>
+          </thead>
+          <tbody>${clearanceMarkaRows}</tbody>
+        </table>
+      `;
+    }
+
+    // Current Stock Marka Summary
+    if (
+      reportData.currentStockMarkaData &&
+      reportData.currentStockMarkaData.length > 0
+    ) {
+      const currentStockMarkaRows = reportData.currentStockMarkaData
+        .map(
+          (item: any) => `
+          <tr>
+            <td>${reportData.customer?.name || '-'}</td>
+            <td>${item.marka}</td>
+            <td class="right">${item.totalQuantity}</td>
+          </tr>
+        `
+        )
+        .join('\n');
+
+      body += `
+        <h3>Current Stock Marka Summary</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th><th>Marka</th><th>Total Items</th>
+            </tr>
+          </thead>
+          <tbody>${currentStockMarkaRows}</tbody>
+        </table>
+      `;
+    }
+
+    body += `
+      <div class="small">Balance: Rs. ${Math.abs(reportData.balance || 0).toFixed(2)} ${
+        reportData.balance > 0
+          ? '(Receivable)'
+          : reportData.balance < 0
+            ? '(Payable)'
+            : '(Settled)'
+      }</div>
+    `;
+
+    return wrapHtml('Customer Report - Marka Summary', body);
+  }
+
+  // Check if this is a summary report
+  if (
+    !filters.detailed &&
+    (reportData.entrySummaryData ||
+      reportData.clearanceSummaryData ||
+      reportData.currentStockSummaryData)
+  ) {
+    let body = `
+      <div class="small">Report Type: ${filters.reportType} - Summary View</div>
+      <div class="small">Customer: ${reportData.customer?.name || '-'}</div>
+      <div class="small">Date Range: ${dateRange}</div>
+    `;
+
+    // Entry Summary
+    if (reportData.entrySummaryData && reportData.entrySummaryData.length > 0) {
+      const entrySummaryRows = reportData.entrySummaryData
+        .map(
+          (item: any) => `
+          <tr>
+            <td>${reportData.customer?.name || '-'}</td>
+            <td>${item.productType}${item.subType ? ` (${item.subType})` : ''}</td>
+            <td class="right">${item.totalQuantity}</td>
+          </tr>
+        `
+        )
+        .join('\n');
+
+      body += `
+        <h3>Entry Summary</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th><th>Product Type</th><th>Total Items</th>
+            </tr>
+          </thead>
+          <tbody>${entrySummaryRows}</tbody>
+        </table>
+      `;
+    }
+
+    // Clearance Summary
+    if (
+      reportData.clearanceSummaryData &&
+      reportData.clearanceSummaryData.length > 0
+    ) {
+      const clearanceSummaryRows = reportData.clearanceSummaryData
+        .map(
+          (item: any) => `
+          <tr>
+            <td>${reportData.customer?.name || '-'}</td>
+            <td>${item.productType}${item.subType ? ` (${item.subType})` : ''}</td>
+            <td class="right">${item.totalQuantity}</td>
+          </tr>
+        `
+        )
+        .join('\n');
+
+      body += `
+        <h3>Clearance Summary</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th><th>Product Type</th><th>Total Items</th>
+            </tr>
+          </thead>
+          <tbody>${clearanceSummaryRows}</tbody>
+        </table>
+      `;
+    }
+
+    // Current Stock Summary
+    if (
+      reportData.currentStockSummaryData &&
+      reportData.currentStockSummaryData.length > 0
+    ) {
+      const currentStockSummaryRows = reportData.currentStockSummaryData
+        .map(
+          (item: any) => `
+          <tr>
+            <td>${reportData.customer?.name || '-'}</td>
+            <td>${item.productType}${item.subType ? ` (${item.subType})` : ''}</td>
+            <td class="right">${item.totalQuantity}</td>
+          </tr>
+        `
+        )
+        .join('\n');
+
+      body += `
+        <h3>Current Stock Summary</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th><th>Product Type</th><th>Total Items</th>
+            </tr>
+          </thead>
+          <tbody>${currentStockSummaryRows}</tbody>
+        </table>
+      `;
+    }
+
+    body += `
+      <div class="small">Balance: Rs. ${Math.abs(reportData.balance || 0).toFixed(2)} ${
+        reportData.balance > 0
+          ? '(Receivable)'
+          : reportData.balance < 0
+            ? '(Payable)'
+            : '(Settled)'
+      }</div>
+    `;
+
+    return wrapHtml('Customer Report - Summary', body);
+  }
+
+  // Detailed report (existing logic)
   const entryReceipts = reportData.entryData?.receipts || [];
   const clearanceReceipts = reportData.clearanceData?.receipts || [];
 
@@ -378,6 +607,7 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
         no: receipt.receiptNo || receipt.id,
         productType: item.productType?.name || '-',
         productSubType: item.productSubType?.name || '-',
+        marka: item.marka || '-',
         qty: item.quantity || 0,
         amount: item.totalPrice || item.totalAmount || 0,
       }))
@@ -389,6 +619,7 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
         <td>${r.no}</td>
         <td>${r.productType}</td>
         <td>${r.productSubType}</td>
+        <td>${r.marka}</td>
         <td class="right">${r.qty}</td>
         <td class="ltr">Rs. ${(r.amount || 0).toFixed(2)}</td>
       </tr>
@@ -404,6 +635,7 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
         no: receipt.clearanceNo || receipt.id,
         productType: item.entryItem?.productType?.name || '-',
         productSubType: item.entryItem?.productSubType?.name || '-',
+        marka: item.entryItem?.marka || '-',
         qty: item.clearQuantity || 0,
         amount: item.totalAmount || 0,
       }))
@@ -415,6 +647,7 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
         <td>${r.no}</td>
         <td>${r.productType}</td>
         <td>${r.productSubType}</td>
+        <td>${r.marka}</td>
         <td class="right">${r.qty}</td>
         <td class="ltr">Rs. ${(r.amount || 0).toFixed(2)}</td>
       </tr>
@@ -423,8 +656,9 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
     .join('\n');
 
   const body = `
-    <div class="small">Report Type: ${filters.reportType} - ${filters.period}</div>
+    <div class="small">Report Type: ${filters.reportType} - Detailed View</div>
     <div class="small">Customer: ${reportData.customer?.name || '-'}</div>
+    <div class="small">Date Range: ${dateRange}</div>
 
     ${
       entryRows.length > 0
@@ -433,7 +667,7 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
       <table>
         <thead>
           <tr>
-            <th>Date</th><th>Receipt No</th><th>Product Type</th><th>Sub Type</th><th>Qty</th><th>Amount</th>
+            <th>Date</th><th>Receipt No</th><th>Product Type</th><th>Sub Type</th><th>Marka</th><th>Qty</th><th>Amount</th>
           </tr>
         </thead>
         <tbody>${entryRows}</tbody>
@@ -449,7 +683,7 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
       <table>
         <thead>
           <tr>
-            <th>Date</th><th>Clearance No</th><th>Product Type</th><th>Sub Type</th><th>Qty</th><th>Amount</th>
+            <th>Date</th><th>Clearance No</th><th>Product Type</th><th>Sub Type</th><th>Marka</th><th>Qty</th><th>Amount</th>
           </tr>
         </thead>
         <tbody>${clearanceRows}</tbody>
@@ -458,7 +692,13 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
         : ''
     }
 
-    <div class="small">Balance: ${reportData.balance ?? 'N/A'}</div>
+    <div class="small">Balance: Rs. ${Math.abs(reportData.balance || 0).toFixed(2)} ${
+      reportData.balance > 0
+        ? '(Receivable)'
+        : reportData.balance < 0
+          ? '(Payable)'
+          : '(Settled)'
+    }</div>
     
     ${
       reportData.ledger && reportData.ledger.length > 0
@@ -488,7 +728,7 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
     }
   `;
 
-  return wrapHtml('Customer Report', body);
+  return wrapHtml('Customer Report - Detailed', body);
 };
 
 export const buildEntryReceiptHTML = (receiptData: any) => {

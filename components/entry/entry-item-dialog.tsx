@@ -96,10 +96,7 @@ export function EntryItemDialog({
     }
   }, [editItem, form]);
 
-  const onSubmit = async (data: EntryItemFormData, e?: React.FormEvent) => {
-    e?.preventDefault();
-    e?.stopPropagation();
-
+  const onSubmit = async (data: EntryItemFormData) => {
     // Validate box number against room capacity before submitting
     const selectedRoom = rooms.find((r) => r.id === data.roomId);
     const roomCapacity = selectedRoom?.capacity || null;
@@ -176,7 +173,7 @@ export function EntryItemDialog({
                         field.onChange(parseInt(value));
                         form.setValue('productSubTypeId', null);
                       }}
-                      disabled={isEditMode && !!editItem}
+                      disabled={false}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -208,9 +205,7 @@ export function EntryItemDialog({
                         field.onChange(value ? parseInt(value) : null)
                       }
                       disabled={
-                        !selectedTypeId ||
-                        filteredSubTypes.length === 0 ||
-                        (isEditMode && !!editItem)
+                        !selectedTypeId || filteredSubTypes.length === 0
                       }
                     >
                       <FormControl>

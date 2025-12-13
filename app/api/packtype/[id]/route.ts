@@ -114,7 +114,7 @@ export async function PUT(
   }
 }
 
-// DELETE - Delete pack type
+// DELETE - Delete pack type (with cascade delete)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -129,7 +129,7 @@ export async function DELETE(
       );
     }
 
-    // Check if pack type exists and is in use
+    // Check if pack type exists
     const packType = await prisma.packType.findUnique({
       where: { id },
       include: {
@@ -146,24 +146,16 @@ export async function DELETE(
       );
     }
 
-    // Check if pack type is in use
-    if (packType._count.entryItems > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Cannot delete pack type that has been used in entries',
-        },
-        { status: 400 }
-      );
-    }
-
+    // Delete the PackType - database will cascade delete EntryItems
     await prisma.packType.delete({
       where: { id },
     });
 
     return NextResponse.json({
       success: true,
-      data: { message: 'Pack type deleted successfully' },
+      data: {
+        message: `Pack type and ${packType._count.entryItems} related entry items deleted successfully`,
+      },
     });
   } catch (error) {
     console.error('Error deleting pack type:', error);

@@ -123,7 +123,7 @@ export async function PUT(
   }
 }
 
-// DELETE - Delete product type
+// DELETE - Delete product type (with cascade delete)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -158,35 +158,19 @@ export async function DELETE(
       );
     }
 
-    // Check if product type is in use
-    if (productType._count.entryItems > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Cannot delete product type that has been used in entries',
-        },
-        { status: 400 }
-      );
-    }
-
-    if (productType._count.subTypes > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            'Cannot delete product type that has subtypes. Delete subtypes first.',
-        },
-        { status: 400 }
-      );
-    }
-
+    // Delete the ProductType - database will cascade delete ProductSubTypes and EntryItems
     await prisma.productType.delete({
       where: { id },
     });
 
+    const totalDeleted =
+      productType._count.subTypes + productType._count.entryItems;
+
     return NextResponse.json({
       success: true,
-      data: { message: 'Product type deleted successfully' },
+      data: {
+        message: `Product type and ${totalDeleted} related records deleted successfully`,
+      },
     });
   } catch (error) {
     console.error('Error deleting product type:', error);

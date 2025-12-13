@@ -72,7 +72,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { customerId, carNo, description, items } = body;
+    const { customerId, carNo, description, items, receiptNo } = body;
 
     // Validate required fields
     if (!customerId || !carNo || !items || items.length === 0) {
@@ -82,7 +82,7 @@ export async function PUT(
       );
     }
 
-    // Check if entry receipt exists and get old total amount
+    // Check if entry receipt exists and get old data
     const existingReceipt = await prisma.entryReceipt.findUnique({
       where: { id },
       include: {
@@ -97,7 +97,9 @@ export async function PUT(
       );
     }
 
+    const oldCustomerId = existingReceipt.customerId;
     const oldTotalAmount = existingReceipt.totalAmount;
+    const customerChanged = oldCustomerId !== customerId;
 
     // Build a map of existing items by their id to preserve clearance data
     const existingItemsMap = new Map(
@@ -113,7 +115,6 @@ export async function PUT(
         : 0;
       const grandTotal = totalPrice + kjTotal;
       newTotalAmount += grandTotal;
-      console.log('procssed item = ');
 
       // Get the existing item to preserve remaining quantities
       const existingItem = item.id ? existingItemsMap.get(item.id) : null;
@@ -144,17 +145,18 @@ export async function PUT(
         grandTotal,
       };
     });
-    console.log('processed items = ', processedItems);
 
     // Update entry receipt, items, and ledger in transaction
     const updatedReceipt = await prisma.$transaction(async (tx) => {
-      // Update existing items or create new ones
+      // Update existing items with new product types, subtypes, and recalculated prices
       for (const processedItem of processedItems) {
         if (processedItem.id) {
-          // Update existing item
+          // Update existing item with all fields including product type/subtype
           await tx.entryItem.update({
             where: { id: processedItem.id },
             data: {
+              productTypeId: processedItem.productTypeId,
+              productSubTypeId: processedItem.productSubTypeId,
               quantity: processedItem.quantity,
               remainingQuantity: processedItem.remainingQuantity,
               unitPrice: processedItem.unitPrice,
@@ -174,12 +176,13 @@ export async function PUT(
         }
       }
 
-      // Update entry receipt with new total
+      // Update entry receipt with new data
       const receipt = await tx.entryReceipt.update({
         where: { id },
         data: {
           customerId,
           carNo,
+          receiptNo: receiptNo || existingReceipt.receiptNo,
           description: description || null,
           totalAmount: newTotalAmount,
         },
@@ -196,9 +199,32 @@ export async function PUT(
         },
       });
 
-      // Update the ledger entry if amount changed
-      if (oldTotalAmount !== newTotalAmount) {
-        // Find the ledger entry for this receipt
+      // Handle ledger updates
+      if (customerChanged) {
+        // Customer changed - remove old ledger entry and create new one
+
+        // Delete old ledger entry from previous customer
+        await tx.ledger.deleteMany({
+          where: {
+            entryReceiptId: id,
+            type: 'adding_inventory',
+            customerId: oldCustomerId,
+          },
+        });
+
+        // Create new ledger entry for new customer
+        await tx.ledger.create({
+          data: {
+            customerId: customerId,
+            type: 'adding_inventory',
+            entryReceiptId: id,
+            description: `Entry Receipt: ${receiptNo || existingReceipt.receiptNo} (Customer Updated)`,
+            debitAmount: newTotalAmount,
+            creditAmount: 0,
+          },
+        });
+      } else if (oldTotalAmount !== newTotalAmount) {
+        // Same customer but amount changed - update existing ledger entry
         const ledgerEntry = await tx.ledger.findFirst({
           where: {
             entryReceiptId: id,
@@ -207,12 +233,11 @@ export async function PUT(
         });
 
         if (ledgerEntry) {
-          // Update the ledger entry with new debit amount
           await tx.ledger.update({
             where: { id: ledgerEntry.id },
             data: {
               debitAmount: newTotalAmount,
-              description: `Entry Receipt: ${existingReceipt.receiptNo} (Updated)`,
+              description: `Entry Receipt: ${receiptNo || existingReceipt.receiptNo} (Updated)`,
             },
           });
         }

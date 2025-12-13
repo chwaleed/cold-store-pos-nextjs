@@ -25,6 +25,7 @@ export default function RecordsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -77,10 +78,20 @@ export default function RecordsPage() {
     };
 
     fetchEntries();
-  }, [debouncedSearch, page, selectedCustomer, startDate, endDate, toast]);
+  }, [
+    debouncedSearch,
+    page,
+    selectedCustomer,
+    startDate,
+    endDate,
+    refreshTrigger,
+    toast,
+  ]);
 
   const handleRefresh = () => {
+    // Reset to page 1 and trigger a refresh
     setPage(1);
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   const clearFilters = () => {

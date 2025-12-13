@@ -243,7 +243,7 @@ export function EntryEditForm({ entryId }: EntryEditFormProps) {
                     <CustomerSearchSelect
                       value={field.value}
                       onValueChange={field.onChange}
-                      disabled={true}
+                      disabled={false}
                     />
                   </FormControl>
                   <FormMessage />
@@ -275,7 +275,7 @@ export function EntryEditForm({ entryId }: EntryEditFormProps) {
                     <Input
                       placeholder="e.g., CS-20240101-0001"
                       {...field}
-                      disabled
+                      disabled={false}
                     />
                   </FormControl>
                   <FormMessage />

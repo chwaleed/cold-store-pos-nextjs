@@ -133,10 +133,10 @@
     updatedAt         DateTime @updatedAt
 
     entryReceipt   EntryReceipt     @relation(fields: [entryReceiptId], references: [id], onDelete: Cascade)
-    productType    ProductType      @relation(fields: [productTypeId], references: [id])
-    productSubType ProductSubType?  @relation(fields: [productSubTypeId], references: [id])
-    packType       PackType         @relation(fields: [packTypeId], references: [id])
-    room           Room             @relation(fields: [roomId], references: [id])
+    productType    ProductType      @relation(fields: [productTypeId], references: [id], onDelete: Cascade)
+    productSubType ProductSubType?  @relation(fields: [productSubTypeId], references: [id], onDelete: Cascade)
+    packType       PackType         @relation(fields: [packTypeId], references: [id], onDelete: Cascade)
+    room           Room             @relation(fields: [roomId], references: [id], onDelete: Cascade)
     clearedItems   ClearedItem[]
 
     @@index([entryReceiptId])
