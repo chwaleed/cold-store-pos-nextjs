@@ -263,27 +263,44 @@ export default function CustomerDetailPage() {
             </div>
 
             {/* Compact Account Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 p-3 rounded-lg">
                 <p className="text-xs text-muted-foreground">Balance</p>
+
                 <p className="text-xl font-bold">
-                  PKR {customer.balance?.toFixed(2) || '0.00'}
+                  PKR{' '}
+                  {customer.balance != null
+                    ? customer.balance.toFixed(2)
+                    : '0.00'}
                 </p>
-                {customer.balance && customer.balance > 0 && (
+
+                {customer.balance > 0 && (
                   <Badge variant="destructive" className="text-xs mt-1">
                     Outstanding
                   </Badge>
                 )}
-                {customer.balance && customer.balance < 0 && (
+
+                {customer.balance < 0 && (
                   <Badge variant="default" className="text-xs mt-1">
                     Credit
                   </Badge>
                 )}
-                {(!customer.balance || customer.balance === 0) && (
+
+                {customer.balance === 0 && (
                   <Badge variant="secondary" className="text-xs mt-1">
                     Clear
                   </Badge>
                 )}
+              </div>
+
+              <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 p-3 rounded-lg">
+                <p className="text-xs text-muted-foreground">Total Discount</p>
+                <p className="text-xl font-bold">
+                  PKR {customer.totalDiscount?.toFixed(2) || '0.00'}
+                </p>
+                <Badge variant="outline" className="text-xs mt-1">
+                  Given
+                </Badge>
               </div>
 
               <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 p-3 rounded-lg">

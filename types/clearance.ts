@@ -23,6 +23,7 @@ export interface ClearanceReceipt {
   carNo: string | null;
   clearanceDate: Date;
   totalAmount: number;
+  discount: number;
   description: string | null;
   createdAt: Date;
   updatedAt: Date;

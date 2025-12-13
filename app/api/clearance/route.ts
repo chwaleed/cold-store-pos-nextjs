@@ -233,7 +233,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify quantities and calculate total amount
-    let totalAmount = 0;
+    let subtotalAmount = 0;
     const clearedItemsData: {
       entryItemId: number;
       entryReceiptId: number;
@@ -302,7 +302,7 @@ export async function POST(request: NextRequest) {
           ? clearKjQuantity * entryItem.kjUnitPrice
           : 0;
       const itemTotalAmount = itemAmount + kjAmount;
-      totalAmount += itemTotalAmount;
+      subtotalAmount += itemTotalAmount;
 
       clearedItemsData.push({
         entryItemId: item.entryItemId,
@@ -312,6 +312,10 @@ export async function POST(request: NextRequest) {
         totalAmount: itemTotalAmount,
       });
     }
+
+    // Calculate final total amount after discount
+    const discountAmount = validatedData.discountAmount || 0;
+    const totalAmount = Math.max(0, subtotalAmount - discountAmount);
 
     // Generate clearance number
     const today = new Date();
@@ -335,6 +339,7 @@ export async function POST(request: NextRequest) {
           carNo: validatedData.carNo || null,
           clearanceDate: validatedData.clearanceDate || new Date(),
           totalAmount,
+          discount: discountAmount,
           description: validatedData.description || null,
           creditAmount:
             validatedData?.paymentAmount && validatedData.paymentAmount > 0
@@ -407,7 +412,6 @@ export async function POST(request: NextRequest) {
       }
 
       // Create ledger entry for discount if discountAmount > 0
-      const discountAmount = validatedData.discountAmount || 0;
       if (discountAmount > 0) {
         await tx.ledger.create({
           data: {
@@ -417,6 +421,7 @@ export async function POST(request: NextRequest) {
             description: `Discount on Clearance: ${validatedData.receiptNo}`,
             debitAmount: 0,
             creditAmount: discountAmount,
+            isDiscount: true,
           },
         });
       }

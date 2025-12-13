@@ -11,6 +11,7 @@ export interface Customer {
 
 export interface CustomerWithBalance extends Customer {
   balance?: number;
+  totalDiscount?: number;
   _count?: {
     entryReceipts: number;
     clearanceReceipts: number;

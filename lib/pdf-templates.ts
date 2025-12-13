@@ -271,7 +271,91 @@ export const buildOverallReportHTML = (reportData: any, filters: any) => {
     }
 
     ${
-      entryReceiptRows.length > 0
+      reportData.summary?.entryByRoom &&
+      Object.keys(reportData.summary.entryByRoom).length > 0
+        ? `
+      <h3>Room-wise Summary</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Room</th>
+            <th>Entry Qty</th>
+            <th>Entry Amount</th>
+            <th>Cleared Qty</th>
+            <th>Cleared Amount</th>
+            <th>Current Stock</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${Object.keys(reportData.summary.entryByRoom)
+            .map((room) => {
+              const entry = reportData.summary.entryByRoom[room] || {
+                quantity: 0,
+                amount: 0,
+              };
+              const clearance = reportData.summary.clearanceByRoom?.[room] || {
+                quantity: 0,
+                amount: 0,
+              };
+              const current = reportData.summary.currentStockByRoom?.[room] || {
+                quantity: 0,
+              };
+              return `
+              <tr>
+                <td>${room}</td>
+                <td class="right">${entry.quantity}</td>
+                <td class="ltr">Rs. ${entry.amount.toFixed(2)}</td>
+                <td class="right">${clearance.quantity}</td>
+                <td class="ltr">Rs. ${clearance.amount.toFixed(2)}</td>
+                <td class="right">${current.quantity}</td>
+              </tr>
+            `;
+            })
+            .join('')}
+        </tbody>
+      </table>
+    `
+        : ''
+    }
+
+    ${
+      reportData.summary?.detailedProductBreakdown &&
+      reportData.summary.detailedProductBreakdown.length > 0
+        ? `
+      <h3>Detailed Product Breakdown</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Product Type</th>
+            <th>Entry Qty</th>
+            <th>Cleared Qty</th>
+            <th>Remaining Qty</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${reportData.summary.detailedProductBreakdown
+            .map((item: any) => {
+              const productName = item.productSubType
+                ? `${item.productType} (${item.productSubType})`
+                : item.productType;
+              return `
+              <tr>
+                <td>${productName}</td>
+                <td class="right">${item.entryQuantity}</td>
+                <td class="right">${item.clearanceQuantity}</td>
+                <td class="right">${item.currentQuantity}</td>
+              </tr>
+            `;
+            })
+            .join('')}
+        </tbody>
+      </table>
+    `
+        : ''
+    }
+
+    ${
+      filters?.detailed && entryReceiptRows.length > 0
         ? `
       <h3>Entry Receipts</h3>
       <table>
@@ -292,7 +376,7 @@ export const buildOverallReportHTML = (reportData: any, filters: any) => {
     }
 
     ${
-      clearanceReceiptRows.length > 0
+      filters?.detailed && clearanceReceiptRows.length > 0
         ? `
       <h3>Clearance Receipts</h3>
       <table>

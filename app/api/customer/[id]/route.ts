@@ -44,7 +44,7 @@ export async function GET(
       );
     }
 
-    // Calculate customer balance
+    // Calculate customer balance and total discount
     const ledgerEntries = await prisma.ledger.findMany({
       where: { customerId },
     });
@@ -54,9 +54,14 @@ export async function GET(
       0
     );
 
+    // Calculate total discount amount from ledger entries where isDiscount is true
+    const totalDiscount = ledgerEntries
+      .filter((entry) => entry.isDiscount)
+      .reduce((acc, entry) => acc + entry.creditAmount, 0);
+
     return NextResponse.json({
       success: true,
-      data: { ...customer, balance },
+      data: { ...customer, balance, totalDiscount },
     });
   } catch (error) {
     console.error('Error fetching customer:', error);

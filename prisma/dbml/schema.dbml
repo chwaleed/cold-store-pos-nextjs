@@ -143,7 +143,7 @@ Table Ledger {
   description String [not null]
   debitAmount Float [not null, default: 0]
   creditAmount Float [not null, default: 0]
-  discount Float [not null, default: 0]
+  isDiscount Boolean [not null, default: false]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   customer Customer [not null]

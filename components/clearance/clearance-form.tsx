@@ -231,6 +231,15 @@ export function ClearanceForm() {
   };
 
   const calculateTotalAmount = () => {
+    const subtotal = clearedItems.reduce(
+      (total, item) => total + item.grandTotal,
+      0
+    );
+    const discountAmount = form.getValues('discountAmount') || 0;
+    return Math.max(0, subtotal - discountAmount); // Ensure total doesn't go negative
+  };
+
+  const calculateSubtotal = () => {
     return clearedItems.reduce((total, item) => total + item.grandTotal, 0);
   };
 
@@ -326,10 +335,24 @@ export function ClearanceForm() {
         <div className="flex w-full items-center justify-between">
           <div className="text-sm text-muted-foreground">
             {clearedItems.length > 0 && (
-              <span>
-                Total Amount:{' '}
-                <strong>PKR {calculateTotalAmount().toFixed(2)}</strong>
-              </span>
+              <div className="space-y-1">
+                <div>
+                  Subtotal:{' '}
+                  <strong>PKR {calculateSubtotal().toFixed(2)}</strong>
+                </div>
+                {form.watch('discountAmount') > 0 && (
+                  <div className="text-green-600">
+                    Discount:{' '}
+                    <strong>
+                      -PKR {form.watch('discountAmount').toFixed(2)}
+                    </strong>
+                  </div>
+                )}
+                <div className="text-base">
+                  Total Amount:{' '}
+                  <strong>PKR {calculateTotalAmount().toFixed(2)}</strong>
+                </div>
+              </div>
             )}
           </div>
           <Button

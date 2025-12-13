@@ -155,6 +155,171 @@ export async function GET(request: NextRequest) {
       });
     });
 
+    // Group by room
+    const entryByRoom: Record<string, { quantity: number; amount: number }> =
+      {};
+    const clearanceByRoom: Record<
+      string,
+      { quantity: number; amount: number }
+    > = {};
+
+    entries.forEach((entry) => {
+      entry.items.forEach((item) => {
+        const roomName = item.room?.name || 'No Room';
+        if (!entryByRoom[roomName]) {
+          entryByRoom[roomName] = { quantity: 0, amount: 0 };
+        }
+        entryByRoom[roomName].quantity += item.quantity;
+        entryByRoom[roomName].amount += item.totalPrice;
+      });
+    });
+
+    clearances.forEach((clearance) => {
+      clearance.clearedItems.forEach((item) => {
+        const roomName = item.entryItem.room?.name || 'No Room';
+        if (!clearanceByRoom[roomName]) {
+          clearanceByRoom[roomName] = { quantity: 0, amount: 0 };
+        }
+        clearanceByRoom[roomName].quantity += item.clearQuantity;
+        clearanceByRoom[roomName].amount += item.totalAmount;
+      });
+    });
+
+    // Calculate current stock by room
+    const currentStockByRoom: Record<string, { quantity: number }> = {};
+
+    // Add entry quantities
+    Object.entries(entryByRoom).forEach(([roomName, data]) => {
+      currentStockByRoom[roomName] = { quantity: data.quantity };
+    });
+
+    // Subtract clearance quantities
+    Object.entries(clearanceByRoom).forEach(([roomName, data]) => {
+      if (currentStockByRoom[roomName]) {
+        currentStockByRoom[roomName].quantity -= data.quantity;
+      } else {
+        currentStockByRoom[roomName] = { quantity: -data.quantity };
+      }
+    });
+
+    // Filter out negative or zero stock
+    const filteredCurrentStockByRoom = Object.fromEntries(
+      Object.entries(currentStockByRoom).filter(([, data]) => data.quantity > 0)
+    );
+
+    // Group by product type and subtype for detailed breakdown
+    const entryByTypeSubtype: Record<
+      string,
+      {
+        productType: string;
+        productSubType?: string;
+        quantity: number;
+        amount: number;
+      }
+    > = {};
+    const clearanceByTypeSubtype: Record<
+      string,
+      {
+        productType: string;
+        productSubType?: string;
+        quantity: number;
+        amount: number;
+      }
+    > = {};
+
+    entries.forEach((entry) => {
+      entry.items.forEach((item) => {
+        const key = item.productSubType
+          ? `${item.productType.name}-${item.productSubType.name}`
+          : item.productType.name;
+
+        if (!entryByTypeSubtype[key]) {
+          entryByTypeSubtype[key] = {
+            productType: item.productType.name,
+            productSubType: item.productSubType?.name,
+            quantity: 0,
+            amount: 0,
+          };
+        }
+        entryByTypeSubtype[key].quantity += item.quantity;
+        entryByTypeSubtype[key].amount += item.totalPrice;
+      });
+    });
+
+    clearances.forEach((clearance) => {
+      clearance.clearedItems.forEach((item) => {
+        const key = item.entryItem.productSubType
+          ? `${item.entryItem.productType.name}-${item.entryItem.productSubType.name}`
+          : item.entryItem.productType.name;
+
+        if (!clearanceByTypeSubtype[key]) {
+          clearanceByTypeSubtype[key] = {
+            productType: item.entryItem.productType.name,
+            productSubType: item.entryItem.productSubType?.name,
+            quantity: 0,
+            amount: 0,
+          };
+        }
+        clearanceByTypeSubtype[key].quantity += item.clearQuantity;
+        clearanceByTypeSubtype[key].amount += item.totalAmount;
+      });
+    });
+
+    // Calculate current stock by type and subtype
+    const currentStockByTypeSubtype: Record<
+      string,
+      {
+        productType: string;
+        productSubType?: string;
+        quantity: number;
+      }
+    > = {};
+
+    // Add entry quantities
+    Object.entries(entryByTypeSubtype).forEach(([key, data]) => {
+      currentStockByTypeSubtype[key] = {
+        productType: data.productType,
+        productSubType: data.productSubType,
+        quantity: data.quantity,
+      };
+    });
+
+    // Subtract clearance quantities
+    Object.entries(clearanceByTypeSubtype).forEach(([key, data]) => {
+      if (currentStockByTypeSubtype[key]) {
+        currentStockByTypeSubtype[key].quantity -= data.quantity;
+      } else {
+        currentStockByTypeSubtype[key] = {
+          productType: data.productType,
+          productSubType: data.productSubType,
+          quantity: -data.quantity,
+        };
+      }
+    });
+
+    // Convert to array and sort
+    const detailedProductBreakdown = Object.entries(currentStockByTypeSubtype)
+      .map(([key, data]) => ({
+        key,
+        productType: data.productType,
+        productSubType: data.productSubType,
+        entryQuantity: entryByTypeSubtype[key]?.quantity || 0,
+        clearanceQuantity: clearanceByTypeSubtype[key]?.quantity || 0,
+        currentQuantity: data.quantity,
+      }))
+      .sort((a, b) => {
+        // Sort by product type first, then by subtype
+        if (a.productType !== b.productType) {
+          return a.productType.localeCompare(b.productType);
+        }
+        if (a.productSubType && b.productSubType) {
+          return a.productSubType.localeCompare(b.productSubType);
+        }
+        if (a.productSubType && !b.productSubType) return 1;
+        if (!a.productSubType && b.productSubType) return -1;
+        return 0;
+      });
+
     return NextResponse.json({
       entries,
       clearances,
@@ -165,6 +330,10 @@ export async function GET(request: NextRequest) {
         totalClearanceQuantity,
         entryByType,
         clearanceByType,
+        entryByRoom,
+        clearanceByRoom,
+        currentStockByRoom: filteredCurrentStockByRoom,
+        detailedProductBreakdown,
       },
       filters: {
         period,

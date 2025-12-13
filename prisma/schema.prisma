@@ -197,7 +197,7 @@
     description        String   // e.g., "Payment", "Rent Charged", "Discount Given", "Cash Advance"
     debitAmount        Float    @default(0) // Amount customer owes
     creditAmount       Float    @default(0) // Amount customer paid
-    discount           Float  @default(0)
+    isDiscount         Boolean  @default(false) // True when this entry is a discount
     createdAt          DateTime @default(now())
     updatedAt          DateTime @updatedAt
 

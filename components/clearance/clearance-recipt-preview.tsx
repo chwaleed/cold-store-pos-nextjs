@@ -330,6 +330,15 @@ export function ClearnceReceiptPreview({
             </div>
           )}
 
+          {clearnceItem.discount > 0 && (
+            <div className="text-sm">
+              <p className="text-xs text-muted-foreground">Discount</p>
+              <p className="font-medium text-green-600">
+                PKR {clearnceItem.discount.toFixed(2)}
+              </p>
+            </div>
+          )}
+
           <div>
             <p className="text-xs text-muted-foreground">Total</p>
             <p className="font-medium">
@@ -364,7 +373,20 @@ export function ClearnceReceiptPreview({
       <Separator className="my-2" />
 
       <div className="flex justify-end py-2">
-        <div className="text-right">
+        <div className="text-right space-y-1">
+          {/* Calculate subtotal (total before discount) */}
+          {clearnceItem.discount > 0 ? (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Subtotal: PKR{' '}
+                {(clearnceItem.totalAmount + clearnceItem.discount).toFixed(2)}
+              </p>
+              <p className="text-sm text-green-600">
+                Discount: -PKR {clearnceItem.discount.toFixed(2)}
+              </p>
+              <Separator className="my-1" />
+            </>
+          ) : null}
           <p className="text-lg font-bold">
             Grand Total: PKR {clearnceItem.totalAmount.toFixed(2)}
           </p>

@@ -11,6 +11,7 @@ interface ClearanceReceiptData {
   };
   carNo: string;
   totalAmount: number;
+  discount: number;
   description?: string;
   clearedItems: any[];
 }
@@ -838,6 +839,21 @@ ${itemsTableRows}
       </table>
 
       <div class="total-section">
+        ${
+          clearance.discount > 0
+            ? `
+        <div class="total-row">
+          <span class="total-label">ذیلی کل:</span>
+          <span class="total-value">Rs. ${(clearance.totalAmount + clearance.discount).toFixed(2)}</span>
+        </div>
+        <div class="total-row" style="color: #16a34a;">
+          <span class="total-label">رعایت:</span>
+          <span class="total-value">-Rs. ${clearance.discount.toFixed(2)}</span>
+        </div>
+        <hr style="margin: 5px 0; border: 1px solid #ddd;">
+        `
+            : ''
+        }
         <div class="total-row">
           <span class="total-label">کل رقم:</span>
           <span class="total-value">Rs. ${clearance.totalAmount.toFixed(2)}</span>
