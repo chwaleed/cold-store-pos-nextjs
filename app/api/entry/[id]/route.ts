@@ -251,13 +251,17 @@ export async function DELETE(
       );
     }
 
-    // Check if entry receipt exists
+    // Check if entry receipt exists and has any cleared items
     const entryReceipt = await prisma.entryReceipt.findUnique({
       where: { id },
       include: {
-        _count: {
-          select: {
-            clearanceReceipts: true,
+        items: {
+          include: {
+            _count: {
+              select: {
+                clearedItems: true,
+              },
+            },
           },
         },
       },
@@ -270,8 +274,13 @@ export async function DELETE(
       );
     }
 
+    // Check if any items have been cleared
+    const hasClearedItems = entryReceipt.items.some(
+      (item) => item._count.clearedItems > 0
+    );
+
     // Prevent deletion if there are clearances
-    if (entryReceipt._count.clearanceReceipts > 0) {
+    if (hasClearedItems) {
       return NextResponse.json(
         {
           success: false,
@@ -281,7 +290,7 @@ export async function DELETE(
       );
     }
 
-    // Delete entry receipt (items will be deleted due to cascade)
+    // Delete entry receipt (items and ledger entries will be deleted due to cascade)
     await prisma.entryReceipt.delete({
       where: { id },
     });

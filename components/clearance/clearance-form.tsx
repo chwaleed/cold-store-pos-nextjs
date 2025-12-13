@@ -75,6 +75,7 @@ export function ClearanceForm() {
       description: '',
       clearanceDate: new Date(),
       paymentAmount: 0,
+      discountAmount: 0,
       items: [],
     },
   });

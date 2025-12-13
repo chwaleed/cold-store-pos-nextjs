@@ -33,6 +33,11 @@ export const clearanceReceiptSchema = z.object({
     .nonnegative('Payment amount cannot be negative')
     .optional()
     .default(0),
+  discountAmount: z
+    .number()
+    .nonnegative('Discount amount cannot be negative')
+    .optional()
+    .default(0),
   items: z
     .array(clearedItemSchema)
     .min(1, 'At least one cleared item is required'),

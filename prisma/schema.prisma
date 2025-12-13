@@ -202,8 +202,8 @@
     updatedAt          DateTime @updatedAt
 
     customer          Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
-    entryReceipt      EntryReceipt?     @relation(fields: [entryReceiptId], references: [id], onDelete: SetNull)
-    clearanceReceipt  ClearanceReceipt? @relation(fields: [clearanceReceiptId], references: [id], onDelete: SetNull)
+    entryReceipt      EntryReceipt?     @relation(fields: [entryReceiptId], references: [id], onDelete: Cascade)
+    clearanceReceipt  ClearanceReceipt? @relation(fields: [clearanceReceiptId], references: [id], onDelete: Cascade)
 
     @@index([customerId])
     @@index([createdAt])

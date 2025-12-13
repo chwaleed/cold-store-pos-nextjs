@@ -7,6 +7,7 @@ const directCashSchema = z.object({
   type: z.enum(['debit', 'credit']),
   amount: z.number().positive(),
   description: z.string().min(1),
+  date: z.string().min(1),
 });
 
 // GET /api/ledger?customerId=123 - Get customer ledger entries
@@ -112,6 +113,7 @@ export async function POST(request: NextRequest) {
         debitAmount: validatedData.type === 'debit' ? validatedData.amount : 0,
         creditAmount:
           validatedData.type === 'credit' ? validatedData.amount : 0,
+        createdAt: new Date(validatedData.date),
       },
       include: {
         customer: {

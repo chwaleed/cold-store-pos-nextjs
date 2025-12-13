@@ -108,7 +108,7 @@ export function ClearanceFormFields({
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <FormField
           control={form.control}
           name="description"
@@ -126,7 +126,6 @@ export function ClearanceFormFields({
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
           name="paymentAmount"
@@ -150,7 +149,34 @@ export function ClearanceFormFields({
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="discountAmount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Discount Amount (PKR)</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  {...field}
+                  value={field.value || 0}
+                  onChange={(e) =>
+                    field.onChange(parseFloat(e.target.value) || 0)
+                  }
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
+
+      {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> */}
+
+      {/* </div> */}
     </div>
   );
 }

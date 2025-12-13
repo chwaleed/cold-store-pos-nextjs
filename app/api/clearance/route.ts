@@ -406,6 +406,21 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      // Create ledger entry for discount if discountAmount > 0
+      const discountAmount = validatedData.discountAmount || 0;
+      if (discountAmount > 0) {
+        await tx.ledger.create({
+          data: {
+            customerId: validatedData.customerId,
+            type: 'clearance',
+            clearanceReceiptId: receipt.id,
+            description: `Discount on Clearance: ${validatedData.receiptNo}`,
+            debitAmount: 0,
+            creditAmount: discountAmount,
+          },
+        });
+      }
+
       return receipt;
     });
 

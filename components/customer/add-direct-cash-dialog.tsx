@@ -28,6 +28,7 @@ const directCashSchema = z.object({
   type: z.enum(['debit', 'credit']),
   amount: z.coerce.number().positive('Amount must be greater than 0'),
   description: z.string().min(1, 'Description is required'),
+  date: z.string().min(1, 'Date is required'),
 });
 
 type DirectCashFormData = z.infer<typeof directCashSchema>;
@@ -63,6 +64,7 @@ export function AddDirectCashDialog({
       type: 'debit',
       amount: 0,
       description: '',
+      date: new Date().toISOString().split('T')[0],
     },
   });
 
@@ -81,6 +83,7 @@ export function AddDirectCashDialog({
           type: data.type,
           amount: data.amount,
           description: data.description,
+          date: data.date,
         }),
       });
 
@@ -145,6 +148,14 @@ export function AddDirectCashDialog({
             </Select>
             {errors.type && (
               <p className="text-sm text-destructive">{errors.type.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="date">Date</Label>
+            <Input id="date" type="date" {...register('date')} />
+            {errors.date && (
+              <p className="text-sm text-destructive">{errors.date.message}</p>
             )}
           </div>
 

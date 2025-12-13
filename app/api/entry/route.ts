@@ -157,6 +157,7 @@ export async function POST(request: NextRequest) {
           description: `Entry Receipt: ${validatedData.receiptNo}`,
           debitAmount: totalAmount,
           creditAmount: 0,
+          discount: 0,
         },
       });
 

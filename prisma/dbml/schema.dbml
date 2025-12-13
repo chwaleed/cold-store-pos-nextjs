@@ -202,8 +202,8 @@ Ref: ClearedItem.entryItemId > EntryItem.id [delete: Cascade]
 
 Ref: Ledger.customerId > Customer.id [delete: Cascade]
 
-Ref: Ledger.entryReceiptId > EntryReceipt.id [delete: Set Null]
+Ref: Ledger.entryReceiptId > EntryReceipt.id [delete: Cascade]
 
-Ref: Ledger.clearanceReceiptId > ClearanceReceipt.id [delete: Set Null]
+Ref: Ledger.clearanceReceiptId > ClearanceReceipt.id [delete: Cascade]
 
 Ref: Expense.categoryId > ExpenseCategory.id [delete: Cascade]
