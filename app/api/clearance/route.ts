@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { clearanceReceiptSchema } from '@/schema/clearance';
+import { createCashBookEntry } from '@/lib/cash-book-integration';
 
 // GET - List all clearance receipts
 // export async function GET(request: NextRequest) {
@@ -313,21 +314,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Calculate final total amount after discount
+    // Total amount represents the full value of stock cleared (not reduced by discount)
     const discountAmount = validatedData.discountAmount || 0;
-    const totalAmount = Math.max(0, subtotalAmount - discountAmount);
-
-    // Generate clearance number
-    const today = new Date();
-    const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
-    const count = await prisma.clearanceReceipt.count({
-      where: {
-        clearanceDate: {
-          gte: new Date(today.setHours(0, 0, 0, 0)),
-          lt: new Date(today.setHours(23, 59, 59, 999)),
-        },
-      },
-    });
+    const totalAmount = subtotalAmount;
 
     // Create clearance receipt with cleared items in a transaction
     const clearance = await prisma.$transaction(async (tx) => {
@@ -396,22 +385,7 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // Create ledger entry for payment if paymentAmount > 0
-      const paymentAmount = validatedData.paymentAmount || 0;
-      if (paymentAmount > 0) {
-        await tx.ledger.create({
-          data: {
-            customerId: validatedData.customerId,
-            type: 'clearance',
-            clearanceReceiptId: receipt.id,
-            description: `Clearance: ${validatedData.receiptNo}`,
-            debitAmount: 0,
-            creditAmount: paymentAmount,
-          },
-        });
-      }
-
-      // Create ledger entry for discount if discountAmount > 0
+      // Create ledger entry for discount FIRST if discountAmount > 0
       if (discountAmount > 0) {
         await tx.ledger.create({
           data: {
@@ -422,12 +396,51 @@ export async function POST(request: NextRequest) {
             debitAmount: 0,
             creditAmount: discountAmount,
             isDiscount: true,
+            createdAt: validatedData.clearanceDate || new Date(),
           },
         });
       }
 
+      // Create ledger entry for payment AFTER discount if paymentAmount > 0
+      const paymentAmount = validatedData.paymentAmount || 0;
+      if (paymentAmount > 0) {
+        await tx.ledger.create({
+          data: {
+            customerId: validatedData.customerId,
+            type: 'clearance',
+            clearanceReceiptId: receipt.id,
+            description: `Payment on Clearance: ${validatedData.receiptNo}`,
+            debitAmount: 0,
+            creditAmount: paymentAmount,
+            createdAt: validatedData.clearanceDate || new Date(),
+          },
+        });
+
+        // Create cash book entry for clearance payment
+        await createCashBookEntry(
+          {
+            date: validatedData.clearanceDate || new Date(),
+            transactionType: 'inflow',
+            amount: paymentAmount,
+            description: `Clearance Payment: ${validatedData.receiptNo}`,
+            source: 'clearance',
+            referenceId: receipt.id,
+            referenceType: 'clearance_receipt',
+            customerId: validatedData.customerId,
+          },
+          tx
+        );
+      }
+
       return receipt;
     });
+
+    // Update daily cash summary after transaction completes
+    if (validatedData.paymentAmount && validatedData.paymentAmount > 0) {
+      await updateDailyCashSummaryHelper(
+        validatedData.clearanceDate || new Date()
+      );
+    }
 
     return NextResponse.json(
       { success: true, data: clearance },
@@ -446,4 +459,67 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// Helper function to update daily cash summary
+async function updateDailyCashSummaryHelper(date: Date) {
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  // Calculate totals for the day
+  const transactions = await (prisma as any).cashBookEntry.findMany({
+    where: {
+      date: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+    },
+  });
+
+  const totalInflows = transactions
+    .filter((t: any) => t.transactionType === 'inflow')
+    .reduce((sum: number, t: any) => sum + t.amount, 0);
+
+  const totalOutflows = transactions
+    .filter((t: any) => t.transactionType === 'outflow')
+    .reduce((sum: number, t: any) => sum + t.amount, 0);
+
+  // Get or create daily summary
+  const existingSummary = await (prisma as any).dailyCashSummary.findUnique({
+    where: { date: startOfDay },
+  });
+
+  let openingBalance = existingSummary?.openingBalance || 0;
+
+  // If no existing summary, try to get opening balance from previous day's closing balance
+  if (!existingSummary) {
+    const previousDay = new Date(startOfDay);
+    previousDay.setDate(previousDay.getDate() - 1);
+
+    const previousSummary = await (prisma as any).dailyCashSummary.findUnique({
+      where: { date: previousDay },
+    });
+
+    openingBalance = previousSummary?.closingBalance || 0;
+  }
+
+  const closingBalance = openingBalance + totalInflows - totalOutflows;
+
+  await (prisma as any).dailyCashSummary.upsert({
+    where: { date: startOfDay },
+    update: {
+      totalInflows,
+      totalOutflows,
+      closingBalance,
+    },
+    create: {
+      date: startOfDay,
+      openingBalance,
+      totalInflows,
+      totalOutflows,
+      closingBalance,
+    },
+  });
 }

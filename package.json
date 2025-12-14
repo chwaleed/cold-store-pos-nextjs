@@ -11,7 +11,9 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "ts-node prisma/seed.ts",
+    "seed:cashbook": "tsx prisma/seed-cashbook.ts",
+    "test:cashbook": "node test-cashbook-seeder.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.4.2",

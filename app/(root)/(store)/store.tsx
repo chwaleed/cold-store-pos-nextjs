@@ -41,7 +41,9 @@ const useStore = create<StoreState>((set, get) => ({
   // ---------------- TYPE ----------------
   handleType: (typeData, operation) => {
     if (operation === 'add') {
-      set((state) => ({ types: [...state.types, typeData] }));
+      set((state) => ({
+        types: [{ ...typeData, _count: { subTypes: 0 } }, ...state.types],
+      }));
     }
 
     if (operation === 'remove') {
@@ -103,7 +105,7 @@ const useStore = create<StoreState>((set, get) => ({
   handleRoom: (roomData, operation) => {
     if (operation === 'add') {
       set((state) => ({
-        rooms: [...state.rooms, roomData],
+        rooms: [roomData, ...state.rooms],
       }));
     }
 

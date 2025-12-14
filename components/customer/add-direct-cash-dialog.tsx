@@ -30,7 +30,7 @@ const directCashSchema = z.object({
   amount: z.coerce.number().positive('Amount must be greater than 0'),
   description: z.string().min(1, 'Description is required'),
   date: z.string().min(1, 'Date is required'),
-  isDiscount: z.boolean().default(false),
+  isDirectCash: z.boolean().default(false),
 });
 
 type DirectCashFormData = z.infer<typeof directCashSchema>;
@@ -67,12 +67,12 @@ export function AddDirectCashDialog({
       amount: 0,
       description: '',
       date: new Date().toISOString().split('T')[0],
-      isDiscount: false,
+      isDirectCash: false,
     },
   });
 
   const type = watch('type');
-  const isDiscount = watch('isDiscount');
+  const isDirectCash = watch('isDirectCash');
 
   const onSubmit = async (data: DirectCashFormData) => {
     try {
@@ -88,7 +88,7 @@ export function AddDirectCashDialog({
           amount: data.amount,
           description: data.description,
           date: data.date,
-          isDiscount: data.isDiscount,
+          isDirectCash: data.isDirectCash,
         }),
       });
 
@@ -209,14 +209,14 @@ export function AddDirectCashDialog({
 
           <div className="flex items-center space-x-2">
             <Checkbox
-              id="isDiscount"
-              checked={isDiscount}
-              onCheckedChange={(checked) => setValue('isDiscount', !!checked)}
+              id="isDirectCash"
+              checked={isDirectCash}
+              onCheckedChange={(checked) => setValue('isDirectCash', !!checked)}
             />
-            <Label htmlFor="isDiscount" className="text-sm">
-              Mark as discount entry
+            <Label htmlFor="isDirectCash" className="text-sm">
+              Mark as direct cash (loan)
               <span className="text-xs text-muted-foreground ml-2">
-                (This will be counted in total discount)
+                (Will not be counted in profit/loss - for loans given/returned)
               </span>
             </Label>
           </div>

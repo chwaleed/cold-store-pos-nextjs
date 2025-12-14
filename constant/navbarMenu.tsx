@@ -7,6 +7,7 @@ import {
   FileText,
   Warehouse,
   User2,
+  Wallet,
 } from 'lucide-react';
 import { NavItem } from '@/types/Navbar';
 
@@ -41,6 +42,11 @@ export const NAVBAR_ITEMS: NavItem[] = [
     title: 'Expenses',
     path: '/expenses',
     icon: <DollarSign className="h-4 w-4" />,
+  },
+  {
+    title: 'Cash Book',
+    path: '/cash-book',
+    icon: <Wallet className="h-4 w-4" />,
   },
   {
     title: 'Reports',

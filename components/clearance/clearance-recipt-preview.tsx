@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Printer, FileDown } from 'lucide-react';
+import { ArrowLeft, Printer, FileDown, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -11,6 +11,16 @@ import { useToast } from '@/components/ui/use-toast';
 import { EntryReceiptWithDetails } from '@/types/entry';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ClearnceReceiptPreviewProps {
   clearanceId: number;
@@ -21,6 +31,8 @@ export function ClearnceReceiptPreview({
 }: ClearnceReceiptPreviewProps) {
   const [clearnceItem, setClearancesItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -106,6 +118,41 @@ export function ClearnceReceiptPreview({
     }
   };
 
+  const handleDelete = async () => {
+    try {
+      setDeleting(true);
+      const response = await fetch(`/api/clearance/${clearanceId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: 'Success',
+          description:
+            'Clearance receipt deleted successfully. All related data has been reverted.',
+        });
+        router.push('/clearance');
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to delete clearance receipt',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete clearance receipt',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-3">
@@ -124,10 +171,12 @@ export function ClearnceReceiptPreview({
   }
 
   // Prepare data for the DataTable
-  const itemsData = clearnceItem.clearedItems?.map((item, index) => ({
-    ...item,
-    index: index + 1,
-  }));
+  const itemsData = clearnceItem.clearedItems?.map(
+    (item: any, index: number) => ({
+      ...item,
+      index: index + 1,
+    })
+  );
 
   const columns = [
     {
@@ -291,6 +340,14 @@ export function ClearnceReceiptPreview({
             <Printer className="mr-1.5 h-4 w-4" />
             Print
           </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            <Trash2 className="mr-1.5 h-4 w-4" />
+            Delete
+          </Button>
         </div>
       </div>
 
@@ -392,6 +449,38 @@ export function ClearnceReceiptPreview({
           </p>
         </div>
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Clearance Receipt?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will permanently delete clearance receipt{' '}
+              <strong>{clearnceItem?.clearanceNo}</strong> and revert all
+              related changes:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Stock quantities will be restored to entry items</li>
+                <li>All ledger entries will be removed</li>
+                <li>Cash book entries will be deleted</li>
+                <li>Daily cash summary will be recalculated</li>
+              </ul>
+              <p className="mt-2 font-semibold text-destructive">
+                This action cannot be undone.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? 'Deleting...' : 'Delete Receipt'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

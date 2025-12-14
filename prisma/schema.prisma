@@ -29,6 +29,7 @@
     entryReceipts     EntryReceipt[]
     clearanceReceipts ClearanceReceipt[]
     ledger            Ledger[]
+    cashBookEntries   CashBookEntry[]
 
     @@index([name])
     // CNIC was removed (no longer stored)
@@ -39,7 +40,7 @@
   model ProductType {
     id                    Int      @id @default(autoincrement())
     name                  String   @unique
-    doubleRentAfter30Days Boolean  @default(false) // Enable double rent pricing after 30 days
+    doubleRentAfter30Days Boolean  @default(false) // Enable double rent pricing after 33 days
     createdAt             DateTime @default(now())
     updatedAt             DateTime @updatedAt
 
@@ -198,6 +199,7 @@
     debitAmount        Float    @default(0) // Amount customer owes
     creditAmount       Float    @default(0) // Amount customer paid
     isDiscount         Boolean  @default(false) // True when this entry is a discount
+    isDirectCash       Boolean  @default(false) // True for loan transactions (not counted in profit/loss)
     createdAt          DateTime @default(now())
     updatedAt          DateTime @updatedAt
 
@@ -251,5 +253,64 @@
     updatedAt DateTime @updatedAt
 
     @@index([key])
+  }
+
+  // Cash Book Entry Model - Tracks all cash transactions
+  model CashBookEntry {
+    id                Int      @id @default(autoincrement())
+    date              DateTime @default(now())
+    transactionType   String   // 'inflow' or 'outflow'
+    amount            Float
+    description       String
+    source            String   // 'clearance', 'ledger', 'expense', 'manual'
+    referenceId       Int?     // ID of source transaction (clearanceId, ledgerId, expenseId)
+    referenceType     String?  // Type of reference ('clearance_receipt', 'ledger_entry', 'expense')
+    customerId        Int?     // Optional customer reference
+    isDirectCash      Boolean  @default(false) // True for loan transactions (not counted in profit/loss)
+    createdBy         String?  // User who created manual entries
+    createdAt         DateTime @default(now())
+    updatedAt         DateTime @updatedAt
+
+    customer          Customer? @relation(fields: [customerId], references: [id])
+
+    @@index([date])
+    @@index([transactionType])
+    @@index([source])
+    @@index([referenceId, referenceType])
+  }
+
+  // Daily Cash Summary Model - Tracks daily cash balances
+  model DailyCashSummary {
+    id              Int      @id @default(autoincrement())
+    date            DateTime @unique
+    openingBalance  Float    @default(0)
+    totalInflows    Float    @default(0)
+    totalOutflows   Float    @default(0)
+    closingBalance  Float    @default(0)
+    isReconciled    Boolean  @default(false)
+    reconciledBy    String?
+    reconciledAt    DateTime?
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    auditTrail      OpeningBalanceAudit[]
+
+    @@index([date])
+  }
+
+  // Opening Balance Audit Trail Model - Tracks changes to opening balances
+  model OpeningBalanceAudit {
+    id                    Int      @id @default(autoincrement())
+    dailyCashSummaryId    Int
+    oldOpeningBalance     Float
+    newOpeningBalance     Float
+    changeReason          String?
+    changedBy             String?
+    changeTimestamp       DateTime @default(now())
+
+    dailyCashSummary      DailyCashSummary @relation(fields: [dailyCashSummaryId], references: [id], onDelete: Cascade)
+
+    @@index([dailyCashSummaryId])
+    @@index([changeTimestamp])
   }
 

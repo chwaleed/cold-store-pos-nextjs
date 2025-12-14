@@ -158,6 +158,9 @@ export async function POST(request: NextRequest) {
           debitAmount: totalAmount,
           creditAmount: 0,
           isDiscount: false,
+          createdAt: validatedData.entryDate
+            ? new Date(validatedData.entryDate)
+            : new Date(),
         },
       });
 

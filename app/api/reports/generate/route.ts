@@ -11,6 +11,7 @@ import {
   buildCustomerReportHTML,
   buildEntryReceiptHTML,
   buildClearanceReceiptHTML,
+  buildCashBookReportHTML,
 } from '@/lib/pdf-templates';
 import fs from 'fs';
 import path from 'path';
@@ -50,6 +51,9 @@ export async function POST(req: NextRequest) {
         break;
       case 'clearance':
         html = buildClearanceReceiptHTML(data);
+        break;
+      case 'cash-book':
+        html = buildCashBookReportHTML(data, filters || {});
         break;
       default:
         return NextResponse.json(
