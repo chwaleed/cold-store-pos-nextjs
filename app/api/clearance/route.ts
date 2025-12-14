@@ -314,21 +314,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Calculate final total amount after discount
+    // Total amount represents the full value of stock cleared (not reduced by discount)
     const discountAmount = validatedData.discountAmount || 0;
-    const totalAmount = Math.max(0, subtotalAmount - discountAmount);
-
-    // Generate clearance number
-    const today = new Date();
-    const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
-    const count = await prisma.clearanceReceipt.count({
-      where: {
-        clearanceDate: {
-          gte: new Date(today.setHours(0, 0, 0, 0)),
-          lt: new Date(today.setHours(23, 59, 59, 999)),
-        },
-      },
-    });
+    const totalAmount = subtotalAmount;
 
     // Create clearance receipt with cleared items in a transaction
     const clearance = await prisma.$transaction(async (tx) => {
@@ -397,7 +385,23 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // Create ledger entry for payment if paymentAmount > 0
+      // Create ledger entry for discount FIRST if discountAmount > 0
+      if (discountAmount > 0) {
+        await tx.ledger.create({
+          data: {
+            customerId: validatedData.customerId,
+            type: 'clearance',
+            clearanceReceiptId: receipt.id,
+            description: `Discount on Clearance: ${validatedData.receiptNo}`,
+            debitAmount: 0,
+            creditAmount: discountAmount,
+            isDiscount: true,
+            createdAt: validatedData.clearanceDate || new Date(),
+          },
+        });
+      }
+
+      // Create ledger entry for payment AFTER discount if paymentAmount > 0
       const paymentAmount = validatedData.paymentAmount || 0;
       if (paymentAmount > 0) {
         await tx.ledger.create({
@@ -405,7 +409,7 @@ export async function POST(request: NextRequest) {
             customerId: validatedData.customerId,
             type: 'clearance',
             clearanceReceiptId: receipt.id,
-            description: `Clearance: ${validatedData.receiptNo}`,
+            description: `Payment on Clearance: ${validatedData.receiptNo}`,
             debitAmount: 0,
             creditAmount: paymentAmount,
             createdAt: validatedData.clearanceDate || new Date(),
@@ -426,22 +430,6 @@ export async function POST(request: NextRequest) {
           },
           tx
         );
-      }
-
-      // Create ledger entry for discount if discountAmount > 0
-      if (discountAmount > 0) {
-        await tx.ledger.create({
-          data: {
-            customerId: validatedData.customerId,
-            type: 'clearance',
-            clearanceReceiptId: receipt.id,
-            description: `Discount on Clearance: ${validatedData.receiptNo}`,
-            debitAmount: 0,
-            creditAmount: discountAmount,
-            // isDiscount: true, // TODO: Add back when Prisma client is regenerated
-            createdAt: validatedData.clearanceDate || new Date(),
-          },
-        });
       }
 
       return receipt;

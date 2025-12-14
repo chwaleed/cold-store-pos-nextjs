@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
     let balance = 0;
     const balanceMap = new Map<number, number>();
     allEntries.forEach((entry) => {
+      // Include all entries (including discounts) in balance calculation
       balance += entry.debitAmount - entry.creditAmount;
       balanceMap.set(entry.id, balance);
     });
@@ -67,9 +68,7 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         skip,
         take: limit,
       }),
@@ -80,10 +79,12 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
+    console.log(ledgerEntries);
     const entriesWithBalance = ledgerEntries.map((entry) => ({
       ...entry,
       balance: balanceMap.get(entry.id) || 0,
     }));
+    console.log(balanceMap);
 
     return NextResponse.json({
       success: true,

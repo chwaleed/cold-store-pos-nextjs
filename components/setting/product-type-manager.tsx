@@ -284,10 +284,10 @@ export function ProductTypeManager() {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>Double Amount After 30 Days</FormLabel>
+                      <FormLabel>Double Amount After 33 Days</FormLabel>
                       <FormDescription>
                         Automatically double the rental price for items stored
-                        longer than 30 days
+                        longer than 33 days
                       </FormDescription>
                     </div>
                   </FormItem>

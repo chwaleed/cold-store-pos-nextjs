@@ -206,6 +206,9 @@ export function AuditReport() {
     toast.success('Excel exported');
   };
 
+  const netCashReceived =
+    reportData?.summary?.totalCashReceived - reportData?.summary?.totalDiscount;
+
   return (
     <div className="flex flex-col gap-6 mt-4">
       {/* Filters */}
@@ -353,31 +356,27 @@ export function AuditReport() {
           </div>
 
           {/* Revenue & Costs */}
-          <div>
-            <h3 className="text-sm font-semibold mb-2 flex items-center gap-2 text-muted-foreground uppercase tracking-wide">
-              <Wallet className="h-4 w-4 text-green-500" />
-              Revenue & Costs
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <CompactMetricCard
-                title="Cash Received"
-                value={`₨ ${reportData.summary.totalCashReceived.toLocaleString()}`}
-                icon={<DollarSign className="h-4 w-4 text-green-500" />}
-                className="border-l-4 border-l-green-500"
-              />
-              <CompactMetricCard
-                title="Total Expenses"
-                value={`₨ ${reportData.summary.totalExpenses.toLocaleString()}`}
-                icon={<AlertCircle className="h-4 w-4 text-red-500" />}
-                className="border-l-4 border-l-red-500"
-              />
-              <CompactMetricCard
-                title="Total Discount"
-                value={`₨ ${reportData.summary.totalDiscount.toLocaleString()}`}
-                icon={<TrendingDown className="h-4 w-4 text-orange-500" />}
-                className="border-l-4 border-l-orange-500"
-              />
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <CompactMetricCard
+              title="Cash Received (After Discount)"
+              value={`₨ ${netCashReceived.toLocaleString()}`}
+              icon={<DollarSign className="h-4 w-4 text-green-500" />}
+              className="border-l-4 border-l-green-500"
+            />
+
+            <CompactMetricCard
+              title="Total Expenses"
+              value={`₨ ${reportData.summary.totalExpenses.toLocaleString()}`}
+              icon={<AlertCircle className="h-4 w-4 text-red-500" />}
+              className="border-l-4 border-l-red-500"
+            />
+
+            <CompactMetricCard
+              title="Total Discount"
+              value={`₨ ${reportData.summary.totalDiscount.toLocaleString()}`}
+              icon={<TrendingDown className="h-4 w-4 text-orange-500" />}
+              className="border-l-4 border-l-orange-500"
+            />
           </div>
 
           {/* Net Profit - Highlighted */}
@@ -388,7 +387,7 @@ export function AuditReport() {
                   NET PROFIT
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Cash Received - Expenses - Discount
+                  Cash Received - Expenses
                 </p>
               </div>
               <div className="text-right">

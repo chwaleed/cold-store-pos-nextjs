@@ -7,8 +7,18 @@ import { Badge } from '@/components/ui/badge';
 import { CustomerSearchSelect } from '@/components/ui/customer-search-select';
 import { useDebounce } from 'use-debounce';
 import { useToast } from '@/components/ui/use-toast';
-import { Eye, Search } from 'lucide-react';
+import { Eye, Search, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // Define the type for a clearance receipt row (adjust as needed)
 type ClearanceReceipt = {
@@ -33,6 +43,9 @@ export function ClearanceTable() {
   const [endDate, setEndDate] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [receiptToDelete, setReceiptToDelete] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -85,6 +98,50 @@ export function ClearanceTable() {
   const hasActiveFilters =
     searchTerm || selectedCustomer || startDate || endDate;
 
+  const handleDeleteClick = (id: number) => {
+    setReceiptToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!receiptToDelete) return;
+
+    try {
+      setDeleting(true);
+      const response = await fetch(`/api/clearance/${receiptToDelete}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: 'Success',
+          description:
+            'Clearance receipt deleted successfully. All related data has been reverted.',
+        });
+        // Refresh the list
+        setReceipts((prev) => prev.filter((r) => r.id !== receiptToDelete));
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to delete clearance receipt',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete clearance receipt',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+      setReceiptToDelete(null);
+    }
+  };
+
   const columns = [
     { name: 'Receipt No', accessor: 'receiptNo', id: 'receiptNo' },
     {
@@ -114,7 +171,7 @@ export function ClearanceTable() {
     {
       name: 'Actions',
       accessor: (row: any) => (
-        <div className="flex  gap-2">
+        <div className="flex gap-2">
           <Button
             variant="ghost"
             size="sm"
@@ -122,6 +179,15 @@ export function ClearanceTable() {
             title="Preview Receipt"
           >
             <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDeleteClick(row.id)}
+            title="Delete Receipt"
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       ),
@@ -199,6 +265,35 @@ export function ClearanceTable() {
           Total: PKR {totalAmount.toFixed(2)}
         </div>
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Clearance Receipt?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will permanently delete this clearance receipt and
+              revert all related changes:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Stock quantities will be restored</li>
+                <li>Ledger entries will be removed</li>
+                <li>Cash book entries will be deleted</li>
+                <li>Daily cash summary will be updated</li>
+              </ul>
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

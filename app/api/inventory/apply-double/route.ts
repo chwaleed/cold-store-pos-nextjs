@@ -11,7 +11,7 @@ export async function GET() {
         remainingQuantity: { gt: 0 },
         productType: { doubleRentAfter30Days: true },
         entryReceipt: {
-          entryDate: { lt: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) },
+          entryDate: { lt: new Date(now.getTime() - 33 * 24 * 60 * 60 * 1000) },
         },
       },
       select: {

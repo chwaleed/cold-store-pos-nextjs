@@ -414,6 +414,12 @@ export const buildAuditReportHTML = (reportData: any, filters?: any) => {
   const netProfit = reportData?.summary?.netProfit || 0;
   const netProfitColor = netProfit >= 0 ? '#16a34a' : '#dc2626';
 
+  const cashReceived = Number(reportData?.summary?.totalCashReceived || 0);
+  const totalDiscount = Number(reportData?.summary?.totalDiscount || 0);
+  const totalExpenses = Number(reportData?.summary?.totalExpenses || 0);
+
+  const netCashReceived = cashReceived - totalDiscount;
+
   const body = `
     <div class="info-list urdu">
       <div class="info-item">
@@ -459,18 +465,21 @@ export const buildAuditReportHTML = (reportData: any, filters?: any) => {
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td class="urdu">نقد وصول شدہ</td>
-          <td class="ltr">Rs. ${Number(reportData?.summary?.totalCashReceived || 0).toFixed(2)}</td>
+       <tr>
+          <td class="urdu">نقد وصول شدہ (رعایت کے بعد)</td>
+          <td class="ltr">Rs. ${netCashReceived.toFixed(2)}</td>
         </tr>
+
         <tr>
           <td class="urdu">کل اخراجات</td>
-          <td class="ltr">Rs. ${Number(reportData?.summary?.totalExpenses || 0).toFixed(2)}</td>
+          <td class="ltr">Rs. ${totalExpenses.toFixed(2)}</td>
         </tr>
+
         <tr>
           <td class="urdu">کل رعایت</td>
-          <td class="ltr">Rs. ${Number(reportData?.summary?.totalDiscount || 0).toFixed(2)}</td>
+          <td class="ltr">Rs. ${totalDiscount.toFixed(2)}</td>
         </tr>
+
       </tbody>
     </table>
 

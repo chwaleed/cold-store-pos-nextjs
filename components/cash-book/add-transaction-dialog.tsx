@@ -220,20 +220,6 @@ export function AddTransactionDialog({
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="customer">Customer (Optional)</Label>
-            <CustomerSearchSelect
-              value={customerId || 0}
-              onValueChange={(value) =>
-                setValue('customerId', value || undefined)
-              }
-              placeholder="Select customer (optional)..."
-            />
-            <p className="text-xs text-muted-foreground">
-              Link this transaction to a specific customer if applicable
-            </p>
-          </div>
-
           <DialogFooter>
             <Button
               type="button"
