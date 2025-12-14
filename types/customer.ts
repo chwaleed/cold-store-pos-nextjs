@@ -15,6 +15,7 @@ export interface CustomerWithBalance extends Customer {
   _count?: {
     entryReceipts: number;
     clearanceReceipts: number;
+    cashBookEntries: number;
   };
 }
 
@@ -27,6 +28,17 @@ export interface CustomerListResponse {
     total: number;
     totalPages: number;
   };
+}
+
+export interface CustomerWithCashBook extends CustomerWithBalance {
+  cashBookEntries?: {
+    id: number;
+    date: Date;
+    transactionType: 'inflow' | 'outflow';
+    amount: number;
+    description: string;
+    source: 'clearance' | 'ledger' | 'expense' | 'manual';
+  }[];
 }
 
 export interface CustomerResponse {

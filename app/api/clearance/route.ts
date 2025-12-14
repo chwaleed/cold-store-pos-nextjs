@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { clearanceReceiptSchema } from '@/schema/clearance';
+import { createCashBookEntry } from '@/lib/cash-book-integration';
 
 // GET - List all clearance receipts
 // export async function GET(request: NextRequest) {
@@ -407,8 +408,24 @@ export async function POST(request: NextRequest) {
             description: `Clearance: ${validatedData.receiptNo}`,
             debitAmount: 0,
             creditAmount: paymentAmount,
+            createdAt: validatedData.clearanceDate || new Date(),
           },
         });
+
+        // Create cash book entry for clearance payment
+        await createCashBookEntry(
+          {
+            date: validatedData.clearanceDate || new Date(),
+            transactionType: 'inflow',
+            amount: paymentAmount,
+            description: `Clearance Payment: ${validatedData.receiptNo}`,
+            source: 'clearance',
+            referenceId: receipt.id,
+            referenceType: 'clearance_receipt',
+            customerId: validatedData.customerId,
+          },
+          tx
+        );
       }
 
       // Create ledger entry for discount if discountAmount > 0
@@ -421,13 +438,21 @@ export async function POST(request: NextRequest) {
             description: `Discount on Clearance: ${validatedData.receiptNo}`,
             debitAmount: 0,
             creditAmount: discountAmount,
-            isDiscount: true,
+            // isDiscount: true, // TODO: Add back when Prisma client is regenerated
+            createdAt: validatedData.clearanceDate || new Date(),
           },
         });
       }
 
       return receipt;
     });
+
+    // Update daily cash summary after transaction completes
+    if (validatedData.paymentAmount && validatedData.paymentAmount > 0) {
+      await updateDailyCashSummaryHelper(
+        validatedData.clearanceDate || new Date()
+      );
+    }
 
     return NextResponse.json(
       { success: true, data: clearance },
@@ -446,4 +471,67 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// Helper function to update daily cash summary
+async function updateDailyCashSummaryHelper(date: Date) {
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  // Calculate totals for the day
+  const transactions = await (prisma as any).cashBookEntry.findMany({
+    where: {
+      date: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+    },
+  });
+
+  const totalInflows = transactions
+    .filter((t: any) => t.transactionType === 'inflow')
+    .reduce((sum: number, t: any) => sum + t.amount, 0);
+
+  const totalOutflows = transactions
+    .filter((t: any) => t.transactionType === 'outflow')
+    .reduce((sum: number, t: any) => sum + t.amount, 0);
+
+  // Get or create daily summary
+  const existingSummary = await (prisma as any).dailyCashSummary.findUnique({
+    where: { date: startOfDay },
+  });
+
+  let openingBalance = existingSummary?.openingBalance || 0;
+
+  // If no existing summary, try to get opening balance from previous day's closing balance
+  if (!existingSummary) {
+    const previousDay = new Date(startOfDay);
+    previousDay.setDate(previousDay.getDate() - 1);
+
+    const previousSummary = await (prisma as any).dailyCashSummary.findUnique({
+      where: { date: previousDay },
+    });
+
+    openingBalance = previousSummary?.closingBalance || 0;
+  }
+
+  const closingBalance = openingBalance + totalInflows - totalOutflows;
+
+  await (prisma as any).dailyCashSummary.upsert({
+    where: { date: startOfDay },
+    update: {
+      totalInflows,
+      totalOutflows,
+      closingBalance,
+    },
+    create: {
+      date: startOfDay,
+      openingBalance,
+      totalInflows,
+      totalOutflows,
+      closingBalance,
+    },
+  });
 }

@@ -117,6 +117,7 @@ export async function GET(request: NextRequest) {
             sum + r.items.reduce((itemSum, i) => itemSum + i.quantity, 0),
           0
         ),
+        totalDiscount: entries.reduce((sum, r) => sum + (r.discount || 0), 0),
       };
     }
 
@@ -190,6 +191,10 @@ export async function GET(request: NextRequest) {
           (sum, r) =>
             sum +
             r.clearedItems.reduce((itemSum, i) => itemSum + i.clearQuantity, 0),
+          0
+        ),
+        totalDiscount: clearances.reduce(
+          (sum, r) => sum + (r.discount || 0),
           0
         ),
       };
@@ -396,8 +401,20 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       customer,
-      entryData: detailed ? entryData : null,
-      clearanceData: detailed ? clearanceData : null,
+      entryData: detailed
+        ? entryData
+        : {
+            totalAmount: entryData?.totalAmount || 0,
+            totalQuantity: entryData?.totalQuantity || 0,
+            totalDiscount: entryData?.totalDiscount || 0,
+          },
+      clearanceData: detailed
+        ? clearanceData
+        : {
+            totalAmount: clearanceData?.totalAmount || 0,
+            totalQuantity: clearanceData?.totalQuantity || 0,
+            totalDiscount: clearanceData?.totalDiscount || 0,
+          },
       entrySummaryData,
       clearanceSummaryData,
       currentStockSummaryData,

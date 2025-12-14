@@ -132,3 +132,11 @@ export const generateClearanceReceiptPDF = (clearanceData: any) =>
     undefined,
     `clearance-receipt-${clearanceData?.clearanceNo || Date.now()}.pdf`
   );
+
+export const generateCashBookReportPDF = (reportData: any, filters: any) =>
+  createPdfClient(
+    'cash-book',
+    reportData,
+    filters,
+    `cash-book-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`
+  );

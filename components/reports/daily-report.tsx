@@ -53,6 +53,7 @@ import {
   X,
   Search,
   FileText,
+  Percent,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import * as XLSX from 'xlsx';
@@ -191,7 +192,7 @@ export function DailyReport() {
         ['ENTRY SUMMARY'],
         ['Total Amount', `₨ ${reportData.entryData.totalAmount.toFixed(2)}`],
         ['Total Quantity', reportData.entryData.totalQuantity],
-        ['Number of Receipts', reportData.entryData.receipts.length]
+        ['Number of Receipts', reportData.entryData.receipts?.length || 0]
       );
     }
 
@@ -204,7 +205,7 @@ export function DailyReport() {
           `₨ ${reportData.clearanceData.totalAmount.toFixed(2)}`,
         ],
         ['Total Quantity', reportData.clearanceData.totalQuantity],
-        ['Number of Receipts', reportData.clearanceData.receipts.length]
+        ['Number of Receipts', reportData.clearanceData.receipts?.length || 0]
       );
     }
 
@@ -744,7 +745,7 @@ export function DailyReport() {
           </Card>
 
           {/* Key Metrics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <MetricCard
               title="Net Balance"
               value={`₨ ${Math.abs(reportData.balance).toFixed(2)}`}
@@ -775,7 +776,7 @@ export function DailyReport() {
                 <MetricCard
                   title="Total Entry"
                   value={`₨ ${reportData.entryData.totalAmount.toFixed(2)}`}
-                  description={`${reportData.entryData.totalQuantity} items across ${reportData.entryData.receipts.length} receipts`}
+                  description={`${reportData.entryData.totalQuantity} items${reportData.entryData.receipts ? ` across ${reportData.entryData.receipts.length} receipts` : ''}`}
                   icon={<ArrowDown className="h-4 w-4 text-blue-500" />}
                 />
               )}
@@ -784,8 +785,17 @@ export function DailyReport() {
                 <MetricCard
                   title="Total Clearance"
                   value={`₨ ${reportData.clearanceData.totalAmount.toFixed(2)}`}
-                  description={`${reportData.clearanceData.totalQuantity} items across ${reportData.clearanceData.receipts.length} receipts`}
+                  description={`${reportData.clearanceData.totalQuantity} items${reportData.clearanceData.receipts ? ` across ${reportData.clearanceData.receipts.length} receipts` : ''}`}
                   icon={<ArrowUp className="h-4 w-4 text-emerald-500" />}
+                />
+              )}
+            {reportData &&
+              (reportData.entryData || reportData.clearanceData) && (
+                <MetricCard
+                  title="Total Discount"
+                  value={`₨ ${((reportData.entryData?.totalDiscount || 0) + (reportData.clearanceData?.totalDiscount || 0)).toFixed(2)}`}
+                  description="Discount given"
+                  icon={<Percent className="h-4 w-4 text-orange-500" />}
                 />
               )}
           </div>
@@ -793,7 +803,8 @@ export function DailyReport() {
           {/* Entry Details Section */}
           {isDetailed &&
             (reportType === 'both' || reportType === 'entry') &&
-            reportData.entryData?.receipts.length > 0 && (
+            reportData.entryData?.receipts &&
+            reportData.entryData.receipts.length > 0 && (
               <Card>
                 <CardHeader className="bg-background/50 rounded-2xl border-b">
                   <div className="flex items-center gap-2">
@@ -864,7 +875,8 @@ export function DailyReport() {
           {/* Clearance Details Section */}
           {isDetailed &&
             (reportType === 'both' || reportType === 'clearance') &&
-            reportData.clearanceData?.receipts.length > 0 && (
+            reportData.clearanceData?.receipts &&
+            reportData.clearanceData.receipts.length > 0 && (
               <Card>
                 <CardHeader className="bg-background/50 rounded-2xl">
                   <div className="flex items-center gap-2">

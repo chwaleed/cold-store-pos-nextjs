@@ -35,15 +35,15 @@ function wrapHtml(title: string, bodyContent: string) {
       @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap");
       /* Urdu font loaded from static path which is included in project root */
       @font-face {
-        font-family: 'NotoNastaliqUrdu';
+        font-family: 'Noto Nastaliq Urdu';
         src: url('/Noto_Nastaliq_Urdu/static/NotoNastaliqUrdu-Regular.ttf') format('truetype');
-        font-weight: normal;
+        font-weight: 400;
         font-style: normal;
         font-display: swap;
       }
 
       body { font-family: Roboto, Arial, sans-serif; padding: 20px; }
-      .urdu { font-family: 'NotoNastaliqUrdu', 'Noto Naskh Arabic', serif; }
+      .urdu { font-family: 'Noto Nastaliq Urdu', 'Noto Naskh Arabic', serif; }
       .header { text-align:center; margin-bottom: 10px; }
       h1 { margin: 0 0 5px 0; }
       .subheader { color: #555; margin-bottom: 10px }
@@ -54,6 +54,11 @@ function wrapHtml(title: string, bodyContent: string) {
       .ltr { direction:ltr; text-align:left }
       .summary { width: 50%; margin: 0 auto 10px auto }
       .small { font-size: 0.9em; color:#666 }
+      .info-list { margin: 15px 0; padding: 10px; background: #f9f9f9; border-radius: 5px; }
+      .info-item { padding: 5px 0; border-bottom: 1px solid #e0e0e0; }
+      .info-item:last-child { border-bottom: none; }
+      .info-label { display: inline-block; min-width: 200px; font-weight: 500; }
+      .info-value { display: inline-block; }
     </style>
   </head>
   <body>
@@ -63,7 +68,7 @@ function wrapHtml(title: string, bodyContent: string) {
       <div class="subheader">${title}</div>
     </div>
     ${bodyContent}
-    <footer class="small">Generated: ${format(new Date(), 'PPP pp')}</footer>
+    <footer class="small urdu">تیار کردہ: ${format(new Date(), 'PPP pp')}</footer>
   </body>
 </html>`;
 }
@@ -94,25 +99,25 @@ export const buildStockReportHTML = (
     <div class="summary">
       <table>
         <tbody>
-          <tr><td>Total Items</td><td class="right">${summary?.totalItems || 0}</td></tr>
-          <tr><td>Total Quantity</td><td class="right">${summary?.totalQuantity || 0}</td></tr>
-          <tr><td>Total Value</td><td class="ltr">Rs. ${(summary?.totalValue || 0).toFixed(2)}</td></tr>
+          <tr><td class="urdu">کل اشیاء</td><td class="right">${summary?.totalItems || 0}</td></tr>
+          <tr><td class="urdu">کل مقدار</td><td class="right">${summary?.totalQuantity || 0}</td></tr>
+          <tr><td class="urdu">کل قیمت</td><td class="ltr">Rs. ${(summary?.totalValue || 0).toFixed(2)}</td></tr>
         </tbody>
       </table>
     </div>
 
-    <div class="small">Room: ${room}</div>
+    <div class="small urdu">کمرہ: ${room}</div>
 
     <table>
       <thead>
         <tr>
-          <th>#</th>
-          <th>Product Type</th>
-          <th>Sub Type</th>
-          <th>Room</th>
-          <th>Qty</th>
-          <th>Unit Price</th>
-          <th>Total Value</th>
+          <th class="urdu">#</th>
+          <th class="urdu">پروڈکٹ کی قسم</th>
+          <th class="urdu">ذیلی قسم</th>
+          <th class="urdu">کمرہ</th>
+          <th class="urdu">مقدار</th>
+          <th class="urdu">یونٹ قیمت</th>
+          <th class="urdu">کل قیمت</th>
         </tr>
       </thead>
       <tbody>
@@ -121,7 +126,7 @@ export const buildStockReportHTML = (
     </table>
   `;
 
-  return wrapHtml('Stock Summary Report', body);
+  return wrapHtml('اسٹاک خلاصہ رپورٹ', body);
 };
 
 export const buildExpenseReportHTML = (reportData: any, filters: any) => {
@@ -139,12 +144,12 @@ export const buildExpenseReportHTML = (reportData: any, filters: any) => {
     .join('\n');
 
   const body = `
-    <div class="small">Period: ${filters?.period || 'All'}</div>
+    <div class="small urdu">مدت: ${filters?.period || 'تمام'}</div>
     <div class="summary">
       <table>
         <tbody>
-          <tr><td>Grand Total</td><td class="ltr">Rs. ${(reportData.summary?.grandTotal || 0).toFixed(2)}</td></tr>
-          <tr><td>Count</td><td class="right">${reportData.summary?.count || 0}</td></tr>
+          <tr><td class="urdu">کل رقم</td><td class="ltr">Rs. ${(reportData.summary?.grandTotal || 0).toFixed(2)}</td></tr>
+          <tr><td class="urdu">تعداد</td><td class="right">${reportData.summary?.count || 0}</td></tr>
         </tbody>
       </table>
     </div>
@@ -152,17 +157,17 @@ export const buildExpenseReportHTML = (reportData: any, filters: any) => {
     <table>
       <thead>
         <tr>
-          <th>Date</th>
-          <th>Category</th>
-          <th>Amount</th>
-          <th>Description</th>
+          <th class="urdu">تاریخ</th>
+          <th class="urdu">زمرہ</th>
+          <th class="urdu">رقم</th>
+          <th class="urdu">تفصیل</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>
   `;
 
-  return wrapHtml('Expense Report', body);
+  return wrapHtml('اخراجات رپورٹ', body);
 };
 
 export const buildOverallReportHTML = (reportData: any, filters: any) => {
@@ -223,11 +228,11 @@ export const buildOverallReportHTML = (reportData: any, filters: any) => {
     .join('\n');
 
   const body = `
-    <div class="small">Period: ${filters?.period || 'All'}</div>
+    <div class="small urdu">مدت: ${filters?.period || 'تمام'}</div>
 
     <table>
       <thead>
-        <tr><th>Summary</th><th></th></tr>
+        <tr><th class="urdu">خلاصہ</th><th></th></tr>
       </thead>
    <tbody>
   <tr>
@@ -255,8 +260,8 @@ export const buildOverallReportHTML = (reportData: any, filters: any) => {
     ${
       reportData.entryByType && reportData.entryByType.length > 0
         ? `
-      <h3>Entry by Product Type</h3>
-      <table><thead><tr><th>Product Type</th><th>Quantity</th><th>Amount</th></tr></thead><tbody>${rowsEntryByType}</tbody></table>
+      <h3 class="urdu">پروڈکٹ کی قسم کے مطابق اندراج</h3>
+      <table><thead><tr><th class="urdu">پروڈکٹ کی قسم</th><th class="urdu">مقدار</th><th class="urdu">رقم</th></tr></thead><tbody>${rowsEntryByType}</tbody></table>
     `
         : ''
     }
@@ -264,8 +269,8 @@ export const buildOverallReportHTML = (reportData: any, filters: any) => {
     ${
       reportData.clearanceByType && reportData.clearanceByType.length > 0
         ? `
-      <h3>Clearance by Product Type</h3>
-      <table><thead><tr><th>Product Type</th><th>Quantity</th><th>Amount</th></tr></thead><tbody>${rowsClearanceByType}</tbody></table>
+      <h3 class="urdu">پروڈکٹ کی قسم کے مطابق نکاسی</h3>
+      <table><thead><tr><th class="urdu">پروڈکٹ کی قسم</th><th class="urdu">مقدار</th><th class="urdu">رقم</th></tr></thead><tbody>${rowsClearanceByType}</tbody></table>
     `
         : ''
     }
@@ -274,16 +279,16 @@ export const buildOverallReportHTML = (reportData: any, filters: any) => {
       reportData.summary?.entryByRoom &&
       Object.keys(reportData.summary.entryByRoom).length > 0
         ? `
-      <h3>Room-wise Summary</h3>
+      <h3 class="urdu">کمرے کے مطابق خلاصہ</h3>
       <table>
         <thead>
           <tr>
-            <th>Room</th>
-            <th>Entry Qty</th>
-            <th>Entry Amount</th>
-            <th>Cleared Qty</th>
-            <th>Cleared Amount</th>
-            <th>Current Stock</th>
+            <th class="urdu">کمرہ</th>
+            <th class="urdu">اندراج مقدار</th>
+            <th class="urdu">اندراج رقم</th>
+            <th class="urdu">نکاسی مقدار</th>
+            <th class="urdu">نکاسی رقم</th>
+            <th class="urdu">موجودہ اسٹاک</th>
           </tr>
         </thead>
         <tbody>
@@ -322,14 +327,14 @@ export const buildOverallReportHTML = (reportData: any, filters: any) => {
       reportData.summary?.detailedProductBreakdown &&
       reportData.summary.detailedProductBreakdown.length > 0
         ? `
-      <h3>Detailed Product Breakdown</h3>
+      <h3 class="urdu">تفصیلی پروڈکٹ تقسیم</h3>
       <table>
         <thead>
           <tr>
-            <th>Product Type</th>
-            <th>Entry Qty</th>
-            <th>Cleared Qty</th>
-            <th>Remaining Qty</th>
+            <th class="urdu">پروڈکٹ کی قسم</th>
+            <th class="urdu">اندراج مقدار</th>
+            <th class="urdu">نکاسی مقدار</th>
+            <th class="urdu">باقی مقدار</th>
           </tr>
         </thead>
         <tbody>
@@ -357,16 +362,16 @@ export const buildOverallReportHTML = (reportData: any, filters: any) => {
     ${
       filters?.detailed && entryReceiptRows.length > 0
         ? `
-      <h3>Entry Receipts</h3>
+      <h3 class="urdu">اندراج کی رسیدیں</h3>
       <table>
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Receipt No</th>
-            <th>Customer</th>
-            <th>Total Items</th>
-            <th>Total Qty</th>
-            <th>Total Amount</th>
+            <th class="urdu">تاریخ</th>
+            <th class="urdu">رسید نمبر</th>
+            <th class="urdu">کسٹمر</th>
+            <th class="urdu">کل اشیاء</th>
+            <th class="urdu">کل مقدار</th>
+            <th class="urdu">کل رقم</th>
           </tr>
         </thead>
         <tbody>${entryReceiptRows}</tbody>
@@ -378,16 +383,16 @@ export const buildOverallReportHTML = (reportData: any, filters: any) => {
     ${
       filters?.detailed && clearanceReceiptRows.length > 0
         ? `
-      <h3>Clearance Receipts</h3>
+      <h3 class="urdu">نکاسی کی رسیدیں</h3>
       <table>
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Clearance No</th>
-            <th>Customer</th>
-            <th>Total Items</th>
-            <th>Total Qty</th>
-            <th>Total Amount</th>
+            <th class="urdu">تاریخ</th>
+            <th class="urdu">نکاسی نمبر</th>
+            <th class="urdu">کسٹمر</th>
+            <th class="urdu">کل اشیاء</th>
+            <th class="urdu">کل مقدار</th>
+            <th class="urdu">کل رقم</th>
           </tr>
         </thead>
         <tbody>${clearanceReceiptRows}</tbody>
@@ -397,53 +402,154 @@ export const buildOverallReportHTML = (reportData: any, filters: any) => {
     }
   `;
 
-  return wrapHtml('Overall Report', body);
+  return wrapHtml('مجموعی رپورٹ', body);
 };
 
-export const buildAuditReportHTML = (reportData: any) => {
-  const periodType =
-    reportData?.period?.type === 'month' ? 'Monthly' : 'Yearly';
-  const profitMargin = reportData?.financial?.profitMargin;
-  const profitMarginValue =
-    typeof profitMargin === 'string'
-      ? parseFloat(profitMargin)
-      : profitMargin || 0;
+export const buildAuditReportHTML = (reportData: any, filters?: any) => {
+  const dateRange =
+    filters?.fromDate && filters?.toDate
+      ? `${format(new Date(filters.fromDate), 'PP')} - ${format(new Date(filters.toDate), 'PP')}`
+      : 'تاریخ کی حد متعین نہیں';
+
+  const netProfit = reportData?.summary?.netProfit || 0;
+  const netProfitColor = netProfit >= 0 ? '#16a34a' : '#dc2626';
 
   const body = `
-   <div class="small urdu">مدت: ${periodType} - ${reportData?.period?.year || 'N/A'}</div>
+    <div class="info-list urdu">
+      <div class="info-item">
+        <span class="info-label">رپورٹ کی قسم:</span>
+        <span class="info-value">منافع اور آڈٹ رپورٹ</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">تاریخ کی حد:</span>
+        <span class="info-value">${dateRange}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">تیار کردہ:</span>
+        <span class="info-value">${format(new Date(), 'PPP pp')}</span>
+      </div>
+    </div>
 
-<table>
-  <tbody>
-    <tr><td class="urdu">کل آمدنی</td><td class="ltr">Rs. ${Number(reportData?.financial?.totalRevenue || 0).toFixed(2)}</td></tr>
-    <tr><td class="urdu">کل اخراجات</td><td class="ltr">Rs. ${Number(reportData?.financial?.totalCosts || 0).toFixed(2)}</td></tr>
-    <tr><td class="urdu">خالص منافع / نقصان</td><td class="ltr">Rs. ${Number(reportData?.financial?.profitLoss || 0).toFixed(2)}</td></tr>
-    <tr><td class="urdu">منافع کی شرح</td><td class="right">${Number(profitMarginValue).toFixed(2)}%</td></tr>
-    <tr><td class="urdu">بقایاجات</td><td class="ltr">Rs. ${Number(reportData?.financial?.outstandingBalance || 0).toFixed(2)}</td></tr>
-  </tbody>
-</table>
+    <h3 class="urdu">کاروباری میٹرکس</h3>
+    <table>
+      <thead>
+        <tr>
+          <th class="urdu">تفصیل</th>
+          <th class="urdu">رقم</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="urdu">کل اندراج کی رقم</td>
+          <td class="ltr">Rs. ${Number(reportData?.summary?.totalEntryAmount || 0).toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td class="urdu">کل نکاسی کی رقم</td>
+          <td class="ltr">Rs. ${Number(reportData?.summary?.totalClearanceAmount || 0).toFixed(2)}</td>
+        </tr>
+      </tbody>
+    </table>
 
-<h3 class="urdu">آپریشنز خلاصہ</h3>
-<table>
-  <tbody>
-    <tr><td class="urdu">اندراج کی رقم</td><td class="ltr">Rs. ${Number(reportData?.entry?.totalAmount || 0).toFixed(2)}</td></tr>
-    <tr><td class="urdu">اندراج کی مقدار</td><td class="right">${Number(reportData?.entry?.totalQuantity || 0)}</td></tr>
-    <tr><td class="urdu">نکاسی کی رقم</td><td class="ltr">Rs. ${Number(reportData?.clearance?.totalAmount || 0).toFixed(2)}</td></tr>
-    <tr><td class="urdu">نکاسی کی مقدار</td><td class="right">${Number(reportData?.clearance?.totalQuantity || 0)}</td></tr>
-  </tbody>
-</table>
+    <h3 class="urdu">آمدنی اور اخراجات</h3>
+    <table>
+      <thead>
+        <tr>
+          <th class="urdu">تفصیل</th>
+          <th class="urdu">رقم</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="urdu">نقد وصول شدہ</td>
+          <td class="ltr">Rs. ${Number(reportData?.summary?.totalCashReceived || 0).toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td class="urdu">کل اخراجات</td>
+          <td class="ltr">Rs. ${Number(reportData?.summary?.totalExpenses || 0).toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td class="urdu">کل رعایت</td>
+          <td class="ltr">Rs. ${Number(reportData?.summary?.totalDiscount || 0).toFixed(2)}</td>
+        </tr>
+      </tbody>
+    </table>
 
-<h3 class="urdu">اسٹاک کی صورتحال</h3>
-<table>
-  <tbody>
-    <tr><td class="urdu">کل اسٹاک مالیت</td><td class="ltr">Rs. ${Number(reportData?.inventory?.totalValue || 0).toFixed(2)}</td></tr>
-    <tr><td class="urdu">اسٹاک میں موجود اشیاء</td><td class="right">${Number(reportData?.inventory?.itemCount || 0)}</td></tr>
-    <tr><td class="urdu">کل مقدار</td><td class="right">${Number(reportData?.inventory?.totalQuantity || 0)}</td></tr>
-  </tbody>
-</table>
+    <div style="background: #f3e8ff; border: 2px solid #9333ea; border-radius: 6px; padding: 12px; margin: 15px 0; text-align: center; max-width: 400px; margin-left: auto; margin-right: auto;">
+      <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; font-weight: 500; font-family: 'Noto Nastaliq Urdu', 'Noto Naskh Arabic', serif;">خالص منافع</div>
+      <div style="font-size: 9px; color: #9ca3af; margin-bottom: 6px; font-family: 'Noto Nastaliq Urdu', 'Noto Naskh Arabic', serif;">نقد وصول شدہ - اخراجات - رعایت</div>
+      <div style="font-size: 24px; font-weight: 800; color: ${netProfitColor}; direction: ltr;">Rs. ${Number(netProfit).toFixed(2)}</div>
+    </div>
 
+    <h3 class="urdu">دیگر میٹرکس</h3>
+    <table>
+      <thead>
+        <tr>
+          <th class="urdu">تفصیل</th>
+          <th class="urdu">رقم</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="urdu">بقایاجات</td>
+          <td class="ltr">Rs. ${Number(reportData?.summary?.totalOutstandingBalance || 0).toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td class="urdu">خالص براہ راست نقد (قرضے)</td>
+          <td class="ltr">Rs. ${Number(reportData?.summary?.netDirectCash || 0).toFixed(2)}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 class="urdu">براہ راست نقد / قرض کی تفصیلات</h3>
+    <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; background: #fafafa;">
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+        <span style="font-size: 12px; color: #374151; font-family: 'Noto Nastaliq Urdu', 'Noto Naskh Arabic', serif;">براہ راست نقد دیا گیا (قرضے)</span>
+        <span style="font-size: 12px; font-weight: 600; color: #dc2626; direction: ltr;">Rs. ${Number(reportData?.summary?.totalDirectCashGiven || 0).toFixed(2)}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+        <span style="font-size: 12px; color: #374151; font-family: 'Noto Nastaliq Urdu', 'Noto Naskh Arabic', serif;">براہ راست نقد وصول شدہ (واپسی)</span>
+        <span style="font-size: 12px; font-weight: 600; color: #16a34a; direction: ltr;">Rs. ${Number(reportData?.summary?.totalDirectCashReceived || 0).toFixed(2)}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 10px; margin-top: 8px; background: #fef3c7; border-radius: 4px; font-weight: 600;">
+        <span style="font-size: 12px; color: #374151; font-family: 'Noto Nastaliq Urdu', 'Noto Naskh Arabic', serif;">خالص بقایا قرضے</span>
+        <span style="font-size: 12px; font-weight: 600; color: #d97706; direction: ltr;">Rs. ${Number(reportData?.summary?.netDirectCash || 0).toFixed(2)}</span>
+      </div>
+    </div>
+
+    ${
+      reportData?.breakdown?.expensesByCategory &&
+      Object.keys(reportData.breakdown.expensesByCategory).length > 0
+        ? `
+    <h3 class="urdu">زمرہ کے مطابق اخراجات کی تفصیل</h3>
+    <table>
+      <thead>
+        <tr>
+          <th class="urdu">زمرہ</th>
+          <th class="urdu">رقم</th>
+          <th class="urdu">فیصد</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${Object.entries(reportData.breakdown.expensesByCategory)
+          .sort(([, a]: any, [, b]: any) => b - a)
+          .map(
+            ([category, amount]: [string, any]) => `
+          <tr>
+            <td>${category}</td>
+            <td class="ltr" style="color: #dc2626; font-weight: 600;">Rs. ${Number(amount).toFixed(2)}</td>
+            <td class="right" style="color: #6b7280;">${((amount / reportData.summary.totalExpenses) * 100).toFixed(1)}%</td>
+          </tr>
+        `
+          )
+          .join('')}
+      </tbody>
+    </table>
+    `
+        : ''
+    }
   `;
 
-  return wrapHtml('Audit Report', body);
+  return wrapHtml('منافع اور آڈٹ رپورٹ', body);
 };
 
 export const buildCustomerReportHTML = (reportData: any, filters: any) => {
@@ -459,11 +565,56 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
       reportData.clearanceMarkaData ||
       reportData.currentStockMarkaData)
   ) {
+    // Calculate totals for marka search
+    const totalEntryAmount = reportData.entryData?.totalAmount || 0;
+    const totalClearedAmount = reportData.clearanceData?.totalAmount || 0;
+    const totalDiscount =
+      reportData.entryData?.totalDiscount ||
+      reportData.clearanceData?.totalDiscount ||
+      0;
+    const outstandingBalance = reportData.balance || 0;
+
     let body = `
-      <div class="small">Report Type: ${filters.reportType} - Marka Search</div>
-      <div class="small">Customer: ${reportData.customer?.name || '-'}</div>
-      <div class="small">Date Range: ${dateRange}</div>
-      <div class="small">Marka Filter: "${filters.marka}"</div>
+      <div class="info-list urdu">
+        <div class="info-item">
+          <span class="info-label">رپورٹ کی قسم:</span>
+          <span class="info-value">${filters.reportType} - مارکہ تلاش</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">کسٹمر:</span>
+          <span class="info-value">${reportData.customer?.name || '-'}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">تاریخ کی حد:</span>
+          <span class="info-value">${dateRange}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">مارکہ فلٹر:</span>
+          <span class="info-value">"${filters.marka}"</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">کل اندراج کی رقم:</span>
+          <span class="info-value ltr">Rs. ${totalEntryAmount.toFixed(2)}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">کل نکاسی کی رقم:</span>
+          <span class="info-value ltr">Rs. ${totalClearedAmount.toFixed(2)}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">کل رعایت:</span>
+          <span class="info-value ltr">Rs. ${totalDiscount.toFixed(2)}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">بقایا رقم:</span>
+          <span class="info-value ltr">Rs. ${Math.abs(outstandingBalance).toFixed(2)} ${
+            outstandingBalance > 0
+              ? '(وصولی)'
+              : outstandingBalance < 0
+                ? '(ادائیگی)'
+                : '(صاف)'
+          }</span>
+        </div>
+      </div>
     `;
 
     // Entry Marka Summary
@@ -481,11 +632,11 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
         .join('\n');
 
       body += `
-        <h3>Entry Marka Summary</h3>
+        <h3 class="urdu">اندراج مارکہ خلاصہ</h3>
         <table>
           <thead>
             <tr>
-              <th>Customer</th><th>Marka</th><th>Total Items</th>
+              <th class="urdu">کسٹمر</th><th class="urdu">مارکہ</th><th class="urdu">کل اشیاء</th>
             </tr>
           </thead>
           <tbody>${entryMarkaRows}</tbody>
@@ -511,11 +662,11 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
         .join('\n');
 
       body += `
-        <h3>Clearance Marka Summary</h3>
+        <h3 class="urdu">نکاسی مارکہ خلاصہ</h3>
         <table>
           <thead>
             <tr>
-              <th>Customer</th><th>Marka</th><th>Total Items</th>
+              <th class="urdu">کسٹمر</th><th class="urdu">مارکہ</th><th class="urdu">کل اشیاء</th>
             </tr>
           </thead>
           <tbody>${clearanceMarkaRows}</tbody>
@@ -541,11 +692,11 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
         .join('\n');
 
       body += `
-        <h3>Current Stock Marka Summary</h3>
+        <h3 class="urdu">موجودہ اسٹاک مارکہ خلاصہ</h3>
         <table>
           <thead>
             <tr>
-              <th>Customer</th><th>Marka</th><th>Total Items</th>
+              <th class="urdu">کسٹمر</th><th class="urdu">مارکہ</th><th class="urdu">کل اشیاء</th>
             </tr>
           </thead>
           <tbody>${currentStockMarkaRows}</tbody>
@@ -554,16 +705,16 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
     }
 
     body += `
-      <div class="small">Balance: Rs. ${Math.abs(reportData.balance || 0).toFixed(2)} ${
+      <div class="small urdu">بیلنس: Rs. ${Math.abs(reportData.balance || 0).toFixed(2)} ${
         reportData.balance > 0
-          ? '(Receivable)'
+          ? '(وصولی)'
           : reportData.balance < 0
-            ? '(Payable)'
-            : '(Settled)'
+            ? '(ادائیگی)'
+            : '(صاف)'
       }</div>
     `;
 
-    return wrapHtml('Customer Report - Marka Summary', body);
+    return wrapHtml('کسٹمر رپورٹ - مارکہ خلاصہ', body);
   }
 
   // Check if this is a summary report
@@ -573,10 +724,52 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
       reportData.clearanceSummaryData ||
       reportData.currentStockSummaryData)
   ) {
+    // Calculate totals for summary view
+    const totalEntryAmount = reportData.entryData?.totalAmount || 0;
+    const totalClearedAmount = reportData.clearanceData?.totalAmount || 0;
+    const totalDiscount =
+      reportData.entryData?.totalDiscount ||
+      reportData.clearanceData?.totalDiscount ||
+      0;
+    const outstandingBalance = reportData.balance || 0;
+
     let body = `
-      <div class="small">Report Type: ${filters.reportType} - Summary View</div>
-      <div class="small">Customer: ${reportData.customer?.name || '-'}</div>
-      <div class="small">Date Range: ${dateRange}</div>
+      <div class="info-list urdu">
+        <div class="info-item">
+          <span class="info-label">رپورٹ کی قسم:</span>
+          <span class="info-value">${filters.reportType} - خلاصہ</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">کسٹمر:</span>
+          <span class="info-value">${reportData.customer?.name || '-'}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">تاریخ کی حد:</span>
+          <span class="info-value">${dateRange}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">کل اندراج کی رقم:</span>
+          <span class="info-value ltr">Rs. ${totalEntryAmount.toFixed(2)}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">کل نکاسی کی رقم:</span>
+          <span class="info-value ltr">Rs. ${totalClearedAmount.toFixed(2)}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">کل رعایت:</span>
+          <span class="info-value ltr">Rs. ${totalDiscount.toFixed(2)}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">بقایا رقم:</span>
+          <span class="info-value ltr">Rs. ${Math.abs(outstandingBalance).toFixed(2)} ${
+            outstandingBalance > 0
+              ? '(وصولی)'
+              : outstandingBalance < 0
+                ? '(ادائیگی)'
+                : '(صاف)'
+          }</span>
+        </div>
+      </div>
     `;
 
     // Entry Summary
@@ -594,11 +787,11 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
         .join('\n');
 
       body += `
-        <h3>Entry Summary</h3>
+        <h3 class="urdu">اندراج کا خلاصہ</h3>
         <table>
           <thead>
             <tr>
-              <th>Customer</th><th>Product Type</th><th>Total Items</th>
+              <th class="urdu">کسٹمر</th><th class="urdu">پروڈکٹ کی قسم</th><th class="urdu">کل اشیاء</th>
             </tr>
           </thead>
           <tbody>${entrySummaryRows}</tbody>
@@ -624,11 +817,11 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
         .join('\n');
 
       body += `
-        <h3>Clearance Summary</h3>
+        <h3 class="urdu">نکاسی کا خلاصہ</h3>
         <table>
           <thead>
             <tr>
-              <th>Customer</th><th>Product Type</th><th>Total Items</th>
+              <th class="urdu">کسٹمر</th><th class="urdu">پروڈکٹ کی قسم</th><th class="urdu">کل اشیاء</th>
             </tr>
           </thead>
           <tbody>${clearanceSummaryRows}</tbody>
@@ -654,11 +847,11 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
         .join('\n');
 
       body += `
-        <h3>Current Stock Summary</h3>
+        <h3 class="urdu">موجودہ اسٹاک کا خلاصہ</h3>
         <table>
           <thead>
             <tr>
-              <th>Customer</th><th>Product Type</th><th>Total Items</th>
+              <th class="urdu">کسٹمر</th><th class="urdu">پروڈکٹ کی قسم</th><th class="urdu">کل اشیاء</th>
             </tr>
           </thead>
           <tbody>${currentStockSummaryRows}</tbody>
@@ -667,16 +860,16 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
     }
 
     body += `
-      <div class="small">Balance: Rs. ${Math.abs(reportData.balance || 0).toFixed(2)} ${
+      <div class="small urdu">بیلنس: Rs. ${Math.abs(reportData.balance || 0).toFixed(2)} ${
         reportData.balance > 0
-          ? '(Receivable)'
+          ? '(وصولی)'
           : reportData.balance < 0
-            ? '(Payable)'
-            : '(Settled)'
+            ? '(ادائیگی)'
+            : '(صاف)'
       }</div>
     `;
 
-    return wrapHtml('Customer Report - Summary', body);
+    return wrapHtml('کسٹمر رپورٹ - خلاصہ', body);
   }
 
   // Detailed report (existing logic)
@@ -739,22 +932,75 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
     )
     .join('\n');
 
+  // Calculate totals for financial summary
+  const totalEntryAmount = entryReceipts.reduce(
+    (sum: number, receipt: any) => sum + (receipt.totalAmount || 0),
+    0
+  );
+  const totalClearedAmount = clearanceReceipts.reduce(
+    (sum: number, receipt: any) => sum + (receipt.totalAmount || 0),
+    0
+  );
+  const totalDiscount =
+    entryReceipts.reduce(
+      (sum: number, receipt: any) => sum + (receipt.discount || 0),
+      0
+    ) +
+    clearanceReceipts.reduce(
+      (sum: number, receipt: any) => sum + (receipt.discount || 0),
+      0
+    );
+  const outstandingBalance = reportData.balance || 0;
+
   const body = `
-    <div class="small">Report Type: ${filters.reportType} - Detailed View</div>
-    <div class="small">Customer: ${reportData.customer?.name || '-'}</div>
-    <div class="small">Date Range: ${dateRange}</div>
+    <div class="info-list urdu">
+      <div class="info-item">
+        <span class="info-label">رپورٹ کی قسم:</span>
+        <span class="info-value">${filters.reportType} - تفصیلی</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">کسٹمر:</span>
+        <span class="info-value">${reportData.customer?.name || '-'}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">تاریخ کی حد:</span>
+        <span class="info-value">${dateRange}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">کل اندراج کی رقم:</span>
+        <span class="info-value ltr">Rs. ${totalEntryAmount.toFixed(2)}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">کل نکاسی کی رقم:</span>
+        <span class="info-value ltr">Rs. ${totalClearedAmount.toFixed(2)}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">کل رعایت:</span>
+        <span class="info-value ltr">Rs. ${totalDiscount.toFixed(2)}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">بقایا رقم:</span>
+        <span class="info-value ltr">Rs. ${Math.abs(outstandingBalance).toFixed(2)} ${
+          outstandingBalance > 0
+            ? '(وصولی)'
+            : outstandingBalance < 0
+              ? '(ادائیگی)'
+              : '(صاف)'
+        }</span>
+      </div>
+    </div>
 
     ${
       entryRows.length > 0
         ? `
-      <h3>Entry Records</h3>
+      <h3 class="urdu">اندراج کے ریکار
       <table>
         <thead>
           <tr>
-            <th>Date</th><th>Receipt No</th><th>Product Type</th><th>Sub Type</th><th>Marka</th><th>Qty</th><th>Amount</th>
+            <th class="urdu">تاریخ</th><th class="urdu">رسید نمبر</th><th class="urdu">پروڈکٹ کی قسم</th><th class="urdu">ذیلی قسم</th><th class="urdu">مارکہ</th><th class="urdu">مقدار</th><th class="urdu">رقم</th>
           </tr>
         </thead>
-        <tbody>${entryRows}</tbody>
+        <tbody >${entryRows}</tbody>
       </table>
     `
         : ''
@@ -763,11 +1009,11 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
     ${
       clearanceRows.length > 0
         ? `
-      <h3>Clearance Records</h3>
+      <h3 class="urdu">نکاسی کے ریکارڈ</h3>
       <table>
         <thead>
           <tr>
-            <th>Date</th><th>Clearance No</th><th>Product Type</th><th>Sub Type</th><th>Marka</th><th>Qty</th><th>Amount</th>
+            <th class="urdu">تاریخ</th><th class="urdu">نکاسی نمبر</th><th class="urdu">پروڈکٹ کی قسم</th><th class="urdu">ذیلی قسم</th><th class="urdu">مارکہ</th><th class="urdu">مقدار</th><th class="urdu">رقم</th>
           </tr>
         </thead>
         <tbody>${clearanceRows}</tbody>
@@ -776,21 +1022,21 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
         : ''
     }
 
-    <div class="small">Balance: Rs. ${Math.abs(reportData.balance || 0).toFixed(2)} ${
+    <div class="small urdu">بیلنس: Rs. ${Math.abs(reportData.balance || 0).toFixed(2)} ${
       reportData.balance > 0
-        ? '(Receivable)'
+        ? '(وصولی)'
         : reportData.balance < 0
-          ? '(Payable)'
-          : '(Settled)'
+          ? '(ادائیگی)'
+          : '(صاف)'
     }</div>
     
     ${
       reportData.ledger && reportData.ledger.length > 0
         ? `
-      <h3>Ledger</h3>
+      <h3 class="urdu">کھاتہ</h3>
       <table>
         <thead>
-          <tr><th>Date</th><th>Description</th><th>Debit</th><th>Credit</th></tr>
+          <tr><th class="urdu">تاریخ</th><th class="urdu">تفصیل</th><th class="urdu">ڈیبٹ</th><th class="urdu">کریڈٹ</th></tr>
         </thead>
         <tbody>
           ${reportData.ledger
@@ -812,7 +1058,7 @@ export const buildCustomerReportHTML = (reportData: any, filters: any) => {
     }
   `;
 
-  return wrapHtml('Customer Report - Detailed', body);
+  return wrapHtml('کسٹمر رپورٹ - تفصیلی', body);
 };
 
 export const buildEntryReceiptHTML = (receiptData: any) => {
@@ -822,4 +1068,145 @@ export const buildEntryReceiptHTML = (receiptData: any) => {
 
 export const buildClearanceReceiptHTML = (clearanceData: any) => {
   return generateClearanceReceiptHTML(clearanceData);
+};
+
+export const buildCashBookReportHTML = (reportData: any, filters: any) => {
+  const dateRange =
+    filters?.fromDate && filters?.toDate
+      ? `${format(new Date(filters.fromDate), 'PP')} - ${format(new Date(filters.toDate), 'PP')}`
+      : 'Date range not specified';
+
+  // Summary section
+  let body = `
+    <div class="small urdu">رپورٹ کی قسم: نقدی کتاب رپورٹ</div>
+    <div class="small urdu">تاریخ کی حد: ${dateRange}</div>
+    <div class="small urdu">تیار کردہ: ${format(new Date(), 'PPP pp')}</div>
+
+    <table>
+      <thead>
+        <tr><th colspan="2" class="urdu">نقدی کتاب کا خلاصہ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="urdu">ابتدائی بیلنس</td><td class="ltr">Rs. ${Number(reportData.summary?.openingBalance || 0).toFixed(2)}</td></tr>
+        <tr><td class="urdu">کل آمدنی</td><td class="ltr">Rs. ${Number(reportData.summary?.totalInflows || 0).toFixed(2)}</td></tr>
+        <tr><td class="urdu">کل اخراجات</td><td class="ltr">Rs. ${Number(reportData.summary?.totalOutflows || 0).toFixed(2)}</td></tr>
+        <tr><td class="urdu">خالص نقدی بہاؤ</td><td class="ltr">Rs. ${Number(reportData.summary?.netCashFlow || 0).toFixed(2)}</td></tr>
+        <tr><td class="urdu">اختتامی بیلنس</td><td class="ltr">Rs. ${Number(reportData.summary?.closingBalance || 0).toFixed(2)}</td></tr>
+        <tr><td class="urdu">کل لین دین</td><td class="right">${reportData.summary?.transactionCount || 0}</td></tr>
+      </tbody>
+    </table>
+  `;
+
+  // Source breakdown
+  if (
+    reportData.transactionsBySource &&
+    Object.keys(reportData.transactionsBySource).length > 0
+  ) {
+    const sourceRows = Object.entries(reportData.transactionsBySource)
+      .map(([source, data]: [string, any]) => {
+        const net = data.inflows - data.outflows;
+        return `
+          <tr>
+            <td>${source.charAt(0).toUpperCase() + source.slice(1)}</td>
+            <td class="ltr">Rs. ${data.inflows.toFixed(2)}</td>
+            <td class="ltr">Rs. ${data.outflows.toFixed(2)}</td>
+            <td class="ltr">Rs. ${net.toFixed(2)}</td>
+            <td class="right">${data.count}</td>
+          </tr>
+        `;
+      })
+      .join('');
+
+    body += `
+      <h3 class="urdu">ذریعہ کے مطابق تفصیل</h3>
+      <table>
+        <thead>
+          <tr>
+            <th class="urdu">ذریعہ</th>
+            <th class="urdu">آمدنی</th>
+            <th class="urdu">اخراجات</th>
+            <th class="urdu">خالص</th>
+            <th class="urdu">تعداد</th>
+          </tr>
+        </thead>
+        <tbody>${sourceRows}</tbody>
+      </table>
+    `;
+  }
+
+  // Daily summaries
+  if (reportData.dailySummaries && reportData.dailySummaries.length > 0) {
+    const dailyRows = reportData.dailySummaries
+      .map(
+        (summary: any) => `
+        <tr>
+          <td class="right">${format(new Date(summary.date), 'PP')}</td>
+          <td class="ltr">Rs. ${summary.openingBalance.toFixed(2)}</td>
+          <td class="ltr">Rs. ${summary.totalInflows.toFixed(2)}</td>
+          <td class="ltr">Rs. ${summary.totalOutflows.toFixed(2)}</td>
+          <td class="ltr">Rs. ${summary.closingBalance.toFixed(2)}</td>
+        </tr>
+      `
+      )
+      .join('');
+
+    body += `
+      <h3 class="urdu">روزانہ خلاصہ</h3>
+      <table>
+        <thead>
+          <tr>
+            <th class="urdu">تاریخ</th>
+            <th class="urdu">ابتدائی بیلنس</th>
+            <th class="urdu">آمدنی</th>
+            <th class="urdu">اخراجات</th>
+            <th class="urdu">اختتامی بیلنس</th>
+          </tr>
+        </thead>
+        <tbody>${dailyRows}</tbody>
+      </table>
+    `;
+  }
+
+  // Transaction details (if included)
+  if (
+    filters?.includeTransactionDetails &&
+    reportData.transactions &&
+    reportData.transactions.length > 0
+  ) {
+    const transactionRows = reportData.transactions
+      .map(
+        (transaction: any) => `
+        <tr>
+          <td class="right">${format(new Date(transaction.date), 'PP')}</td>
+          <td>${transaction.transactionType === 'inflow' ? 'Inflow' : 'Outflow'}</td>
+          <td class="ltr">Rs. ${transaction.amount.toFixed(2)}</td>
+          <td>${transaction.description}</td>
+          <td>${transaction.source.charAt(0).toUpperCase() + transaction.source.slice(1)}</td>
+          <td>${transaction.customer?.name || '-'}</td>
+          <td>${transaction.referenceId || '-'}</td>
+        </tr>
+      `
+      )
+      .join('');
+
+    body += `
+      <h3 class="urdu">لین دین کی تفصیلات</h3>
+      <table>
+        <thead>
+          <tr>
+            <th class="urdu">تاریخ</th>
+            <th class="urdu">قسم</th>
+            <th class="urdu">رقم</th>
+            <th class="urdu">تفصیل</th>
+            <th class="urdu">ذریعہ</th>
+            <th class="urdu">کسٹمر</th>
+            <th class="urdu">حوالہ</th>
+          </tr>
+        </thead>
+        <tbody>${transactionRows}</tbody>
+      </table>
+    `;
+  }
+
+  return wrapHtml('نقدی کتاب رپورٹ', body);
 };
