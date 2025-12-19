@@ -1219,3 +1219,110 @@ export const buildCashBookReportHTML = (reportData: any, filters: any) => {
 
   return wrapHtml('نقدی کتاب رپورٹ', body);
 };
+
+export const buildRoomWiseReportHTML = (
+  reportData: any,
+  filters: {
+    roomName: string;
+    reportMode: string;
+    fromDate: string;
+    toDate: string;
+  }
+) => {
+  const dateRange = `${format(new Date(filters.fromDate), 'PP')} - ${format(new Date(filters.toDate), 'PP')}`;
+
+  let body = `
+    <div class="info-list urdu">
+      <div class="info-item">
+        <span class="info-label">رپورٹ کی قسم:</span>
+        <span class="info-value">کمرہ وار رپورٹ</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">کمرہ:</span>
+        <span class="info-value">${filters.roomName}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">تاریخ کی حد:</span>
+        <span class="info-value">${dateRange}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">تیار کردہ:</span>
+        <span class="info-value">${format(new Date(), 'PPP pp')}</span>
+      </div>
+    </div>
+  `;
+
+  // Customer-wise table
+  if (
+    (filters.reportMode === 'customer' || filters.reportMode === 'both') &&
+    reportData.customerWise &&
+    reportData.customerWise.length > 0
+  ) {
+    body += `
+    <h3 class="urdu">گاہک کے مطابق خلاصہ</h3>
+    <table>
+      <thead>
+        <tr>
+          <th class="urdu">گاہک کا نام</th>
+          <th class="urdu">داخل شدہ اسٹاک</th>
+          <th class="urdu">صاف شدہ اسٹاک</th>
+          <th class="urdu">باقی اسٹاک</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${reportData.customerWise
+          .map(
+            (item: any) => `
+          <tr>
+            <td>${item.customerName}</td>
+            <td class="right">${item.stockEntered}</td>
+            <td class="right">${item.stockCleared}</td>
+            <td class="right" style="color: #ea580c; font-weight: 600;">${item.remainingStock}</td>
+          </tr>
+        `
+          )
+          .join('')}
+      </tbody>
+    </table>
+    `;
+  }
+
+  // Product-wise table
+  if (
+    (filters.reportMode === 'product' || filters.reportMode === 'both') &&
+    reportData.productWise &&
+    reportData.productWise.length > 0
+  ) {
+    body += `
+    <h3 class="urdu">مصنوعات کے مطابق خلاصہ</h3>
+    <table>
+      <thead>
+        <tr>
+          <th class="urdu">مصنوعات کی قسم</th>
+          <th class="urdu">ذیلی قسم</th>
+          <th class="urdu">داخل شدہ مقدار</th>
+          <th class="urdu">صاف شدہ مقدار</th>
+          <th class="urdu">باقی مقدار</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${reportData.productWise
+          .map(
+            (item: any) => `
+          <tr>
+            <td>${item.productType}</td>
+            <td>${item.productSubType || '-'}</td>
+            <td class="right">${item.enteredQuantity}</td>
+            <td class="right">${item.clearedQuantity}</td>
+            <td class="right" style="color: #ea580c; font-weight: 600;">${item.remainingQuantity}</td>
+          </tr>
+        `
+          )
+          .join('')}
+      </tbody>
+    </table>
+    `;
+  }
+
+  return wrapHtml(`کمرہ وار رپورٹ - ${filters.roomName}`, body);
+};
