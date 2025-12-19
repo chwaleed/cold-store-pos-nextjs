@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,
@@ -226,28 +227,34 @@ export function AuditReport() {
               <Label className="text-xs font-medium uppercase text-muted-foreground">
                 From Date
               </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !fromDate && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {fromDate ? format(fromDate, 'PP') : <span>Pick date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={fromDate}
-                    onSelect={(date) => date && setFromDate(date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  value={format(fromDate, 'yyyy-MM-dd')}
+                  onChange={(e) => {
+                    const newDate = new Date(e.target.value);
+                    if (!isNaN(newDate.getTime())) {
+                      setFromDate(newDate);
+                    }
+                  }}
+                  className="flex-1"
+                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <CalendarIcon className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={fromDate}
+                      onSelect={(date) => date && setFromDate(date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
 
             {/* To Date */}
@@ -255,28 +262,34 @@ export function AuditReport() {
               <Label className="text-xs font-medium uppercase text-muted-foreground">
                 To Date
               </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !toDate && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {toDate ? format(toDate, 'PP') : <span>Pick date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={toDate}
-                    onSelect={(date) => date && setToDate(date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  value={format(toDate, 'yyyy-MM-dd')}
+                  onChange={(e) => {
+                    const newDate = new Date(e.target.value);
+                    if (!isNaN(newDate.getTime())) {
+                      setToDate(newDate);
+                    }
+                  }}
+                  className="flex-1"
+                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <CalendarIcon className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={toDate}
+                      onSelect={(date) => date && setToDate(date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
 
             {/* Generate Button */}

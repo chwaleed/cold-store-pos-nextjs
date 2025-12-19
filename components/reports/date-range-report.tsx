@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -72,8 +73,8 @@ export function DateRangeReport() {
   const [selectedSubType, setSelectedSubType] = useState<string | undefined>(
     undefined
   );
-  const [period, setPeriod] = useState<string>('day');
-  const [date, setDate] = useState<Date>(new Date());
+  const [dateFrom, setDateFrom] = useState<Date>(new Date());
+  const [dateTo, setDateTo] = useState<Date>(new Date());
   const [isDetailed, setIsDetailed] = useState<boolean>(false);
   const [reportData, setReportData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -96,8 +97,8 @@ export function DateRangeReport() {
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        period,
-        date: date.toISOString(),
+        dateFrom: dateFrom.toISOString(),
+        dateTo: dateTo.toISOString(),
         ...(selectedType && { productTypeId: selectedType }),
         ...(selectedSubType && { productSubTypeId: selectedSubType }),
       });
@@ -127,8 +128,8 @@ export function DateRangeReport() {
       ? productSubTypes.find((st) => st.id.toString() === selectedSubType)?.name
       : undefined;
     const filters = {
-      period,
-      date: date.toISOString(),
+      dateFrom: dateFrom.toISOString(),
+      dateTo: dateTo.toISOString(),
       productType,
       productSubType,
       detailed: isDetailed,
@@ -146,14 +147,16 @@ export function DateRangeReport() {
       ? productSubTypes.find((st) => st.id.toString() === selectedSubType)?.name
       : undefined;
     const filters = {
-      period,
-      date: date.toISOString(),
+      dateFrom: dateFrom.toISOString(),
+      dateTo: dateTo.toISOString(),
       productType,
       productSubType,
       detailed: isDetailed,
     };
     const doc = generateOverallReportPDF(reportData, filters);
-    doc.download(`overall-report-${format(date, 'yyyy-MM-dd')}.pdf`);
+    doc.download(
+      `overall-report-${format(dateFrom, 'yyyy-MM-dd')}_to_${format(dateTo, 'yyyy-MM-dd')}.pdf`
+    );
     toast.success('PDF downloaded');
   };
 
@@ -173,11 +176,7 @@ export function DateRangeReport() {
     const summaryData = [
       ['OVERALL BUSINESS REPORT'],
       ['Generated On', format(new Date(), 'PPP p')],
-      [
-        'Period',
-        period === 'day' ? 'Daily' : period === 'month' ? 'Monthly' : 'Yearly',
-      ],
-      ['Date', format(date, 'PPP')],
+      ['Date Range', `${format(dateFrom, 'PPP')} - ${format(dateTo, 'PPP')}`],
       ['Product Type Filter', productTypeName],
       ['Product Sub-Type Filter', productSubTypeName],
       [],
@@ -425,7 +424,10 @@ export function DateRangeReport() {
       XLSX.utils.book_append_sheet(wb, wsProduct, 'Product Breakdown');
     }
 
-    XLSX.writeFile(wb, `overall_report_${format(date, 'yyyy-MM-dd')}.xlsx`);
+    XLSX.writeFile(
+      wb,
+      `overall_report_${format(dateFrom, 'yyyy-MM-dd')}_to_${format(dateTo, 'yyyy-MM-dd')}.xlsx`
+    );
     toast.success('Excel exported');
   };
 
@@ -443,41 +445,68 @@ export function DateRangeReport() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Time Controls */}
+            {/* Date Range Controls */}
             <div className="space-y-2">
               <Label className="text-xs font-medium uppercase text-muted-foreground">
-                Time Period
+                From Date
               </Label>
               <div className="flex gap-2">
-                <Select value={period} onValueChange={setPeriod}>
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="day">Daily</SelectItem>
-                    <SelectItem value="month">Monthly</SelectItem>
-                    <SelectItem value="year">Yearly</SelectItem>
-                  </SelectContent>
-                </Select>
-
+                <Input
+                  type="date"
+                  value={format(dateFrom, 'yyyy-MM-dd')}
+                  onChange={(e) => {
+                    const newDate = new Date(e.target.value);
+                    if (!isNaN(newDate.getTime())) {
+                      setDateFrom(newDate);
+                    }
+                  }}
+                  className="flex-1"
+                />
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        'flex-1 justify-start text-left font-normal px-3',
-                        !date && 'text-muted-foreground'
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date ? format(date, 'PP') : <span>Pick date</span>}
+                    <Button variant="outline" size="icon">
+                      <CalendarIcon className="h-4 w-4" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={date}
-                      onSelect={(newDate) => newDate && setDate(newDate)}
+                      selected={dateFrom}
+                      onSelect={(newDate) => newDate && setDateFrom(newDate)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-medium uppercase text-muted-foreground">
+                To Date
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  value={format(dateTo, 'yyyy-MM-dd')}
+                  onChange={(e) => {
+                    const newDate = new Date(e.target.value);
+                    if (!isNaN(newDate.getTime())) {
+                      setDateTo(newDate);
+                    }
+                  }}
+                  className="flex-1"
+                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <CalendarIcon className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateTo}
+                      onSelect={(newDate) => newDate && setDateTo(newDate)}
                       initialFocus
                     />
                   </PopoverContent>
@@ -548,36 +577,44 @@ export function DateRangeReport() {
             </div>
 
             {/* Action Button and Options */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="detailed"
-                  checked={isDetailed}
-                  onCheckedChange={(checked) => setIsDetailed(checked === true)}
-                />
-                <Label
-                  htmlFor="detailed"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Include Transaction Details
-                </Label>
-              </div>
+            <div className="space-y-2 md:col-span-2 lg:col-span-1">
+              <Label className="text-xs font-medium uppercase text-muted-foreground">
+                Options & Actions
+              </Label>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="detailed"
+                    checked={isDetailed}
+                    onCheckedChange={(checked) =>
+                      setIsDetailed(checked === true)
+                    }
+                  />
+                  <Label
+                    htmlFor="detailed"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Include Transaction Details
+                  </Label>
+                </div>
 
-              <Button
-                onClick={generateReport}
-                disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
-                {loading ? (
-                  <>
-                    <span className="animate-spin mr-2">⏳</span> Generating...
-                  </>
-                ) : (
-                  <>
-                    <Search className="mr-2 h-4 w-4" /> Generate Report
-                  </>
-                )}
-              </Button>
+                <Button
+                  onClick={generateReport}
+                  disabled={loading}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  {loading ? (
+                    <>
+                      <span className="animate-spin mr-2">⏳</span>{' '}
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="mr-2 h-4 w-4" /> Generate Report
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>

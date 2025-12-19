@@ -14,36 +14,18 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const productTypeId = searchParams.get('productTypeId');
     const productSubTypeId = searchParams.get('productSubTypeId');
-    const period = searchParams.get('period'); // 'day' | 'month' | 'year'
-    const date = searchParams.get('date'); // ISO date string
+    const dateFrom = searchParams.get('dateFrom'); // ISO date string
+    const dateTo = searchParams.get('dateTo'); // ISO date string
 
-    if (!date || !period) {
+    if (!dateFrom || !dateTo) {
       return NextResponse.json(
-        { error: 'Date and period are required' },
+        { error: 'dateFrom and dateTo are required' },
         { status: 400 }
       );
     }
 
-    const referenceDate = new Date(date);
-    let startDate: Date;
-    let endDate: Date;
-
-    switch (period) {
-      case 'day':
-        startDate = startOfDay(referenceDate);
-        endDate = endOfDay(referenceDate);
-        break;
-      case 'month':
-        startDate = startOfMonth(referenceDate);
-        endDate = endOfMonth(referenceDate);
-        break;
-      case 'year':
-        startDate = startOfYear(referenceDate);
-        endDate = endOfYear(referenceDate);
-        break;
-      default:
-        return NextResponse.json({ error: 'Invalid period' }, { status: 400 });
-    }
+    const startDate = startOfDay(new Date(dateFrom));
+    const endDate = endOfDay(new Date(dateTo));
 
     // Fetch all entries in period
     const entries = await db.entryReceipt.findMany({
@@ -336,8 +318,8 @@ export async function GET(request: NextRequest) {
         detailedProductBreakdown,
       },
       filters: {
-        period,
-        date,
+        dateFrom,
+        dateTo,
         productTypeId,
         productSubTypeId,
         startDate,

@@ -13,30 +13,18 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const categoryId = searchParams.get('categoryId');
-    const period = searchParams.get('period'); // 'day' | 'month' | 'year' | 'all'
-    const date = searchParams.get('date'); // ISO date string
+    const dateFrom = searchParams.get('dateFrom'); // ISO date string
+    const dateTo = searchParams.get('dateTo'); // ISO date string
 
-    let startDate: Date | undefined;
-    let endDate: Date | undefined;
-
-    if (date && period !== 'all') {
-      const referenceDate = new Date(date);
-
-      switch (period) {
-        case 'day':
-          startDate = startOfDay(referenceDate);
-          endDate = endOfDay(referenceDate);
-          break;
-        case 'month':
-          startDate = startOfMonth(referenceDate);
-          endDate = endOfMonth(referenceDate);
-          break;
-        case 'year':
-          startDate = startOfYear(referenceDate);
-          endDate = endOfYear(referenceDate);
-          break;
-      }
+    if (!dateFrom || !dateTo) {
+      return NextResponse.json(
+        { error: 'dateFrom and dateTo are required' },
+        { status: 400 }
+      );
     }
+
+    const startDate = startOfDay(new Date(dateFrom));
+    const endDate = endOfDay(new Date(dateTo));
 
     const where: any = {};
 
@@ -44,12 +32,10 @@ export async function GET(request: NextRequest) {
       where.categoryId = parseInt(categoryId);
     }
 
-    if (startDate && endDate) {
-      where.date = {
-        gte: startDate,
-        lte: endDate,
-      };
-    }
+    where.date = {
+      gte: startDate,
+      lte: endDate,
+    };
 
     const expenses = await db.expense.findMany({
       where,
@@ -87,8 +73,8 @@ export async function GET(request: NextRequest) {
         count: expenses.length,
       },
       filters: {
-        period,
-        date,
+        dateFrom,
+        dateTo,
         categoryId,
         startDate,
         endDate,

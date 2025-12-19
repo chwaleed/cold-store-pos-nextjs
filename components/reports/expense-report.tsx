@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -69,8 +70,8 @@ export function ExpenseReport() {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
     undefined
   );
-  const [period, setPeriod] = useState<string>('month');
-  const [date, setDate] = useState<Date>(new Date());
+  const [dateFrom, setDateFrom] = useState<Date>(new Date());
+  const [dateTo, setDateTo] = useState<Date>(new Date());
   const [reportData, setReportData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
@@ -94,8 +95,8 @@ export function ExpenseReport() {
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        period,
-        date: date.toISOString(),
+        dateFrom: dateFrom.toISOString(),
+        dateTo: dateTo.toISOString(),
         ...(selectedCategory && { categoryId: selectedCategory }),
       });
 
@@ -118,8 +119,8 @@ export function ExpenseReport() {
   const handlePrint = () => {
     if (!reportData) return;
     const doc = generateExpenseReportPDF(reportData, {
-      period,
-      date: date.toISOString(),
+      dateFrom: dateFrom.toISOString(),
+      dateTo: dateTo.toISOString(),
     });
     doc.print();
   };
@@ -127,10 +128,12 @@ export function ExpenseReport() {
   const downloadPDF = () => {
     if (!reportData) return;
     const doc = generateExpenseReportPDF(reportData, {
-      period,
-      date: date.toISOString(),
+      dateFrom: dateFrom.toISOString(),
+      dateTo: dateTo.toISOString(),
     });
-    doc.download(`expense_report_${period}_${format(date, 'yyyy-MM-dd')}.pdf`);
+    doc.download(
+      `expense_report_${format(dateFrom, 'yyyy-MM-dd')}_to_${format(dateTo, 'yyyy-MM-dd')}.pdf`
+    );
     toast.success('PDF downloaded');
   };
 
@@ -147,17 +150,7 @@ export function ExpenseReport() {
     const summaryData = [
       ['EXPENSE REPORT'],
       ['Generated On', format(new Date(), 'PPP p')],
-      [
-        'Period',
-        period === 'day'
-          ? 'Daily'
-          : period === 'month'
-            ? 'Monthly'
-            : period === 'year'
-              ? 'Yearly'
-              : 'All Time',
-      ],
-      ['Date', period === 'all' ? 'All Time' : format(date, 'PPP')],
+      ['Date Range', `${format(dateFrom, 'PPP')} - ${format(dateTo, 'PPP')}`],
       ['Category Filter', categoryName],
       [],
       ['SUMMARY'],
@@ -217,7 +210,7 @@ export function ExpenseReport() {
 
     XLSX.writeFile(
       wb,
-      `expense_report_${period}_${format(date, 'yyyy-MM-dd')}.xlsx`
+      `expense_report_${format(dateFrom, 'yyyy-MM-dd')}_to_${format(dateTo, 'yyyy-MM-dd')}.xlsx`
     );
     toast.success('Excel exported successfully');
   };
@@ -236,52 +229,74 @@ export function ExpenseReport() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Period Selection */}
+            {/* From Date */}
             <div className="space-y-2">
               <Label className="text-xs font-medium uppercase text-muted-foreground">
-                Time Period
+                From Date
               </Label>
-              <Select value={period} onValueChange={setPeriod}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="day">Daily</SelectItem>
-                  <SelectItem value="month">Monthly</SelectItem>
-                  <SelectItem value="year">Yearly</SelectItem>
-                  <SelectItem value="all">All Time</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  value={format(dateFrom, 'yyyy-MM-dd')}
+                  onChange={(e) => {
+                    const newDate = new Date(e.target.value);
+                    if (!isNaN(newDate.getTime())) {
+                      setDateFrom(newDate);
+                    }
+                  }}
+                  className="flex-1"
+                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <CalendarIcon className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateFrom}
+                      onSelect={(newDate) => newDate && setDateFrom(newDate)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
 
-            {/* Date Selection */}
+            {/* To Date */}
             <div className="space-y-2">
               <Label className="text-xs font-medium uppercase text-muted-foreground">
-                Specific Date
+                To Date
               </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    disabled={period === 'all'}
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !date && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, 'PPP') : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={(newDate) => newDate && setDate(newDate)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  value={format(dateTo, 'yyyy-MM-dd')}
+                  onChange={(e) => {
+                    const newDate = new Date(e.target.value);
+                    if (!isNaN(newDate.getTime())) {
+                      setDateTo(newDate);
+                    }
+                  }}
+                  className="flex-1"
+                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <CalendarIcon className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateTo}
+                      onSelect={(newDate) => newDate && setDateTo(newDate)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
 
             {/* Category Selection */}
