@@ -260,7 +260,7 @@ export async function PUT(
   }
 }
 
-// DELETE /api/entry/[id] - Delete entry receipt (only if no clearances)
+// DELETE /api/entry/[id] - Delete entry receipt and all related records
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -276,19 +276,20 @@ export async function DELETE(
       );
     }
 
-    // Check if entry receipt exists and has any cleared items
+    // Check if entry receipt exists
     const entryReceipt = await prisma.entryReceipt.findUnique({
       where: { id },
       include: {
         items: {
           include: {
-            _count: {
-              select: {
-                clearedItems: true,
+            clearedItems: {
+              include: {
+                clearanceReceipt: true,
               },
             },
           },
         },
+        ledgerEntries: true,
       },
     });
 
@@ -299,30 +300,100 @@ export async function DELETE(
       );
     }
 
-    // Check if any items have been cleared
-    const hasClearedItems = entryReceipt.items.some(
-      (item) => item._count.clearedItems > 0
-    );
+    // Perform cascade deletion in a transaction
+    await prisma.$transaction(async (tx) => {
+      // Step 1: Get all clearance receipts that will be affected
+      const affectedClearanceIds = new Set<number>();
+      
+      for (const item of entryReceipt.items) {
+        for (const clearedItem of item.clearedItems) {
+          affectedClearanceIds.add(clearedItem.clearanceReceiptId);
+        }
+      }
 
-    // Prevent deletion if there are clearances
-    if (hasClearedItems) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Cannot delete entry receipt with existing clearances',
+      // Step 2: Delete all cleared items related to this entry receipt
+      await tx.clearedItem.deleteMany({
+        where: {
+          entryItemId: {
+            in: entryReceipt.items.map(item => item.id),
+          },
         },
-        { status: 400 }
-      );
-    }
+      });
 
-    // Delete entry receipt (items and ledger entries will be deleted due to cascade)
-    await prisma.entryReceipt.delete({
-      where: { id },
+      // Step 3: Check and delete empty clearance receipts
+      const clearanceIdsArray = Array.from(affectedClearanceIds);
+      for (const clearanceId of clearanceIdsArray) {
+        const remainingItems = await tx.clearedItem.count({
+          where: { clearanceReceiptId: clearanceId },
+        });
+
+        if (remainingItems === 0) {
+          // Delete related cash book entries for this clearance
+          await tx.cashBookEntry.deleteMany({
+            where: {
+              referenceType: 'clearance_receipt',
+              referenceId: clearanceId,
+            },
+          });
+
+          // Delete the empty clearance receipt (ledger entries will cascade)
+          await tx.clearanceReceipt.delete({
+            where: { id: clearanceId },
+          });
+        } else {
+          // Update clearance receipt total amount if it still has items
+          const remainingClearedItems = await tx.clearedItem.findMany({
+            where: { clearanceReceiptId: clearanceId },
+          });
+          
+          const newTotal = remainingClearedItems.reduce(
+            (sum, item) => sum + item.totalAmount, 
+            0
+          );
+
+          await tx.clearanceReceipt.update({
+            where: { id: clearanceId },
+            data: { totalAmount: newTotal },
+          });
+
+          // Update related ledger entries
+          await tx.ledger.updateMany({
+            where: {
+              clearanceReceiptId: clearanceId,
+              type: 'clearance',
+            },
+            data: { creditAmount: newTotal },
+          });
+        }
+      }
+
+      // Step 4: Delete cash book entries related to this entry receipt
+      await tx.cashBookEntry.deleteMany({
+        where: {
+          OR: [
+            {
+              referenceType: 'entry_receipt',
+              referenceId: id,
+            },
+            {
+              referenceType: 'ledger_entry',
+              referenceId: {
+                in: entryReceipt.ledgerEntries.map(ledger => ledger.id),
+              },
+            },
+          ],
+        },
+      });
+
+      // Step 5: Delete the entry receipt (this will cascade delete items and ledger entries)
+      await tx.entryReceipt.delete({
+        where: { id },
+      });
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Entry receipt deleted successfully',
+      message: 'Entry receipt and all related records deleted successfully',
     });
   } catch (error) {
     console.error('Error deleting entry receipt:', error);

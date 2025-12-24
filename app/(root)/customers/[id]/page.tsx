@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Eye, Plus, Pencil } from 'lucide-react';
+import { ArrowLeft, Eye, Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomerWithBalance } from '@/types/customer';
@@ -10,6 +10,7 @@ import { LedgerWithReceipt } from '@/types/ledger';
 import { Badge } from '@/components/ui/badge';
 import { AddDirectCashDialog } from '@/components/customer/add-direct-cash-dialog';
 import { EditCustomerDialog } from '@/components/customer/edit-customer-dialog';
+import { DeleteLedgerDialog } from '@/components/customer/delete-ledger-dialog';
 import { useToast } from '@/components/ui/use-toast';
 import DataTable from '@/components/dataTable/data-table';
 
@@ -24,6 +25,8 @@ export default function CustomerDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showAddCash, setShowAddCash] = useState(false);
   const [showEditCustomer, setShowEditCustomer] = useState(false);
+  const [showDeleteLedger, setShowDeleteLedger] = useState(false);
+  const [selectedLedgerEntry, setSelectedLedgerEntry] = useState<LedgerWithReceipt | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -84,6 +87,11 @@ export default function CustomerDetailPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
+
+  const handleDeleteLedger = (entry: LedgerWithReceipt) => {
+    setSelectedLedgerEntry(entry);
+    setShowDeleteLedger(true);
+  };
 
   const handleViewReceipt = (entry: LedgerWithReceipt) => {
     if (entry.type === 'adding_inventory' && entry.entryReceiptId) {
@@ -171,18 +179,39 @@ export default function CustomerDetailPage() {
     },
     {
       name: 'Action',
-      accessor: (row: any) =>
-        row.type === 'adding_inventory' || row.type === 'clearance' ? (
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => handleViewReceipt(row)}
-            className="h-7 w-7"
-            title="View receipt"
-          >
-            <Eye className="h-3.5 w-3.5" />
-          </Button>
-        ) : null,
+      accessor: (row: any) => {
+        const isSystemGenerated = row.entryReceiptId || row.clearanceReceiptId;
+        
+        return (
+          <div className="flex items-center gap-1">
+            {(row.type === 'adding_inventory' || row.type === 'clearance') && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => handleViewReceipt(row)}
+                className="h-7 w-7"
+                title="View receipt"
+              >
+                <Eye className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            
+            {/* Show delete button for direct cash entries only */}
+            {row.type === 'direct_cash' && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => handleDeleteLedger(row)}
+                className="h-7 w-7 text-destructive hover:text-destructive"
+                title={isSystemGenerated ? "Cannot delete system-generated entry" : "Delete Entry"}
+                disabled={isSystemGenerated}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+        );
+      },
       id: 'action',
       className: 'text-center',
       headerClassName: 'text-center',
@@ -274,19 +303,19 @@ export default function CustomerDetailPage() {
                     : '0.00'}
                 </p>
 
-                {customer.balance > 0 && (
+                {customer.balance != null && customer.balance > 0 && (
                   <Badge variant="destructive" className="text-xs mt-1">
                     Outstanding
                   </Badge>
                 )}
 
-                {customer.balance < 0 && (
+                {customer.balance != null && customer.balance < 0 && (
                   <Badge variant="default" className="text-xs mt-1">
                     Credit
                   </Badge>
                 )}
 
-                {customer.balance === 0 && (
+                {(customer.balance == null || customer.balance === 0) && (
                   <Badge variant="secondary" className="text-xs mt-1">
                     Clear
                   </Badge>
@@ -392,6 +421,13 @@ export default function CustomerDetailPage() {
               setShowEditCustomer(false);
               fetchData();
             }}
+          />
+
+          <DeleteLedgerDialog
+            ledgerEntry={selectedLedgerEntry}
+            open={showDeleteLedger}
+            onOpenChange={setShowDeleteLedger}
+            onSuccess={fetchData}
           />
         </>
       )}

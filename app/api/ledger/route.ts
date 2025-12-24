@@ -119,8 +119,7 @@ export async function POST(request: NextRequest) {
           creditAmount:
             validatedData.type === 'credit' ? validatedData.amount : 0,
           isDirectCash: validatedData.isDirectCash,
-          // Use current timestamp for proper sorting, but keep the date for cash book
-          createdAt: new Date(),
+          createdAt: new Date(validatedData.date), // Use the user-selected date as createdAt
         },
         include: {
           customer: {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, Plus } from 'lucide-react';
+import { Eye, Plus, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,7 @@ import { LedgerWithReceipt } from '@/types/ledger';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { AddDirectCashDialog } from './add-direct-cash-dialog';
+import { DeleteLedgerDialog } from './delete-ledger-dialog';
 import DataTable from '@/components/dataTable/data-table';
 
 interface ViewCustomerDialogProps {
@@ -34,6 +35,8 @@ export function ViewCustomerDialog({
   const [ledgerEntries, setLedgerEntries] = useState<LedgerWithReceipt[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddCash, setShowAddCash] = useState(false);
+  const [showDeleteLedger, setShowDeleteLedger] = useState(false);
+  const [selectedLedgerEntry, setSelectedLedgerEntry] = useState<LedgerWithReceipt | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -78,6 +81,11 @@ export function ViewCustomerDialog({
       fetchData();
     }
   }, [page]);
+
+  const handleDeleteLedger = (entry: LedgerWithReceipt) => {
+    setSelectedLedgerEntry(entry);
+    setShowDeleteLedger(true);
+  };
 
   const handleViewReceipt = (entry: LedgerWithReceipt) => {
     if (entry.type === 'adding_inventory' && entry.entryReceiptId) {
@@ -147,19 +155,37 @@ export function ViewCustomerDialog({
     {
       name: 'Action',
       accessor: (row: any) => {
-        if (row.type === 'adding_inventory' || row.type === 'clearance') {
-          return (
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => handleViewReceipt(row)}
-              className="h-8 w-8"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-          );
-        }
-        return null;
+        const isSystemGenerated = row.entryReceiptId || row.clearanceReceiptId;
+        
+        return (
+          <div className="flex items-center gap-1">
+            {(row.type === 'adding_inventory' || row.type === 'clearance') && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => handleViewReceipt(row)}
+                className="h-8 w-8"
+                title="View Receipt"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            )}
+            
+            {/* Show delete button for direct cash entries only */}
+            {row.type === 'direct_cash' && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => handleDeleteLedger(row)}
+                className="h-8 w-8 text-destructive hover:text-destructive"
+                title={isSystemGenerated ? "Cannot delete system-generated entry" : "Delete Entry"}
+                disabled={isSystemGenerated}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        );
       },
       id: 'action',
       className: 'text-center',
@@ -284,13 +310,22 @@ export function ViewCustomerDialog({
       </Dialog>
 
       {customer && (
-        <AddDirectCashDialog
-          customerId={customer.id}
-          customerName={customer.name}
-          open={showAddCash}
-          onOpenChange={setShowAddCash}
-          onSuccess={fetchData}
-        />
+        <>
+          <AddDirectCashDialog
+            customerId={customer.id}
+            customerName={customer.name}
+            open={showAddCash}
+            onOpenChange={setShowAddCash}
+            onSuccess={fetchData}
+          />
+          
+          <DeleteLedgerDialog
+            ledgerEntry={selectedLedgerEntry}
+            open={showDeleteLedger}
+            onOpenChange={setShowDeleteLedger}
+            onSuccess={fetchData}
+          />
+        </>
       )}
     </>
   );

@@ -183,8 +183,7 @@ export function EntryTable({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Entry Receipt</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this entry receipt? This action
-              cannot be undone.
+              Are you sure you want to delete this entry receipt? This will also delete all related clearances, ledger entries, and cash book records. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -83,9 +83,13 @@ export function ExpenseReport() {
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch('/api/expenses/category');
+      const res = await fetch('/api/expenses/categories');
       const data = await res.json();
-      setCategories(data.categories || []);
+      if (data.success) {
+        setCategories(data.data || []);
+      } else {
+        toast.error('Failed to fetch categories');
+      }
     } catch (error) {
       toast.error('Failed to fetch categories');
     }
